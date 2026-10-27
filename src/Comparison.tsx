@@ -23,24 +23,17 @@ export function Comparison({ design, interactive }: { design: Design; width?: nu
   const env = asset('assets/comparison/tv-env.png');
   const envWide = asset('assets/comparison/tv-env-wide.png');
   const cat = asset('assets/comparison/cat.png');
-  const divider = asset('assets/comparison/divider.svg');
 
   useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
     const apply = () => {
-      // Prefer layout box (offset*) so html zoom from useDesignScale is not applied twice.
-      // Scale from width so the 1440 composition is full-bleed horizontally (no side bars);
-      // short/tall viewports crop or letterbox vertically while keeping Figma proportions.
-      const width = el.offsetWidth || el.getBoundingClientRect().width;
-      if (!width) return;
-      setCoverScale(width / DESIGN_W);
+      // Below 1440: shrink the 1440 stage to the viewport width.
+      // At/above 1440: keep scale 1 — useDesignScale's html zoom grows the page
+      // (never multiply zoom × cmp-scale; that caused dark side bars).
+      setCoverScale(Math.min(1, window.innerWidth / DESIGN_W));
     };
     apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(el);
     window.addEventListener('resize', apply);
-    return () => { ro.disconnect(); window.removeEventListener('resize', apply); };
+    return () => window.removeEventListener('resize', apply);
   }, []);
 
   function moveLine(e: React.PointerEvent<HTMLDivElement>) {
@@ -62,8 +55,6 @@ export function Comparison({ design, interactive }: { design: Design; width?: nu
         <div className="comparison-env" aria-hidden="true">
           <img className="comparison-env__wide" src={envWide} alt="" draggable={false} />
           <img className="comparison-env__main" src={env} alt="" draggable={false} />
-          <div className="comparison-env__glow comparison-env__glow--left" />
-          <div className="comparison-env__glow comparison-env__glow--right" />
         </div>
 
         {valid && sources && (
@@ -91,15 +82,15 @@ export function Comparison({ design, interactive }: { design: Design; width?: nu
                 alt=""
                 onError={() => setFailed(true)}
               />
-              <div className="image-divider" aria-hidden="true">
-                <img src={divider} alt="" draggable={false} />
-              </div>
+              {/* CSS line (no SVG end-caps): clipped to screen, ends above the cat */}
+              <div className="image-divider" aria-hidden="true" />
               <span className="screen-label screen-label--mini">{labels.mini}</span>
               <span className="screen-label screen-label--rgb">{labels.rgb}</span>
             </div>
           </div>
         )}
 
+        {/* Cat above the screen layer so the divider never paints over it */}
         <img className="comparison-cat" src={cat} alt="" draggable={false} aria-hidden="true" />
       </div>
 

@@ -15,7 +15,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
   const index = phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? 2 : phase === 'finale' ? 3 : 0;
   const scrubbing = phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
-  const normalizedTime = phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? clamp((progress-config.text.leaveEnd)/(1-config.text.leaveEnd)) : progress;
+  const normalizedTime = phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd)) : progress;
   const playing = active && visible && !scrubbing && phase !== 'reveal' && phase !== 'zoom' && (!reduced || manual);
   desired.current = { index, time: normalizedTime, scrubbing };
 
@@ -24,7 +24,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     const target = desired.current;
     if (!el || target.index !== i || el.seeking || el.readyState < 2) return;
     if (target.scrubbing && !reduced) {
-      const t = Math.min(el.duration - 1/24, target.time * el.duration);
+      const t = Math.min(el.duration - 1 / 24, target.time * el.duration);
       if (Math.abs(el.currentTime - t) > config.playback.seekTolerance * 2) return;
     }
     setDisplay(i);
@@ -37,15 +37,21 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     }
     videos.current.forEach((el, i) => {
       if (!el) return;
-      if (Math.abs(i-index) <= 1 && el.preload !== 'auto') { el.preload = 'auto'; el.load(); }
+      // Warm neighbors + always keep finale (video 4) buffered to avoid black flash.
+      if ((Math.abs(i - index) <= 1 || i === 3) && el.preload !== 'auto') {
+        el.preload = 'auto';
+        el.load();
+      }
       if (i !== index || !playing) el.pause();
     });
     const el = videos.current[index];
     if (!el || errors[index]) return;
     if (Number.isFinite(el.duration)) {
       const position = phase === 'comparison' || fadingComparison ? 1 : phase === 'reveal' || phase === 'zoom' || reduced ? 0 : normalizedTime;
-      const target = clamp(position * el.duration, 0, Math.max(0, el.duration - 1/24));
-      if ((scrubbing || phase === 'reveal' || phase === 'zoom') && !el.seeking && Math.abs(el.currentTime-target) > config.playback.seekTolerance) el.currentTime = target;
+      const target = clamp(position * el.duration, 0, Math.max(0, el.duration - 1 / 24));
+      if ((scrubbing || phase === 'reveal' || phase === 'zoom') && !el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
+        el.currentTime = target;
+      }
       if (playing && el.paused && !playPending.current.has(index)) {
         playPending.current.add(index);
         el.play().then(() => setAutoplayBlocked(false)).catch(err => {
@@ -66,13 +72,35 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   }, []);
   useEffect(() => { setManual(false); }, [index, active]);
 
+  // Finale handoff: park video 4 at t=0 once when entering, then let it play.
+  const finaleArmed = useRef(false);
+  useEffect(() => {
+    if (phase !== 'finale') {
+      finaleArmed.current = false;
+      return;
+    }
+    if (finaleArmed.current) return;
+    const el = videos.current[3];
+    if (!el) return;
+    const arm = () => {
+      if (!Number.isFinite(el.duration)) return;
+      el.pause();
+      el.currentTime = 0;
+      finaleArmed.current = true;
+      setDisplay(3);
+    };
+    if (el.readyState >= 2) arm();
+    else el.addEventListener('loadeddata', arm, { once: true });
+  }, [phase]);
+
   const still = reduced && !manual;
   const fallback = config.media[index][phase === 'comparison' ? 'end' : 'poster'];
   return <div className="media-stage" style={{ '--media-crossfade': `${config.playback.crossfadeMs}ms` } as CSSProperties} data-media-index={index + 1} data-mode={scrubbing ? 'scroll' : playing ? 'play' : 'still'}>
-    <img className="media-fallback" src={config.media[0].poster} alt="Телевизор Sber TV" />
+    {/* Current-clip poster only — never flash video-1 under later scenes */}
+    <img className="media-fallback" src={fallback} alt="Телевизор Sber TV" />
     {config.media.map((media, i) => <video key={media.src} ref={el => { videos.current[i] = el; }}
-      data-testid={`video-${i+1}`} src={media.src} poster={media.poster} muted playsInline
-      preload={i === 0 ? 'auto' : 'metadata'}
+      data-testid={`video-${i + 1}`} src={media.src} poster={media.poster} muted playsInline
+      preload={i === 0 || i === 3 ? 'auto' : 'metadata'}
       loop={i === 0 ? config.playback.loopVideo1 : i === 3 ? config.playback.loopVideo4 : false}
       aria-hidden="true" className={display === i && !still && !errors[i] ? 'visible' : ''}
       onLoadedData={() => ready(i)} onCanPlay={() => ready(i)}

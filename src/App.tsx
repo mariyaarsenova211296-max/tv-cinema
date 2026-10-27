@@ -88,12 +88,12 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, reduced]);
 
+  // TV stays full-size (no zoom/grow). Reveal only fades the frame in after the title.
   const reveal = reduced ? 1 : smooth((progress - config.reveal.from) / (config.reveal.to - config.reveal.from));
-  const scale = reduced ? 1 : phase === 'reveal' ? config.reveal.scale : phase === 'zoom' ? config.zoom.from + smooth(progress) * (config.zoom.to - config.zoom.from) : 1;
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
-  const finaleOpacity = phase === 'finale' ? smooth((progress - 0.15) / 0.35) : 0;
-  const revealTitleOpacity = phase === 'reveal' ? 1 - smooth(progress) : 0;
+  const finaleOpacity = phase === 'finale' ? smooth((progress - 0.12) / 0.4) : 0;
+  const revealTitleOpacity = phase === 'reveal' ? 1 - smooth(progress) : phase === 'zoom' ? 0 : 0;
 
   return <>
     <a href="#scene-1" className="skip-link">В начало</a>
@@ -137,10 +137,19 @@ export default function App() {
         <div className="cards-scroller" tabIndex={0} aria-label="Карточки возможностей">
           <div className="cards-track" ref={cardsTrack}>
             {design.cards.map((card, i) => {
-              const image = <img src={card.src} alt={card.alt} loading="lazy" width={card.width} style={{ aspectRatio: card.aspectRatio }} />;
+              const image = (
+                <img
+                  src={card.src}
+                  alt={card.alt}
+                  loading="lazy"
+                  width={card.width}
+                  height={700}
+                  style={{ aspectRatio: card.aspectRatio }}
+                />
+              );
               return card.href
-                ? <a className="card" key={i} href={card.href}>{image}</a>
-                : <div className="card" key={i} role="img" aria-label={card.alt}>{image}</div>;
+                ? <a className="card" key={i} href={card.href} style={{ aspectRatio: card.aspectRatio }}>{image}</a>
+                : <div className="card" key={i} role="img" aria-label={card.alt} style={{ aspectRatio: card.aspectRatio }}>{image}</div>;
             })}
           </div>
         </div>
@@ -153,7 +162,7 @@ export default function App() {
             <h1 className="reveal-title" style={{ opacity: revealTitleOpacity }}>{design.revealTitle}</h1>
           )}
           <div className="visual-position">
-            <div className="visual-frame" ref={frame} style={{ transform: `scale(${scale})`, opacity: phase === 'reveal' ? reveal : 1 }}>
+            <div className="visual-frame" ref={frame} style={{ opacity: phase === 'reveal' ? reveal : 1 }}>
               <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
               <div className="comparison-layer" style={{ opacity: comparisonOpacity, visibility: comparisonOpacity > 0 ? 'visible' : 'hidden' }}>
                 <Comparison design={design} width={size.width} height={size.height} interactive={comparisonActive} />

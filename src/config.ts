@@ -2,11 +2,12 @@ import { asset } from './base';
 
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
+  // zoom distance kept for scroll pacing; scale stays 1 (Figma: title → full-size TV, no grow-in).
   distances: { reveal: 1.2, zoom: 1, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
-  reveal: { from: 0.08, to: 0.85, scale: 0.74 },
-  zoom: { from: 0.74, to: 1 },
+  reveal: { from: 0.08, to: 0.85, scale: 1 },
+  zoom: { from: 1, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
-  playback: { loopVideo1: true, loopVideo4: true, crossfadeMs: 180, seekTolerance: 0.035 },
+  playback: { loopVideo1: true, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035 },
   media: [1, 2, 3, 4].map(n => ({
     src: asset(`media/video-${n}.mp4`),
     poster: asset(`media/video-${n}-start.jpg`),

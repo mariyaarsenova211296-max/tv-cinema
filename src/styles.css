@@ -24,6 +24,7 @@ button, a, input { touch-action: manipulation; }
 .sr-only, .skip-link:not(:focus) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .skip-link:focus { position: fixed; z-index: 100; top: 24px; left: 24px; background: #222; padding: 12px; }
 
+/* Header 1:1110 — 32/24 inset, 48px pills, SB Sans Display Medium 18 / 24 / -0.54 */
 .site-header {
   position: absolute;
   inset: 0 0 auto;
@@ -36,25 +37,27 @@ button, a, input { touch-action: manipulation; }
   pointer-events: none;
 }
 .site-header a { pointer-events: auto; }
-.header-left, .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.header-left, .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
 .brand-link { display: block; width: 48px; height: 48px; flex: none; }
 .brand { display: block; width: 48px; height: 48px; }
 .nav-pill {
   display: inline-flex;
   align-items: center;
   gap: 12px;
+  height: 48px;
   min-height: 48px;
   padding: 12px 16px;
   border-radius: 62px;
   background: var(--nav-bg);
   color: var(--nav-muted);
+  font-family: "SB Sans Display", sans-serif;
   font-size: 18px;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.54px;
   line-height: 24px;
   white-space: nowrap;
 }
-.nav-pill--menu, .nav-pill.is-active { color: #000; }
+.nav-pill--menu { color: #000; }
 .nav-group {
   display: inline-flex;
   align-items: center;
@@ -67,10 +70,11 @@ button, a, input { touch-action: manipulation; }
   margin-right: -7px;
 }
 .nav-group .nav-pill:last-child { margin-right: 0; }
+/* Figma: active item is black text only — no extra white chip */
 .nav-group .nav-pill.is-active {
-  background: #fff;
-  border-radius: 62px;
-  box-shadow: 0 0 0 1px #e8edf2;
+  color: #000;
+  background: transparent;
+  box-shadow: none;
 }
 .nav-icon {
   display: grid;
@@ -79,27 +83,31 @@ button, a, input { touch-action: manipulation; }
   height: 48px;
   border-radius: 62px;
   background: var(--nav-bg);
+  flex: none;
 }
-.nav-icon img, .nav-pill img { display: block; }
+.nav-icon img, .nav-pill img { display: block; width: 24px; height: 24px; }
 
 .intro { height: 100svh; background: #000; }
 
+/* Cards 1:1156 — Figma radius 153, heights 700, widths 833/607/900/607/901/901 */
 .cards-section {
   min-height: 100svh;
   padding: 96px 0 calc(var(--bottom-space) + 48px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 48px;
-  background: radial-gradient(120% 80% at 100% 50%, #1a1a1a 0%, #000 55%);
+  gap: 40px;
+  background: #000;
 }
 .cards-title {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 409px;
   text-align: center;
-  font-size: clamp(32px, 4.2vw, 46px);
+  font-family: "SB Sans Display", sans-serif;
+  font-size: 46px;
   font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 0.9;
+  letter-spacing: -1.38px;
+  line-height: 0.896;
   white-space: pre-line;
 }
 .cards-scroller {
@@ -112,23 +120,27 @@ button, a, input { touch-action: manipulation; }
 }
 .cards-track {
   display: flex;
+  align-items: stretch;
   gap: 24px;
   width: max-content;
   padding-bottom: 8px;
 }
 .card {
   flex: none;
-  width: min(56vw, 520px);
+  height: min(700px, 78svh);
+  width: auto;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 153px;
   scroll-snap-align: start;
-  background: #111;
+  background: #0a0d12;
 }
-.card:nth-child(1) { width: min(58vw, 560px); }
-.card:nth-child(3),
-.card:nth-child(5),
-.card:nth-child(6) { width: min(62vw, 600px); }
-.card img { display: block; width: 100%; height: auto; object-fit: cover; }
+.card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* assets already match Figma card frames — cover fills without stretch */
+  object-position: center;
+}
 
 .experience { height: calc((var(--story-distance) + 1) * 100svh); position: relative; }
 .scene-anchor { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
@@ -141,21 +153,24 @@ button, a, input { touch-action: manipulation; }
   justify-content: center;
 }
 .visual-frame {
-  /* Full-bleed design plane — no side letterboxing; ≥1440 scales via html zoom */
+  /* Centered 16:9 TV plane — full width, natural aspect (no stretch) */
   width: 100%;
-  height: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
   flex: none;
   position: relative;
-  transform-origin: center;
-  will-change: transform, opacity;
+  transform-origin: center center;
+  will-change: opacity;
 }
 .media-stage, .comparison-layer { position: absolute; inset: 0; }
 .media-stage video, .media-fallback, .media-still {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center center;
   position: absolute;
   inset: 0;
+  background: #000;
 }
 .media-stage video { opacity: 0; transition: opacity var(--media-crossfade, 180ms) linear; }
 .media-stage video.visible { opacity: 1; }
@@ -187,6 +202,7 @@ button, a, input { touch-action: manipulation; }
 }
 .manual-play span { padding-left: 24px; }
 
+/* Screen 3 title — Figma 1:1501: 46 / 0.896 / -1.38 */
 .reveal-title {
   position: absolute;
   inset: 0;
@@ -195,10 +211,11 @@ button, a, input { touch-action: manipulation; }
   place-items: center;
   margin: 0;
   text-align: center;
-  font-size: clamp(32px, 4.2vw, 46px);
+  font-family: "SB Sans Display", sans-serif;
+  font-size: 46px;
   font-weight: 500;
-  line-height: 0.9;
-  letter-spacing: -0.03em;
+  line-height: 0.896;
+  letter-spacing: -1.38px;
   white-space: pre-line;
   pointer-events: none;
 }
@@ -206,7 +223,7 @@ button, a, input { touch-action: manipulation; }
 .comparison-layer { z-index: 6; pointer-events: none; }
 .comparison { position: absolute; inset: 0; overflow: hidden; background: #000; }
 
-/* Figma 2:321 — 1440×854 composition, cover-scaled into the stage */
+/* Figma 2:321 — 1440×854 composition, width-scaled (zoom-aware) into the stage */
 .comparison--figma .comparison-stage {
   position: absolute;
   left: 50%;
@@ -217,8 +234,9 @@ button, a, input { touch-action: manipulation; }
   transform-origin: center center;
   overflow: hidden;
   background: #000;
+  isolation: isolate;
 }
-.comparison-env { position: absolute; inset: 0; pointer-events: none; }
+.comparison-env { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .comparison-env__wide {
   position: absolute;
   left: -289px;
@@ -237,23 +255,8 @@ button, a, input { touch-action: manipulation; }
   object-fit: cover;
   object-position: center;
 }
-.comparison-env__glow {
-  position: absolute;
-  top: 0;
-  width: 93px;
-  height: 481px;
-  pointer-events: none;
-}
-.comparison-env__glow--left {
-  left: 55px;
-  background: linear-gradient(to left, #ebc59f, rgba(197, 145, 112, 0));
-}
-.comparison-env__glow--right {
-  left: 1301px;
-  background: linear-gradient(to right, #ebc59f, rgba(197, 145, 112, 0));
-}
 
-/* Screen clip 2:324 — divider/images stay inside TV glass only */
+/* Screen clip 2:324 — images + divider only inside TV glass (Figma 1145×513) */
 .comparison-screen {
   position: absolute;
   left: 152px;
@@ -264,7 +267,7 @@ button, a, input { touch-action: manipulation; }
   pointer-events: auto;
   touch-action: none;
   cursor: ew-resize;
-  z-index: 2;
+  z-index: 1;
 }
 .comparison-plane {
   position: absolute;
@@ -278,33 +281,42 @@ button, a, input { touch-action: manipulation; }
   top: -95px;
   width: 1145px;
   height: 772px;
+  /* Keep natural aspect — never stretch (fixes distorted horse side) */
   object-fit: cover;
-  object-position: center bottom;
+  object-position: center center;
   pointer-events: none;
   user-select: none;
 }
 .mini-image { clip-path: inset(0 calc(100% - var(--split)) 0 0); z-index: 1; }
 
-/* Divider 2:328 — only across the screen, ends above the cat */
+/*
+ * Divider — Figma 2:328 inset inside the glass. Cat (z-index 10) overlaps the
+ * lower screen and occludes the line; bottom cap has no extra overflow.
+ */
 .image-divider {
   position: absolute;
   top: 40px;
   left: var(--split);
-  width: 0;
-  height: 443px;
-  transform: translateX(-50%);
+  width: 2px;
+  height: 400px; /* ends ~ absolute y 414; cat top 442 covers residual glass below */
+  margin-left: -1px;
+  background: #fff;
   z-index: 3;
   pointer-events: none;
 }
-.image-divider img {
+.image-divider::before,
+.image-divider::after {
+  content: "";
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 443px;
+  width: 8px;
   height: 8px;
-  transform: translate(-50%, -50%) rotate(90deg);
-  max-width: none;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateX(-50%);
 }
+.image-divider::before { top: 0; }
+.image-divider::after { bottom: 0; }
 
 /* Labels 2:329 / 2:330 — SB Sans Text Semibold 26 / 0.93 / -1.3px */
 .screen-label {
@@ -325,7 +337,7 @@ button, a, input { touch-action: manipulation; }
 .screen-label--mini { left: 78.5px; }
 .screen-label--rgb { left: 1034.85px; }
 
-/* Cat 2:391 — above the screen so the divider never sits on it */
+/* Cat 2:391 — always above the screen/divider stacking context */
 .comparison-cat {
   position: absolute;
   left: 475.13px;
@@ -333,8 +345,9 @@ button, a, input { touch-action: manipulation; }
   width: 383.406px;
   height: 338.316px;
   object-fit: cover;
+  object-position: center top;
   pointer-events: none;
-  z-index: 5;
+  z-index: 10;
 }
 
 .comparison-a11y {
@@ -381,36 +394,41 @@ button, a, input { touch-action: manipulation; }
   overflow: visible;
 }
 
+/* Finale copy — Figma 1:1639–1:1641 */
 .finale-copy {
   position: absolute;
   left: 50%;
   bottom: calc(var(--bottom-space) + 28px);
   transform: translateX(-50%);
-  width: min(480px, 86vw);
+  width: min(472px, 86vw);
   text-align: center;
   z-index: 7;
   pointer-events: none;
 }
 .finale-eyebrow {
   margin: 0 0 12px;
+  font-family: "SB Sans Display", sans-serif;
   font-size: 20px;
   font-weight: 500;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.6px;
+  line-height: 1.3;
   color: rgba(255, 255, 255, 0.8);
 }
 .finale-copy h2 {
   margin: 0 0 20px;
-  font-size: clamp(28px, 3.2vw, 46px);
+  font-family: "SB Sans Display", sans-serif;
+  font-size: 46px;
   font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 0.9;
+  letter-spacing: -1.38px;
+  line-height: 0.896;
 }
 .finale-copy p:last-child {
   margin: 0 auto;
-  max-width: 280px;
+  max-width: 279px;
+  font-family: "SB Sans Display", sans-serif;
   font-size: 18px;
   line-height: 1.3;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.54px;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -494,9 +512,13 @@ button, a, input { touch-action: manipulation; }
   .header-right .nav-icon:nth-child(n+2) { display: none; }
   .cards-section { padding-top: 72px; gap: 32px; }
   .cards-scroller { padding: 0 16px; }
-  .card, .card:nth-child(1), .card:nth-child(3), .card:nth-child(5), .card:nth-child(6) {
-    width: min(78vw, 320px);
+  .cards-title { font-size: 32px; letter-spacing: -0.96px; }
+  .card {
+    height: min(560px, 70svh);
+    border-radius: 96px;
   }
+  .reveal-title { font-size: 32px; letter-spacing: -0.96px; }
+  .finale-copy h2 { font-size: 32px; letter-spacing: -0.96px; }
 }
 
 @media (max-width: 700px) {
