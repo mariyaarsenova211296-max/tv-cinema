@@ -89,16 +89,17 @@ with sync_playwright() as p:
     record('video 1 advances without scrolling; exactly one player active')
 
     scroll(page, 2.65, 'retreat')
-    seeked(page,2,.3)
+    seeked(page,2,1)  # retreat holds video-2 end frame (no camera pull-back)
     assert video(page,1).evaluate('(v)=>v.paused')
+    assert video(page,2).evaluate('(v)=>v.paused')
     t=video(page,2).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(400)
     assert abs(video(page,2).evaluate('(v)=>v.currentTime')-t)<.03
     scroll(page, 3.9, 'retreat')
-    seeked(page,2,.8)
+    seeked(page,2,1)
     scroll(page, 2.4, 'retreat')
-    seeked(page,2,.2)
-    record('video 2 seeks forward/backward and holds at rest')
+    seeked(page,2,1)
+    record('video 2 holds end frame through retreat (no pull-back scrub)')
 
     scroll(page,4.9,'comparison')
     seeked(page,2,1)
@@ -132,7 +133,7 @@ with sync_playwright() as p:
     # Fast direction reversals: allow only the final requested seek to settle.
     for d,ph in [(2.5,'retreat'),(8.7,'finale'),(6.7,'orbit'),(4.9,'comparison'),(1.2,'feature'),(3.15,'retreat')]:
         scroll(page,d,ph)
-    seeked(page,2,.5)
+    seeked(page,2,1)  # retreat parks video-2 on the end frame
     assert page.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     assert 'visible' in video(page,2).get_attribute('class')
     page.set_viewport_size({'width':1024,'height':768})
@@ -217,7 +218,7 @@ with sync_playwright() as p:
     for route in hold:
         route.continue_()
     delayed.unroute('**/media/video-2.mp4')
-    seeked(h,2,.3)
+    seeked(h,2,1)  # retreat holds end frame once video-2 can decode
     h.wait_for_function('document.querySelector("[data-testid=video-2]").classList.contains("visible")')
     record('previous decoded frame held while incoming video is unavailable')
 

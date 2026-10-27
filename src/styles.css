@@ -237,7 +237,7 @@ button, a, input { touch-action: manipulation; }
 .comparison-layer { z-index: 6; pointer-events: none; }
 .comparison { position: absolute; inset: 0; overflow: hidden; background: #000; }
 
-/* Figma 2:321 — 1440×833 composition, width-scaled (zoom-aware) into the stage */
+/* Figma 2:321 — 1440×833 composition, cover-scaled into the sticky stage (no letterbox) */
 .comparison--figma .comparison-stage {
   position: absolute;
   left: 50%;

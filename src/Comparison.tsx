@@ -3,11 +3,13 @@ import type { CSSProperties } from 'react';
 import { asset } from './base';
 import type { Design } from './config';
 
-/** Figma Component 551 (2:321) design width. */
+/** Figma Component 551 (2:321) — 1440×833 design frame. */
 const DESIGN_W = 1440;
+const DESIGN_H = 833;
 
 /**
  * Screen 5 — Figma Component 551 (2:321 / 2:400).
+ * Stage cover-fills the sticky viewport (no top letterbox / sudden zoom-out).
  * Dual-image plane fills the TV glass flush (no env orange at R/B bezel).
  */
 export function Comparison({ design, interactive }: { design: Design; width?: number; height?: number; interactive: boolean }) {
@@ -25,10 +27,16 @@ export function Comparison({ design, interactive }: { design: Design; width?: nu
 
   useEffect(() => {
     const apply = () => {
-      // Below 1440: shrink the 1440 stage to the viewport width.
-      // At/above 1440: keep scale 1 — useDesignScale's html zoom grows the page
-      // (never multiply zoom × cmp-scale; that caused dark side bars).
-      setCoverScale(Math.min(1, window.innerWidth / DESIGN_W));
+      // Layout client sizes only — never multiply by html zoom (that caused side bars).
+      const sticky = rootRef.current?.closest('.stage-sticky') as HTMLElement | null
+        ?? document.querySelector('.stage-sticky');
+      const sw = sticky?.clientWidth || window.innerWidth;
+      const sh = sticky?.clientHeight || window.innerHeight;
+      const widthFit = sw / DESIGN_W;
+      const heightFit = sh / DESIGN_H;
+      // ≥1440: cover the sticky stage (kills top letterbox / sudden zoom-away vs video).
+      // <1440: fit width so the scaled frame stays in-viewport (no horizontal overflow).
+      setCoverScale(sw >= DESIGN_W ? Math.max(widthFit, heightFit) : widthFit);
     };
     apply();
     window.addEventListener('resize', apply);

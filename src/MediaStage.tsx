@@ -15,8 +15,11 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const [video1Ended, setVideo1Ended] = useState(false);
   const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
   const index = phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? 2 : phase === 'finale' ? 3 : 0;
-  const scrubbing = phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
-  const normalizedTime = phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd)) : progress;
+  // Hold video-2 on its end frame through retreat + comparison (Figma 2:321 / target
+  // still). Scrubbing 0→1 pulled the camera back into the distance before the overlay.
+  const holdVideo2End = phase === 'retreat' || phase === 'comparison' || fadingComparison;
+  const scrubbing = phase === 'orbit' || holdVideo2End;
+  const normalizedTime = holdVideo2End ? 1 : phase === 'orbit' ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd)) : progress;
   // Static title outside; video 1 plays once to its final frame; later clips are scroll-scrubbed.
   const playing = active && visible && !scrubbing && phase !== 'reveal' && phase !== 'zoom'
     && !(index === 0 && video1Ended) && (!reduced || manual);
@@ -52,7 +55,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     const el = videos.current[index];
     if (!el || errors[index]) return;
     if (Number.isFinite(el.duration)) {
-      const position = phase === 'comparison' || fadingComparison ? 1 : phase === 'reveal' || phase === 'zoom' || reduced ? 0 : normalizedTime;
+      const position = holdVideo2End ? 1 : phase === 'reveal' || phase === 'zoom' || reduced ? 0 : normalizedTime;
       const target = clamp(position * el.duration, 0, Math.max(0, el.duration - 1 / 24));
       if ((scrubbing || phase === 'reveal' || phase === 'zoom') && !el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
         el.currentTime = target;
@@ -102,7 +105,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   }, [phase]);
 
   const still = reduced && !manual;
-  const fallback = config.media[index][phase === 'comparison' ? 'end' : 'poster'];
+  const fallback = config.media[index][holdVideo2End ? 'end' : 'poster'];
   return <div className="media-stage" style={{ '--media-crossfade': `${config.playback.crossfadeMs}ms` } as CSSProperties} data-media-index={index + 1} data-mode={scrubbing ? 'scroll' : playing ? 'play' : 'still'}>
     {/* Current-clip poster only — never flash video-1 under later scenes */}
     <img className="media-fallback" src={fallback} alt="Телевизор Sber TV" />
