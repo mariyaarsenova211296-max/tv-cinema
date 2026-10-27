@@ -45,6 +45,8 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
         el.preload = 'auto';
         el.load();
       }
+      // Cat-walk clip (video 1): +50% speed.
+      el.playbackRate = i === 0 ? config.playback.video1Rate : 1;
       if (i !== index || !playing) el.pause();
     });
     const el = videos.current[index];

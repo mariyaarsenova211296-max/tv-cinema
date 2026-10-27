@@ -7,8 +7,8 @@ export const config = {
   reveal: { from: 0, to: 0, scale: 1 },
   zoom: { from: 1, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
-  // Video 1 plays once to its final frame after the static title; later clips are scroll-scrubbed (finale plays).
-  playback: { loopVideo1: false, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035 },
+  // Video 1 (cat-walk) plays once at 1.5×; later clips are scroll-scrubbed (finale plays).
+  playback: { loopVideo1: false, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
   media: [1, 2, 3, 4].map(n => ({
     src: asset(`media/video-${n}.mp4`),
     poster: asset(`media/video-${n}-start.jpg`),

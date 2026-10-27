@@ -160,21 +160,23 @@ button, a, input { touch-action: manipulation; }
   justify-content: center;
 }
 .visual-frame {
-  /* Centered 16:9 TV plane — full width, natural aspect (no stretch) */
+  /* Full sticky stage — videos cover the plane (no letterbox black bars) */
   width: 100%;
-  max-height: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   flex: none;
   position: relative;
   transform-origin: center center;
   will-change: opacity;
 }
-.media-stage, .comparison-layer { position: absolute; inset: 0; }
+.media-stage, .comparison-layer { position: absolute; inset: 0; overflow: hidden; }
 .media-stage video, .media-fallback, .media-still {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* fill stage; crop letterbox */
   object-position: center center;
+  /* Slight zoom crops baked-in black bars on the filmed TV glass */
+  transform: scale(1.12);
+  transform-origin: center center;
   position: absolute;
   inset: 0;
   background: #000;
@@ -209,12 +211,14 @@ button, a, input { touch-action: manipulation; }
 }
 .manual-play span { padding-left: 24px; }
 
-/* Screen 3 title — Figma 1:1500 / 1:1501: static beat, then video */
+/* Screen 3 title — Figma 1:1500 is 343px; park title near the bottom so it sits close to the video */
 .reveal-section {
-  min-height: 100svh;
-  display: grid;
-  place-items: center;
-  padding: 0 32px calc(var(--bottom-space) + 24px);
+  height: 343px;
+  min-height: 343px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 32px 72px;
   background: #000;
 }
 .reveal-title {
@@ -266,13 +270,16 @@ button, a, input { touch-action: manipulation; }
   object-position: center;
 }
 
-/* Screen clip 2:324 — 123 / -56 / 1118×512; images + divider only inside glass */
+/*
+ * Screen clip — keep compare content strictly inside the TV glass.
+ * Fill the glass flush (no side gaps / orange bleed from the env).
+ */
 .comparison-screen {
   position: absolute;
-  left: 123px;
-  top: -56px;
-  width: 1118px;
-  height: 512px;
+  left: 152px;
+  top: -26px;
+  width: 1145px;
+  height: 513px;
   overflow: clip;
   pointer-events: auto;
   touch-action: none;
@@ -287,28 +294,28 @@ button, a, input { touch-action: manipulation; }
 .comparison-plane__rgb,
 .mini-image {
   position: absolute;
-  /* Figma 2:326 / 2:327 — 1145×772 at (-5, -95); cover + bottom, no stretch */
-  left: -5px;
-  top: -95px;
-  width: 1145px;
-  height: 772px;
+  /* Oversized cover centered in the glass — no side gaps / letterbox */
+  left: 50%;
+  top: 50%;
+  width: 118%;
+  height: 118%;
+  transform: translate(-50%, -50%);
   object-fit: cover;
-  object-position: bottom center;
+  object-position: center center;
   pointer-events: none;
   user-select: none;
 }
 .mini-image { clip-path: inset(0 calc(100% - var(--split)) 0 0); z-index: 1; }
 
 /*
- * Divider — Figma 2:328 (x 578, top 64). Mock ends the line above the cat
- * (stage y ~395); keep bottom cap clear of fur alpha so it never paints through.
+ * Divider inside glass; bottom cap ends above the cat (z-index 10).
  */
 .image-divider {
   position: absolute;
-  top: 64px;
+  top: 40px;
   left: var(--split);
   width: 2px;
-  height: 360px; /* stage end ≈ 368; cat top 395 */
+  height: 380px;
   margin-left: -1px;
   background: #fff;
   z-index: 3;
@@ -344,14 +351,14 @@ button, a, input { touch-action: manipulation; }
   text-align: center;
   transform: translateX(-50%);
 }
-.screen-label--mini { left: 84.5px; }
-.screen-label--rgb { left: 1012.5px; }
+.screen-label--mini { left: 78.5px; }
+.screen-label--rgb { left: 1034.85px; }
 
-/* Cat 2:391 — 428 / 395 / 383.406×338.316; above screen/divider */
+/* Cat above screen/divider — centered on the glass */
 .comparison-cat {
   position: absolute;
-  left: 428px;
-  top: 395px;
+  left: 475.13px;
+  top: 442px;
   width: 383.406px;
   height: 338.316px;
   object-fit: cover;
@@ -519,14 +526,14 @@ button, a, input { touch-action: manipulation; }
     height: min(560px, 70svh);
     border-radius: 96px;
   }
-  .reveal-section { padding-inline: 16px; }
+  .reveal-section { height: 280px; min-height: 280px; padding: 0 16px; }
   .reveal-title { font-size: 32px; letter-spacing: -0.96px; }
   .finale-copy h2 { font-size: 32px; letter-spacing: -0.96px; }
 }
 
 @media (max-width: 700px) {
   :root { --bottom-space: 148px; }
-  .visual-frame { width: 100%; height: 100%; }
+  .visual-frame { width: 100%; height: 100%; } /* already full-bleed */
   .cta-panel { padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); }
   /* Keep Figma 210×112 proportions — never stretch the pill */
   .cta {
