@@ -535,7 +535,7 @@ button, a, input { touch-action: manipulation; }
   pointer-events: none;
   box-sizing: border-box;
 }
-/* Figma 7:409 — 210×112, radius 1000, pad 8, gap 2, thumb frame 96, type 16/−0.48 */
+/* Figma 7:409 — 210×112, radius 1000, pad 8, gap 2, thumb 96, type 16/−0.48 */
 .cta {
   pointer-events: auto;
   display: flex;
@@ -555,6 +555,7 @@ button, a, input { touch-action: manipulation; }
   transform: none;
 }
 .cta:hover { background: var(--cta-green-hot); }
+/* Precomposed 96×96 thumb (Figma 7:410/7:412). contain keeps ratio; no CSS scaleX squash. */
 .cta-thumb {
   display: block;
   box-sizing: border-box;
@@ -562,9 +563,7 @@ button, a, input { touch-action: manipulation; }
   height: 96px;
   flex: none;
   object-fit: contain;
-  object-position: center bottom;
-  /* Figma 7:412 net transform is a horizontal mirror */
-  transform: scaleX(-1);
+  object-position: center center;
 }
 .cta-copy {
   display: flex;
