@@ -16,6 +16,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const index = phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? 2 : phase === 'finale' ? 3 : 0;
   const scrubbing = phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
   const normalizedTime = phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd)) : progress;
+  // Static title lives outside this stage; reveal/zoom briefly hold frame 0, then feature plays.
   const playing = active && visible && !scrubbing && phase !== 'reveal' && phase !== 'zoom' && (!reduced || manual);
   desired.current = { index, time: normalizedTime, scrubbing };
 

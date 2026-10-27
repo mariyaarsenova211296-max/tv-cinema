@@ -16,7 +16,8 @@ const emptyDesign: Design = {
   logo: null, menu: [], utilities: [], cta: null, cardsTitle: null, cards: [],
   revealTitle: null, comparisonLabels: null, comparisonFeatures: [], finale: null, comparison: null,
 };
-const anchors = [{ id: 3, phase: 'reveal' }, { id: 4, phase: 'feature' }, { id: 5, phase: 'comparison' }, { id: 6, phase: 'finale' }] as const;
+/* scene-3 is the static title section outside the sticky experience */
+const anchors = [{ id: 4, phase: 'feature' }, { id: 5, phase: 'comparison' }, { id: 6, phase: 'finale' }] as const;
 
 function resolveDesign(raw: Design): Design {
   return {
@@ -88,12 +89,10 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, reduced]);
 
-  // TV stays full-size (no zoom/grow). Reveal only fades the frame in after the title.
-  const reveal = reduced ? 1 : smooth((progress - config.reveal.from) / (config.reveal.to - config.reveal.from));
+  // Title is a static section; sticky stage opens on the full-size TV (no scroll-driven reveal).
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
   const finaleOpacity = phase === 'finale' ? smooth((progress - 0.12) / 0.4) : 0;
-  const revealTitleOpacity = phase === 'reveal' ? 1 - smooth(progress) : phase === 'zoom' ? 0 : 0;
 
   return <>
     <a href="#scene-1" className="skip-link">В начало</a>
@@ -155,14 +154,16 @@ export default function App() {
         </div>
       </section>
 
-      <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 3–6">
+      {/* Figma 1:1500 — static title beat; video follows immediately in the sticky stage */}
+      <section id="scene-3" className="reveal-section" aria-label="Экран 3" data-node-id="1:1500">
+        {design.revealTitle && <h1 className="reveal-title" data-node-id="1:1501">{design.revealTitle}</h1>}
+      </section>
+
+      <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–6">
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
         <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
-          {design.revealTitle && (
-            <h1 className="reveal-title" style={{ opacity: revealTitleOpacity }}>{design.revealTitle}</h1>
-          )}
           <div className="visual-position">
-            <div className="visual-frame" ref={frame} style={{ opacity: phase === 'reveal' ? reveal : 1 }}>
+            <div className="visual-frame" ref={frame}>
               <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
               <div className="comparison-layer" style={{ opacity: comparisonOpacity, visibility: comparisonOpacity > 0 ? 'visible' : 'hidden' }}>
                 <Comparison design={design} width={size.width} height={size.height} interactive={comparisonActive} />
@@ -196,7 +197,7 @@ export default function App() {
       <a href={asset('review.html')} title="Материалы и статус реализации" aria-label="Материалы и статус реализации">i</a>
       <nav aria-label="Шесть экранов">{[1, 2, 3, 4, 5, 6].map(n => <a key={n} href={`#scene-${n}`} aria-label={`Экран ${n}`} title={`Экран ${n}`}>{n.toString().padStart(2, '0')}</a>)}</nav>
     </div>
-    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' ? 3 : phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : 6}`}</span>
+    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : 6}`}</span>
     <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
   </>;
 }

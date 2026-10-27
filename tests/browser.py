@@ -71,13 +71,15 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-intro.png'))
     record('six scenes; black intro; Figma menu/CTA/cards present')
 
-    scroll(page, .5, 'reveal')
-    assert 0<float(page.locator('.visual-frame').evaluate('(el)=>getComputedStyle(el).opacity'))<1
-    scroll(page, 1.7, 'zoom')
+    # Screen 3 title is a static section; sticky stage opens on full-opacity video.
+    assert page.locator('#scene-3.reveal-section .reveal-title').count() == 1
+    scroll(page, 0.15, 'reveal')
+    assert float(page.locator('.visual-frame').evaluate('(el)=>getComputedStyle(el).opacity')) == 1
+    scroll(page, 0.45, 'zoom')
     page.screenshot(path=str(OUT/'desktop-reveal.png'))
-    record('scroll-linked appearance and zoom')
+    record('static title section; full-size video stage (no scroll-driven fade)')
 
-    scroll(page, 2.6, 'feature')
+    scroll(page, 1.2, 'feature')
     page.wait_for_function('!document.querySelector("video").paused')
     t=video(page,1).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(650)
@@ -86,19 +88,19 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-video1.png'))
     record('video 1 advances without scrolling; exactly one player active')
 
-    scroll(page, 4.25, 'retreat')
+    scroll(page, 2.65, 'retreat')
     seeked(page,2,.3)
     assert video(page,1).evaluate('(v)=>v.paused')
     t=video(page,2).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(400)
     assert abs(video(page,2).evaluate('(v)=>v.currentTime')-t)<.03
-    scroll(page, 5.5, 'retreat')
+    scroll(page, 3.9, 'retreat')
     seeked(page,2,.8)
-    scroll(page, 4, 'retreat')
+    scroll(page, 2.4, 'retreat')
     seeked(page,2,.2)
     record('video 2 seeks forward/backward and holds at rest')
 
-    scroll(page,6.75,'comparison')
+    scroll(page,4.9,'comparison')
     seeked(page,2,1)
     control=page.get_by_role('slider')
     assert control.input_value()=='50'
@@ -110,15 +112,15 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-comparison.png'))
     record('comparison interface: 50% initial, keyboard accessible, dual-image plane present')
 
-    scroll(page,8.25,'orbit')
+    scroll(page,6.65,'orbit')
     seeked(page,3,(.3-.16)/.84)
-    scroll(page,9.5,'orbit')
+    scroll(page,7.9,'orbit')
     seeked(page,3,(.8-.16)/.84)
-    scroll(page,8,'orbit')
+    scroll(page,6.4,'orbit')
     seeked(page,3,(.2-.16)/.84)
     record('video 3 seeks in both directions')
 
-    scroll(page,10.6,'finale')
+    scroll(page,8.8,'finale')
     page.wait_for_function('!document.querySelector("[data-testid=video-4]").paused')
     t=video(page,4).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(550)
@@ -128,9 +130,9 @@ with sync_playwright() as p:
     record('video 4 plays independently after orbit')
 
     # Fast direction reversals: allow only the final requested seek to settle.
-    for d,ph in [(4.1,'retreat'),(10.4,'finale'),(8.4,'orbit'),(6.8,'comparison'),(2.7,'feature'),(5,'retreat')]:
+    for d,ph in [(2.5,'retreat'),(8.7,'finale'),(6.7,'orbit'),(4.9,'comparison'),(1.2,'feature'),(3.15,'retreat')]:
         scroll(page,d,ph)
-    seeked(page,2,.6)
+    seeked(page,2,.5)
     assert page.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     assert 'visible' in video(page,2).get_attribute('class')
     page.set_viewport_size({'width':1024,'height':768})
@@ -142,7 +144,7 @@ with sync_playwright() as p:
     page.route('**/design.json', lambda route: route.fulfill(json=design_fixture()))
     page.reload()
     page.wait_for_selector('.cta')
-    scroll(page,6.75,'comparison')
+    scroll(page,4.9,'comparison')
     seeked(page,2,1)
     control=page.get_by_role('slider')
     pinned=page.evaluate('scrollY')
@@ -178,7 +180,7 @@ with sync_playwright() as p:
     phone.on('pageerror', lambda err: errors.append(str(err)))
     phone.route('**/design.json',lambda route:route.fulfill(json=design_fixture()))
     phone.goto(BASE)
-    scroll(phone,6.75,'comparison')
+    scroll(phone,4.9,'comparison')
     seeked(phone,2,1)
     assert phone.evaluate('document.documentElement.scrollWidth<=innerWidth')
     screen_box=phone.locator('.comparison-screen').bounding_box()
@@ -192,11 +194,11 @@ with sync_playwright() as p:
     reduced=browser.new_context(viewport={'width':1440,'height':900},reduced_motion='reduce')
     r=reduced.new_page()
     r.goto(BASE)
-    scroll(r,2.6,'feature')
+    scroll(r,1.2,'feature')
     assert r.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     r.get_by_role('button',name='Воспроизвести видео').click()
     r.wait_for_function('!document.querySelector("video").paused')
-    scroll(r,4.5,'retreat')
+    scroll(r,2.8,'retreat')
     assert r.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     record('reduced motion: static states, manual play, no scroll scrubbing')
 
@@ -206,10 +208,10 @@ with sync_playwright() as p:
     delayed.route('**/media/video-2.mp4',lambda route:hold.append(route))
     h=delayed.new_page()
     h.goto(BASE,wait_until='domcontentloaded')
-    scroll(h,2.6,'feature')
+    scroll(h,1.2,'feature')
     h.wait_for_function('!document.querySelector("video").paused')
     h.wait_for_function('document.querySelector("video").classList.contains("visible")')
-    scroll(h,4.25,'retreat')
+    scroll(h,2.65,'retreat')
     assert video(h,1).evaluate('(v)=>v.paused && v.classList.contains("visible")')
     assert video(h,2).evaluate('(v)=>!v.classList.contains("visible")')
     for route in hold:
@@ -231,7 +233,7 @@ with sync_playwright() as p:
     }''')
     a=blocked.new_page()
     a.goto(BASE)
-    scroll(a,2.6,'feature')
+    scroll(a,1.2,'feature')
     a.get_by_role('button',name='Воспроизвести видео').wait_for()
     assert video(a,1).evaluate('(v)=>v.paused')
     a.evaluate('window.__blockAutoplay=false')
@@ -244,7 +246,7 @@ with sync_playwright() as p:
     broken.route('**/media/video-3.mp4',lambda route:route.abort())
     e=broken.new_page()
     e.goto(BASE)
-    scroll(e,8.25,'orbit')
+    scroll(e,6.65,'orbit')
     e.get_by_role('alert').wait_for()
     assert e.locator('.media-still').is_visible()
     broken.unroute('**/media/video-3.mp4')

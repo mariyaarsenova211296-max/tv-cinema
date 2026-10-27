@@ -90,7 +90,7 @@ export function Comparison({ design, interactive }: { design: Design; width?: nu
           </div>
         )}
 
-        {/* Cat above the screen layer so the divider never paints over it */}
+        {/* Cat 2:391 — above screen/divider so the line never paints over it */}
         <img className="comparison-cat" src={cat} alt="" draggable={false} aria-hidden="true" />
       </div>
 
