@@ -9,7 +9,7 @@ from urllib.parse import quote
 from playwright.sync_api import sync_playwright
 from PIL import Image
 
-BASE = os.environ.get('TEST_BASE_URL', 'http://127.0.0.1:5173')
+BASE = os.environ.get('TEST_BASE_URL', 'http://127.0.0.1:5173/tv-cinema/').rstrip('/') + '/'
 OUT = Path('artifacts')
 OUT.mkdir(exist_ok=True)
 results = []

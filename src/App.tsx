@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { asset } from './base';
 import { Comparison } from './Comparison';
 import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
 import type { Design } from './config';
@@ -16,6 +17,20 @@ const emptyDesign: Design = {
 };
 const anchors = [{ id: 3, phase: 'reveal' }, { id: 4, phase: 'feature' }, { id: 5, phase: 'comparison' }, { id: 6, phase: 'finale' }] as const;
 
+function resolveDesign(raw: Design): Design {
+  return {
+    ...raw,
+    logo: raw.logo ? { ...raw.logo, src: asset(raw.logo.src) } : null,
+    utilities: raw.utilities.map(u => ({ ...u, icon: asset(u.icon) })),
+    cta: raw.cta ? { ...raw.cta, thumb: asset(raw.cta.thumb) } : null,
+    cards: raw.cards.map(c => ({ ...c, src: asset(c.src) })),
+    comparisonFeatures: raw.comparisonFeatures.map(f => ({ ...f, icon: asset(f.icon) })),
+    comparison: raw.comparison
+      ? { ...raw.comparison, mini: asset(raw.comparison.mini), rgb: asset(raw.comparison.rgb) }
+      : null,
+  };
+}
+
 export default function App() {
   const [design, setDesign] = useState<Design>(emptyDesign);
   const [distance, setDistance] = useState(-1);
@@ -29,8 +44,8 @@ export default function App() {
 
   useEffect(() => {
     const abort = new AbortController();
-    fetch('/design.json', { signal: abort.signal }).then(r => { if (!r.ok) throw new Error('Design unavailable'); return r.json(); })
-      .then(data => setDesign({ ...emptyDesign, ...data })).catch(() => { /* Deliberately no fabricated content. */ });
+    fetch(asset('design.json'), { signal: abort.signal }).then(r => { if (!r.ok) throw new Error('Design unavailable'); return r.json(); })
+      .then(data => setDesign(resolveDesign({ ...emptyDesign, ...data }))).catch(() => { /* Deliberately no fabricated content. */ });
     return () => abort.abort();
   }, []);
 
@@ -89,7 +104,7 @@ export default function App() {
         )}
         {design.menu.some(item => item.primary) && (
           <a className="nav-pill nav-pill--menu" href={design.menu.find(item => item.primary)!.href}>
-            <img src="/assets/icons/menu.svg" alt="" width={24} height={24} />
+            <img src={asset('assets/icons/menu.svg')} alt="" width={24} height={24} />
             <span>{design.menu.find(item => item.primary)!.label}</span>
           </a>
         )}
@@ -176,7 +191,7 @@ export default function App() {
     )}
 
     <div className="preview-tools" aria-label="Навигация технического предпросмотра">
-      <a href="/review.html" title="Материалы и статус реализации" aria-label="Материалы и статус реализации">i</a>
+      <a href={asset('review.html')} title="Материалы и статус реализации" aria-label="Материалы и статус реализации">i</a>
       <nav aria-label="Шесть экранов">{[1, 2, 3, 4, 5, 6].map(n => <a key={n} href={`#scene-${n}`} aria-label={`Экран ${n}`} title={`Экран ${n}`}>{n.toString().padStart(2, '0')}</a>)}</nav>
     </div>
     <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' ? 3 : phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : 6}`}</span>

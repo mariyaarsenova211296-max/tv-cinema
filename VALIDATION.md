@@ -6,7 +6,7 @@
 npm ci
 npm run build
 npm run preview -- --port 4173
-TEST_BASE_URL=http://127.0.0.1:4173 npm test
+TEST_BASE_URL=http://127.0.0.1:4173/tv-cinema npm test
 ```
 
 ## Сделано

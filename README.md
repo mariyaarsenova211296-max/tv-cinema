@@ -11,12 +11,16 @@ npm ci
 npm run dev -- --port 5173
 ```
 
-Открыть адрес Vite. `/` — лендинг, `/review.html` — статус материалов. Навигация `01–06` внизу слева — только технический предпросмотр.
+Открыть `http://127.0.0.1:5173/tv-cinema/` (Vite `base: '/tv-cinema/'` для GitHub Pages). `…/review.html` — статус материалов. Навигация `01–06` внизу слева — только технический предпросмотр.
 
 ```sh
 npm run build
 npm run preview -- --port 4173
+# → http://127.0.0.1:4173/tv-cinema/
 ```
+
+**Публичный URL (после включения Pages):** https://mariyaarsenova211296-max.github.io/tv-cinema/  
+Workflow: `.github/workflows/deploy-pages.yml` (build + deploy on push to `main`).
 
 ## Экраны
 

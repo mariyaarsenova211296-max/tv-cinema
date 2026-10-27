@@ -1,3 +1,5 @@
+import { asset } from './base';
+
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
   distances: { reveal: 1.2, zoom: 1, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
@@ -6,9 +8,9 @@ export const config = {
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
   playback: { loopVideo1: true, loopVideo4: true, crossfadeMs: 180, seekTolerance: 0.035 },
   media: [1, 2, 3, 4].map(n => ({
-    src: `/media/video-${n}.mp4`,
-    poster: `/media/video-${n}-start.jpg`,
-    end: `/media/video-${n}-end.jpg`,
+    src: asset(`media/video-${n}.mp4`),
+    poster: asset(`media/video-${n}-start.jpg`),
+    end: asset(`media/video-${n}-end.jpg`),
   })),
 } as const;
 
