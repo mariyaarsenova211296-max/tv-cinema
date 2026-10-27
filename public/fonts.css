@@ -1,0 +1,30 @@
+/*
+  Figma uses SB Sans Display / SB Sans Text.
+  Licensed font files were not present in the export session.
+  Manrope is a temporary geometric stand-in for local preview only.
+*/
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap");
+
+@font-face {
+  font-family: "SB Sans Display";
+  src: local("SB Sans Display"), local("SBSansDisplay"), local("SB Sans Display Medium");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SB Sans Display";
+  src: local("SB Sans Display Semibold"), local("SBSansDisplay-Semibold");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SB Sans Text";
+  src: local("SB Sans Text"), local("SBSansText");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}

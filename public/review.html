@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#111"><title>Sber TV — статус реализации</title><link rel="icon" href="data:,"><style>
+:root{color-scheme:dark;font-family:Manrope,Arial,Helvetica,sans-serif;background:#111;color:#eee}*{box-sizing:border-box}body{max-width:1060px;margin:auto;padding:48px 24px 80px}a{color:#d9ff9b;text-underline-offset:5px}header{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid #333;padding-bottom:24px}h1{font-size:clamp(28px,5vw,56px);letter-spacing:-.05em;line-height:1.05;margin:56px 0 20px}h2{font-size:24px;font-weight:500;margin:48px 0 20px}p,li{font-size:15px;line-height:1.7;color:#bbb}strong{color:#fff}code{background:#222;padding:3px 8px;border-radius:4px;color:#d9ff9b}table{border-collapse:collapse;width:100%;font-size:14px}td,th{text-align:left;padding:16px 12px;border-bottom:1px solid #333;line-height:1.5}th{color:#999;font-size:12px;font-weight:400}.tag{display:inline-block;border:1px solid #3a5a34;color:#b2ff66;border-radius:24px;padding:8px 14px;font-size:12px}.scenes{display:flex;gap:8px;flex-wrap:wrap;margin:28px 0}.scenes a{padding:12px 16px;background:#222;text-decoration:none;border-radius:8px}.video-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.video-grid img{display:block;width:100%;border-radius:12px}.video-grid p{margin-top:8px;font-size:13px}small{display:block;color:#888;line-height:1.6;margin-top:32px}.warning{padding:24px;border:1px solid #4a432f;border-radius:16px;background:#1b1913;margin:24px 0}a:focus-visible{outline:2px solid #d9ff9b;outline-offset:5px}@media(max-width:600px){body{padding-top:24px}.video-grid{grid-template-columns:1fr}td,th{padding:12px 6px;font-size:12px}header{align-items:flex-start}.tag{max-width:160px;line-height:1.4}}
+</style></head>
+<body>
+<header><a href="/">Sber TV · предпросмотр</a><span class="tag">Figma подключён · отклонения ниже</span></header>
+<h1>Шесть экранов собраны<br>по макету Untitled.</h1>
+<p>Макет: <code>emJiewWvxtniMYCtgHFDN7</code>, узел <code>1:1105</code>, видео <code>1:2018</code>. Перейти к сцене:</p>
+<nav class="scenes" aria-label="Экраны предпросмотра"><a href="/#scene-1">01 · Старт</a><a href="/#scene-2">02 · Карточки</a><a href="/#scene-3">03 · Появление</a><a href="/#scene-4">04 · Видео 1</a><a href="/#scene-5">05 · Сравнение</a><a href="/#scene-6">06 · Звук</a></nav>
+<div class="warning"><strong>Не отмечено как завершённое.</strong><p>Лицензионные SB Sans не приложены (временный Manrope). URL покупки в макете отсутствует (<code>#buy</code>). Углы экрана сравнения измерены по кадру video-2 и ждут подтверждения. Стык видео 1→2 и петля видео 1 не бесшовные в исходниках.</p></div>
+<h2>Что реализовано</h2>
+<table><thead><tr><th>Сцена</th><th>Поведение</th><th>Источник</th></tr></thead><tbody>
+<tr><td>01</td><td>Чёрный фон, меню, CTA «Купить / 200 000 ₽» снизу с отступом.</td><td>Figma 1:1106, 1:1642</td></tr>
+<tr><td>02</td><td>Шесть отдельных PNG-карточек, горизонтальный скролл, заголовок из макета.</td><td>Figma 1:1158…1:1203</td></tr>
+<tr><td>03</td><td>«Задержите дыхание», появление и zoom общего TV-слоя.</td><td>Figma 1:1500 + video 1</td></tr>
+<tr><td>04</td><td>Видео 1 loop; переход на video 2 со скроллом.</td><td>video <code>ad0nlmnc8tav9ub7ajgp</code></td></tr>
+<tr><td>05</td><td>Конец video 2 + dual-image Miniled/RGB-miniled, 50%, мышь/тач/клавиатура.</td><td>Figma 1:1504 + fills</td></tr>
+<tr><td>06</td><td>Video 4 + тексты Dolby Atmos / 75 Вт.</td><td>Figma 1:1636</td></tr>
+</tbody></table>
+<h2>Четыре локальных видео</h2>
+<div class="video-grid">
+<div><img src="/media/video-1-start.jpg" alt="Начальный кадр видео 1"><p><strong>Видео 1 · 6,08 с</strong><br>Loop на экране 4. <code>ad0nlmnc8tav9ub7ajgp</code>.</p></div>
+<div><img src="/media/video-2-end.jpg" alt="Последний кадр видео 2"><p><strong>Видео 2 · 4,06 с</strong><br>Scroll-scrub 4→5. <code>kklxlau2vkpau5sx2srh</code>.</p></div>
+<div><img src="/media/video-3-end.jpg" alt="Последний кадр видео 3"><p><strong>Видео 3 · 4,06 с</strong><br>Scroll-scrub 5→6. <code>in2g9rsmo1sb1cgd4541</code>.</p></div>
+<div><img src="/media/video-4-start.jpg" alt="Начальный кадр видео 4"><p><strong>Видео 4 · 4,06 с</strong><br>Самостоятельное воспроизведение на экране 6. <code>ez4sramyhspl8y2jgb5o</code>.</p></div>
+</div>
+<h2>Запуск</h2>
+<p><code>npm ci</code> → <code>npm run dev</code>. Сборка: <code>npm run build</code>. Тесты: <code>npm test</code> при работающем Vite.</p>
+<p>Контент: <code>public/design.json</code>. Дистанции/playback: <code>src/config.ts</code>. Ассеты: <code>public/assets</code>, медиа: <code>public/media</code>.</p>
+<small>Сама Figma-файл не изменялась. Техническая навигация 01–06 внизу лендинга — только для предпросмотра.</small>
+</body></html>
