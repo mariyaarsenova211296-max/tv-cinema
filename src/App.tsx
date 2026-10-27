@@ -193,10 +193,6 @@ export default function App() {
       </div>
     )}
 
-    <div className="preview-tools" aria-label="Навигация технического предпросмотра">
-      <a href={asset('review.html')} title="Материалы и статус реализации" aria-label="Материалы и статус реализации">i</a>
-      <nav aria-label="Шесть экранов">{[1, 2, 3, 4, 5, 6].map(n => <a key={n} href={`#scene-${n}`} aria-label={`Экран ${n}`} title={`Экран ${n}`}>{n.toString().padStart(2, '0')}</a>)}</nav>
-    </div>
     <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : 6}`}</span>
     <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
   </>;

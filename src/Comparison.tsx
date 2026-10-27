@@ -7,12 +7,13 @@ import type { Design } from './config';
 const DESIGN_W = 1440;
 
 /**
- * Screen 5 — Figma Component 551 (2:321), 1440×854.
+ * Screen 5 — Figma Component 551 (2:321 / 2:400), 1440×833.
  * Dual-image mask lives only inside the clipped TV screen rect so the divider
  * never covers the cat or bezel.
  */
 export function Comparison({ design, interactive }: { design: Design; width?: number; height?: number; interactive: boolean }) {
-  const [value, setValue] = useState(50);
+  /* Figma divider at x=578 inside 1118-wide screen ≈ 51.7% */
+  const [value, setValue] = useState(52);
   const [failed, setFailed] = useState(false);
   const [coverScale, setCoverScale] = useState(1);
   const rootRef = useRef<HTMLDivElement>(null);

@@ -103,10 +103,10 @@ with sync_playwright() as p:
     scroll(page,4.9,'comparison')
     seeked(page,2,1)
     control=page.get_by_role('slider')
-    assert control.input_value()=='50'
+    assert control.input_value()=='52'
     control.focus()
     control.press('ArrowRight')
-    assert control.input_value()=='51'
+    assert control.input_value()=='53'
     assert page.locator('.comparison-plane').count() == 1
     assert page.locator('.mini-image').count() == 1
     page.screenshot(path=str(OUT/'desktop-comparison.png'))

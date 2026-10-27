@@ -114,11 +114,17 @@ button, a, input { touch-action: manipulation; }
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  scrollbar-width: none; /* Figma: no visible scroll chrome */
+  scrollbar-width: none; /* hide track/bar; scroll still works */
+  -ms-overflow-style: none;
   padding: 0 32px;
   -webkit-overflow-scrolling: touch;
 }
-.cards-scroller::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.cards-scroller::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent;
+}
 .cards-track {
   display: flex;
   align-items: stretch;
@@ -227,13 +233,13 @@ button, a, input { touch-action: manipulation; }
 .comparison-layer { z-index: 6; pointer-events: none; }
 .comparison { position: absolute; inset: 0; overflow: hidden; background: #000; }
 
-/* Figma 2:321 — 1440×854 composition, width-scaled (zoom-aware) into the stage */
+/* Figma 2:321 — 1440×833 composition, width-scaled (zoom-aware) into the stage */
 .comparison--figma .comparison-stage {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 1440px;
-  height: 854px;
+  height: 833px;
   transform: translate(-50%, -50%) scale(var(--cmp-scale, 1));
   transform-origin: center center;
   overflow: hidden;
@@ -244,7 +250,7 @@ button, a, input { touch-action: manipulation; }
 .comparison-env__wide {
   position: absolute;
   left: -289px;
-  top: -56px;
+  top: -77px;
   width: 2018px;
   height: 967px;
   object-fit: cover;
@@ -253,20 +259,20 @@ button, a, input { touch-action: manipulation; }
 .comparison-env__main {
   position: absolute;
   left: -37px;
-  top: 0;
+  top: -21px;
   width: 1514px;
   height: 852px;
   object-fit: cover;
   object-position: center;
 }
 
-/* Screen clip 2:324 — images + divider only inside TV glass (Figma 1145×513) */
+/* Screen clip 2:324 — 123 / -56 / 1118×512; images + divider only inside glass */
 .comparison-screen {
   position: absolute;
-  left: 152px;
-  top: -26px;
-  width: 1145px;
-  height: 513px;
+  left: 123px;
+  top: -56px;
+  width: 1118px;
+  height: 512px;
   overflow: clip;
   pointer-events: auto;
   touch-action: none;
@@ -281,8 +287,8 @@ button, a, input { touch-action: manipulation; }
 .comparison-plane__rgb,
 .mini-image {
   position: absolute;
-  left: 0;
-  /* Figma 2:326 — 1145×772 slot; cover + bottom anchor (no stretch) */
+  /* Figma 2:326 / 2:327 — 1145×772 at (-5, -95); cover + bottom, no stretch */
+  left: -5px;
   top: -95px;
   width: 1145px;
   height: 772px;
@@ -294,16 +300,15 @@ button, a, input { touch-action: manipulation; }
 .mini-image { clip-path: inset(0 calc(100% - var(--split)) 0 0); z-index: 1; }
 
 /*
- * Divider — Figma 2:328. Mock shows the line ending above the cat; keep the
- * bottom cap clear of fur alpha so the handle never paints through the cat.
- * Cat (z-index 10) still covers any residual overlap at the glass edge.
+ * Divider — Figma 2:328 (x 578, top 64). Mock ends the line above the cat
+ * (stage y ~395); keep bottom cap clear of fur alpha so it never paints through.
  */
 .image-divider {
   position: absolute;
-  top: 40px;
+  top: 64px;
   left: var(--split);
   width: 2px;
-  height: 400px; /* ends ~ stage y 414; cat top 442 */
+  height: 360px; /* stage end ≈ 368; cat top 395 */
   margin-left: -1px;
   background: #fff;
   z-index: 3;
@@ -339,14 +344,14 @@ button, a, input { touch-action: manipulation; }
   text-align: center;
   transform: translateX(-50%);
 }
-.screen-label--mini { left: 78.5px; }
-.screen-label--rgb { left: 1034.85px; }
+.screen-label--mini { left: 84.5px; }
+.screen-label--rgb { left: 1012.5px; }
 
-/* Cat 2:391 — exact Figma box; above screen/divider */
+/* Cat 2:391 — 428 / 395 / 383.406×338.316; above screen/divider */
 .comparison-cat {
   position: absolute;
-  left: 475.13px;
-  top: 442px;
+  left: 428px;
+  top: 395px;
   width: 383.406px;
   height: 338.316px;
   object-fit: cover;
@@ -503,29 +508,6 @@ button, a, input { touch-action: manipulation; }
   line-height: 1.1;
 }
 
-.preview-tools {
-  position: fixed;
-  z-index: 21;
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  left: 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: #a0a0a0;
-}
-.preview-tools > a {
-  border: 1px solid #444;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  text-align: center;
-  line-height: 27px;
-  font-family: Georgia, serif;
-}
-.preview-tools nav { display: flex; gap: 4px; }
-.preview-tools nav a { font-size: 10px; letter-spacing: 0.05em; padding: 12px 7px; }
-.preview-tools a:hover { color: #fff; }
-
 @media (max-width: 900px) {
   .site-header { padding: 16px 16px 0; }
   .nav-group { display: none; }
@@ -557,7 +539,6 @@ button, a, input { touch-action: manipulation; }
     transform: scale(0.86);
     transform-origin: center bottom;
   }
-  .preview-tools { bottom: calc(108px + env(safe-area-inset-bottom)); left: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

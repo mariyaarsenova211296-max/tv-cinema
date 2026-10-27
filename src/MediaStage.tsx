@@ -12,12 +12,14 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [manual, setManual] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
+  const [video1Ended, setVideo1Ended] = useState(false);
   const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
   const index = phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? 2 : phase === 'finale' ? 3 : 0;
   const scrubbing = phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
   const normalizedTime = phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd)) : progress;
-  // Static title lives outside this stage; reveal/zoom briefly hold frame 0, then feature plays.
-  const playing = active && visible && !scrubbing && phase !== 'reveal' && phase !== 'zoom' && (!reduced || manual);
+  // Static title outside; video 1 plays once to its final frame; later clips are scroll-scrubbed.
+  const playing = active && visible && !scrubbing && phase !== 'reveal' && phase !== 'zoom'
+    && !(index === 0 && video1Ended) && (!reduced || manual);
   desired.current = { index, time: normalizedTime, scrubbing };
 
   function ready(i: number) {
@@ -72,6 +74,9 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     return () => { document.removeEventListener('visibilitychange', visibility); videos.current.forEach(el => el?.pause()); };
   }, []);
   useEffect(() => { setManual(false); }, [index, active]);
+  useEffect(() => {
+    if (!active) setVideo1Ended(false);
+  }, [active]);
 
   // Finale handoff: park video 4 at t=0 once when entering, then let it play.
   const finaleArmed = useRef(false);
@@ -107,6 +112,14 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       onLoadedData={() => ready(i)} onCanPlay={() => ready(i)}
       onLoadedMetadata={() => setErrors(old => ({ ...old }))}
       onSeeked={() => { ready(i); setErrors(old => ({ ...old })); }}
+      onEnded={() => {
+        if (i !== 0) return;
+        const el = videos.current[0];
+        if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
+        el?.pause();
+        setVideo1Ended(true);
+        setDisplay(0);
+      }}
       onError={() => setErrors(old => ({ ...old, [i]: true }))} />)}
     {(still || errors[index]) && <img className="media-still" src={fallback} alt="Телевизор Sber TV" />}
     {errors[index] && <div role="alert" className="media-message">Не удалось загрузить видео. Показан статичный кадр.<button onClick={() => { setErrors(old => ({ ...old, [index]: false })); videos.current[index]?.load(); }}>Повторить</button></div>}
