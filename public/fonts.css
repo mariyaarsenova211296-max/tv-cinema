@@ -1,29 +1,62 @@
 /*
-  Figma uses SB Sans Display / SB Sans Text.
-  Licensed font files were not present in the export session.
-  Manrope is a temporary geometric stand-in for local preview only.
+  Self-hosted SB Sans Display (ParaType).
+  Archive shipped Display only — no SB Sans Text files were provided.
+  Figma Text usages fall back to SB Sans Display.
 */
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap");
-
 @font-face {
   font-family: "SB Sans Display";
-  src: local("SB Sans Display"), local("SBSansDisplay"), local("SB Sans Display Medium");
+  src: url("/fonts/SBSansDisplay-Thin.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-Thin.woff") format("woff");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SB Sans Display";
+  src: url("/fonts/SBSansDisplay-Light.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SB Sans Display";
+  src: url("/fonts/SBSansDisplay-Regular.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "SB Sans Display";
+  src: url("/fonts/SBSansDisplay-Medium.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-Medium.woff") format("woff");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: "SB Sans Display";
-  src: local("SB Sans Display Semibold"), local("SBSansDisplay-Semibold");
+  src: url("/fonts/SBSansDisplay-SemiBold.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-SemiBold.woff") format("woff");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: "SB Sans Display";
+  src: url("/fonts/SBSansDisplay-Bold.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
+/* Alias for Figma SB Sans Text references until Text files are supplied. */
 @font-face {
   font-family: "SB Sans Text";
-  src: local("SB Sans Text"), local("SBSansText");
+  src: url("/fonts/SBSansDisplay-SemiBold.woff2") format("woff2"),
+       url("/fonts/SBSansDisplay-SemiBold.woff") format("woff");
   font-weight: 600;
   font-style: normal;
   font-display: swap;

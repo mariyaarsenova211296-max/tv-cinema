@@ -21,7 +21,8 @@ TEST_BASE_URL=http://127.0.0.1:4173 npm test
 
 ## Не отмечено как завершённое
 
-- [ ] Лицензионные файлы **SB Sans Display / Text** — в среде нет; стоит Manrope fallback.
+- [x] **SB Sans Display** — Thin / Light / Regular / Medium / SemiBold / Bold (woff2+woff+ttf) в `public/fonts/`.
+- [ ] **SB Sans Text** — в архиве пользователя не было; Figma Text → Display Semibold alias.
 - [ ] Реальный URL магазина для CTA — в макете нет ссылки; сейчас `#buy`.
 - [ ] Точная калибровка углов экрана (`comparison.corners`) дизайнером по финальному кадру.
 - [ ] Бесшовный стык видео 1 → 2 и петля видео 1 (сюжеты исходников несовместимы).
