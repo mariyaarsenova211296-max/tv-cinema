@@ -2,20 +2,40 @@
   color-scheme: dark;
   font-family: "SB Sans Display", "SB Sans Text", "Segoe UI", sans-serif;
   color: #f5f5f5;
-  background: #000;
+  background: #fff; /* side bars outside #root */
   font-synthesis: none;
   --bottom-space: 136px;
   --nav-bg: #f4f7fa;
   --nav-muted: #6b737b;
   --cta-green: #b2ff66;
   --cta-green-hot: #a6ff4a;
-  --design-width: 1440;
+  --design-width: 1440px;
   --design-scale: 1;
+  /* Horizontal inset so fixed chrome stays inside the 1440 column on wide screens */
+  --page-gutter: max(0px, calc((100vw - var(--design-width)) / 2));
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; background: #000; }
-body { margin: 0; min-width: 320px; background: #000; overflow-x: clip; }
+/* >1440: white pillarbox; composition stays 1440 (no proportional zoom) */
+html {
+  scroll-behavior: smooth;
+  background: #fff;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #fff;
+  overflow-x: clip;
+}
+#root {
+  width: 100%;
+  max-width: var(--design-width);
+  margin: 0 auto;
+  min-height: 100svh;
+  background: #000;
+  position: relative;
+  overflow-x: clip;
+}
 button, input, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; }
@@ -35,6 +55,7 @@ button, a, input { touch-action: manipulation; }
   gap: 16px;
   padding: 24px 32px 0;
   pointer-events: none;
+  width: 100%;
 }
 .site-header a { pointer-events: auto; }
 .header-left, .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
@@ -504,14 +525,17 @@ button, a, input { touch-action: manipulation; }
   position: fixed;
   z-index: 20;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: var(--page-gutter);
+  right: var(--page-gutter);
+  width: auto;
+  max-width: var(--design-width);
   padding: 16px 5vw calc(16px + env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
   pointer-events: none;
+  box-sizing: border-box;
 }
-/* CTA 1:1642 — 210×112, radius 1000, pad 8, gap 2, thumb 96, type 16/−0.48 */
+/* Figma 7:409 — 210×112, radius 1000, pad 8, gap 2, thumb frame 96, type 16/−0.48 */
 .cta {
   pointer-events: auto;
   display: flex;
@@ -521,25 +545,26 @@ button, a, input { touch-action: manipulation; }
   box-sizing: border-box;
   width: 210px;
   height: 112px;
-  min-width: 210px;
-  max-width: 210px;
-  min-height: 112px;
-  max-height: 112px;
   padding: 8px;
   border-radius: 1000px;
   background: var(--cta-green);
   color: #000;
   overflow: hidden;
   transition: background 0.2s;
+  text-decoration: none;
+  transform: none;
 }
 .cta:hover { background: var(--cta-green-hot); }
 .cta-thumb {
   display: block;
+  box-sizing: border-box;
   width: 96px;
   height: 96px;
+  flex: none;
   object-fit: contain;
   object-position: center bottom;
-  flex: none;
+  /* Figma 7:412 net transform is a horizontal mirror */
+  transform: scaleX(-1);
 }
 .cta-copy {
   display: flex;
@@ -554,12 +579,14 @@ button, a, input { touch-action: manipulation; }
   white-space: nowrap;
 }
 .cta-label {
+  font-family: "SB Sans Display", sans-serif;
   font-size: 16px;
   font-weight: 500;
   letter-spacing: -0.48px;
   line-height: 1.4;
 }
 .cta-price {
+  font-family: "SB Sans Display", sans-serif;
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.48px;
@@ -591,14 +618,10 @@ button, a, input { touch-action: manipulation; }
   :root { --bottom-space: 148px; }
   .visual-frame { width: 100%; height: 100%; } /* already full-bleed */
   .cta-panel { padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); }
-  /* Keep Figma 210×112 proportions — never stretch the pill */
+  /* Figma 7:409 proportions — scale as a unit, never stretch the pill */
   .cta {
     width: 210px;
     height: 112px;
-    min-width: 210px;
-    max-width: 210px;
-    min-height: 112px;
-    max-height: 112px;
     transform: scale(0.86);
     transform-origin: center bottom;
   }
