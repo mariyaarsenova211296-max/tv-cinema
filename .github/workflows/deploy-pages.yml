@@ -1,8 +1,10 @@
 name: Deploy GitHub Pages
 
+# Dual deploy: scrub from `main` at /tv-cinema/ + gesture alt from `alt-gesture-scroll` at /tv-cinema/alt/
+# Pushing either branch rebuilds BOTH so one deploy never wipes the other path.
 on:
   push:
-    branches: [main]
+    branches: [main, alt-gesture-scroll]
   workflow_dispatch:
 
 permissions:
@@ -18,28 +20,58 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout scrub (main)
         uses: actions/checkout@v4
+        with:
+          ref: main
+          path: scrub
+
+      - name: Checkout gesture (alt-gesture-scroll)
+        uses: actions/checkout@v4
+        with:
+          ref: alt-gesture-scroll
+          path: alt
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: scrub/package-lock.json
 
-      - name: Install
+      - name: Install scrub deps
+        working-directory: scrub
         run: npm ci
 
-      - name: Build
+      - name: Build scrub → /tv-cinema/
+        working-directory: scrub
         run: npm run build
         env:
-          # Confirms project Pages base `/tv-cinema/` (also set in vite.config.ts).
           VITE_BASE: /tv-cinema/
+
+      - name: Install alt deps
+        working-directory: alt
+        run: npm ci
+
+      - name: Build gesture → /tv-cinema/alt/
+        working-directory: alt
+        run: npm run build
+        env:
+          VITE_BASE: /tv-cinema/alt/
+
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -a scrub/dist/. site/
+          mkdir -p site/alt
+          cp -a alt/dist/. site/alt/
+          # Marker so ops can confirm dual artifact contents
+          printf 'scrub=%s\nalt=%s\n' "$(git -C scrub rev-parse --short HEAD)" "$(git -C alt rev-parse --short HEAD)" > site/deploy-revisions.txt
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build
