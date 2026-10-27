@@ -94,18 +94,7 @@
     "mini": "Miniled",
     "rgb": "RGB-miniled"
   },
-  "comparisonFeatures": [
-    {
-      "icon": "assets/comparison/icon-dlg.svg",
-      "title": "DLG 288 гц",
-      "body": "Картинка адаптируется под динамичный контент. Увеличенная скорость обновления экрана"
-    },
-    {
-      "icon": "assets/comparison/icon-rgb.svg",
-      "title": "RGB-miniled",
-      "body": "Топовая технология экрана. Высокая детализация и насыщенный чёрный цвет без серых пятен"
-    }
-  ],
+  "comparisonFeatures": [],
   "finale": {
     "eyebrow": "Dolby Atmos 2.1.2",
     "title": "Пространственный звук до 75 Вт",

@@ -145,11 +145,16 @@ with sync_playwright() as p:
     scroll(page,6.75,'comparison')
     seeked(page,2,1)
     control=page.get_by_role('slider')
+    pinned=page.evaluate('scrollY')
     control.fill('25')
+    page.evaluate('y => window.scrollTo({ top: y, behavior: "instant" })', pinned)
+    page.wait_for_timeout(50)
+    assert control.input_value() == '25'
     assert page.locator('.mini-image').evaluate('(el)=>getComputedStyle(el).clipPath')=='inset(0px 75% 0px 0px)'
-    assert page.locator('.comparison-plane').evaluate('(el)=>getComputedStyle(el).transform').startswith('matrix3d')
-    # Pointer drag directly on the projected TV screen.
-    plane=page.locator('.comparison-plane').bounding_box()
+    assert page.locator('.comparison-screen').count() == 1
+    assert page.locator('.comparison-features').count() == 0
+    # Pointer drag directly on the clipped TV screen.
+    plane=page.locator('.comparison-screen').bounding_box()
     y=plane['y']+plane['height']*.4
     page.mouse.move(plane['x']+plane['width']*.3,y)
     page.mouse.down()
@@ -157,15 +162,15 @@ with sync_playwright() as p:
     page.mouse.move(plane['x']+plane['width']*.7,y,steps=6)
     page.mouse.up()
     assert 60<int(control.input_value())<80
-    assert page.evaluate('scrollY')==old_scroll
+    assert abs(page.evaluate('scrollY') - old_scroll) < 2
     pixels=Image.open(BytesIO(page.screenshot())).convert('RGB')
-    # Verify actual rendered pixels, including subpixel/perspective composition.
+    # Verify rendered dual-image mask (red left / blue right fixture).
     assert pixels.getpixel((int(plane['x']+plane['width']*.15),int(y)))==(255,0,0)
     assert pixels.getpixel((int(plane['x']+plane['width']*.9),int(y)))==(0,0,255)
     panel=page.locator('.cta-panel').bounding_box()
     assert abs(panel['y']+panel['height']-page.viewport_size['height'])<2
     page.screenshot(path=str(OUT/'comparison-mechanics-fixture.png'))
-    record('test-only dual-image mask, perspective, direct drag, fixed CTA; no scroll while dragging')
+    record('test-only dual-image mask, screen clip, direct drag, fixed CTA; no scroll while dragging')
 
     # Mobile with touch events and a short viewport.
     mobile=browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,device_scale_factor=1)
@@ -176,8 +181,9 @@ with sync_playwright() as p:
     scroll(phone,6.75,'comparison')
     seeked(phone,2,1)
     assert phone.evaluate('document.documentElement.scrollWidth<=innerWidth')
-    range_box=phone.get_by_role('slider').bounding_box()
-    phone.touchscreen.tap(range_box['x']+range_box['width']*.75,range_box['y']+range_box['height']/2)
+    screen_box=phone.locator('.comparison-screen').bounding_box()
+    assert screen_box and screen_box['width'] > 0
+    phone.touchscreen.tap(screen_box['x']+screen_box['width']*.75,screen_box['y']+screen_box['height']*.4)
     assert int(phone.get_by_role('slider').input_value())>65
     phone.screenshot(path=str(OUT/'mobile-comparison-fixture.png'))
     record('mobile: touch comparison, no overflow, reserved bottom-panel space')

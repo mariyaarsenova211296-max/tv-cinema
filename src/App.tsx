@@ -7,6 +7,7 @@ import { Comparison } from './Comparison';
 import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
 import type { Design } from './config';
 import { MediaStage } from './MediaStage';
+import { useDesignScale } from './useDesignScale';
 import { useMotionPreference } from './useMotionPreference';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -41,6 +42,7 @@ export default function App() {
   const cardsTrack = useRef<HTMLDivElement>(null);
   const reduced = useMotionPreference();
   const { phase, progress } = resolvePhase(Math.max(0, distance));
+  useDesignScale();
 
   useEffect(() => {
     const abort = new AbortController();
@@ -157,15 +159,6 @@ export default function App() {
                 <Comparison design={design} width={size.width} height={size.height} interactive={comparisonActive} />
               </div>
             </div>
-          </div>
-          <div className="comparison-features" style={{ opacity: comparisonOpacity }} inert={!comparisonActive || undefined}>
-            {design.comparisonFeatures.map(feature => (
-              <article className="feature-block" key={feature.title}>
-                <img src={feature.icon} alt="" width={64} height={64} />
-                <h2>{feature.title}</h2>
-                <p>{feature.body}</p>
-              </article>
-            ))}
           </div>
           {design.finale && (
             <div className="finale-copy" style={{ opacity: finaleOpacity }} inert={phase !== 'finale' || undefined}>

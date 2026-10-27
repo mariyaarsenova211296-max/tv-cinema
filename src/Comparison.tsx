@@ -1,64 +1,129 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { asset } from './base';
 import type { Design } from './config';
 
-// Map a unit square to an arbitrary screen quadrilateral with a projective matrix.
-export function perspective(c: NonNullable<Design['comparison']>['corners']) {
-  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = c;
-  const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
-  const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
-  const det = dx1 * dy2 - dx2 * dy1;
-  const g = det === 0 ? 0 : (dx3 * dy2 - dx2 * dy3) / det;
-  const h = det === 0 ? 0 : (dx1 * dy3 - dx3 * dy1) / det;
-  // A 1000px source plane prevents subpixel clip-path rasterization rounding
-  // before the perspective transform (a 1px plane loses the split entirely).
-  const units = 1000;
-  return `matrix3d(${(x1 - x0 + g * x1) / units},${(y1 - y0 + g * y1) / units},0,${g / units},${(x3 - x0 + h * x3) / units},${(y3 - y0 + h * y3) / units},0,${h / units},0,0,1,0,${x0},${y0},0,1)`;
-}
+/** Figma Component 551 (2:321) design width. */
+const DESIGN_W = 1440;
 
-export function Comparison({ design, width, height, interactive }: { design: Design; width: number; height: number; interactive: boolean }) {
+/**
+ * Screen 5 — Figma Component 551 (2:321), 1440×854.
+ * Dual-image mask lives only inside the clipped TV screen rect so the divider
+ * never covers the cat or bezel.
+ */
+export function Comparison({ design, interactive }: { design: Design; width?: number; height?: number; interactive: boolean }) {
   const [value, setValue] = useState(50);
   const [failed, setFailed] = useState(false);
+  const [coverScale, setCoverScale] = useState(1);
+  const rootRef = useRef<HTMLDivElement>(null);
   const hintId = useId();
   const sources = design.comparison;
   const labels = design.comparisonLabels ?? { mini: 'Miniled', rgb: 'RGB-miniled' };
   const valid = Boolean(sources) && !failed;
-  // Project the entire comparison plane (both aligned images + divider), so that
-  // the bezel, cat, stand and environment are never recoloured or masked.
-  const corners = sources?.corners.map(([x, y]) => [x * width, y * height]) as NonNullable<Design['comparison']>['corners'] | undefined;
-  const planeStyle: CSSProperties = corners ? { width: 1000, height: 1000, transform: perspective(corners) } : {};
+  const env = asset('assets/comparison/tv-env.png');
+  const envWide = asset('assets/comparison/tv-env-wide.png');
+  const cat = asset('assets/comparison/cat.png');
+  const divider = asset('assets/comparison/divider.svg');
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const apply = () => {
+      // Prefer layout box (offset*) so html zoom from useDesignScale is not applied twice.
+      // Scale from width so the 1440 composition is full-bleed horizontally (no side bars);
+      // short/tall viewports crop or letterbox vertically while keeping Figma proportions.
+      const width = el.offsetWidth || el.getBoundingClientRect().width;
+      if (!width) return;
+      setCoverScale(width / DESIGN_W);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    window.addEventListener('resize', apply);
+    return () => { ro.disconnect(); window.removeEventListener('resize', apply); };
+  }, []);
 
   function moveLine(e: React.PointerEvent<HTMLDivElement>) {
-    if (!e.currentTarget.hasPointerCapture(e.pointerId) || !corners) return;
-    const origin = e.currentTarget.parentElement!.parentElement!.getBoundingClientRect();
-    const matrix = new DOMMatrix(perspective(corners));
-    const point = new DOMPoint(e.clientX - origin.left, e.clientY - origin.top).matrixTransform(matrix.inverse());
-    setValue(Math.round(Math.min(100, Math.max(0, point.x / point.w / 1000 * 100))));
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width) return;
+    setValue(Math.round(Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100))));
   }
 
-  return <div className="comparison" data-testid="comparison" style={{ '--split': `${value}%` } as CSSProperties}>
-    {valid && sources && <div className="comparison-plane" style={planeStyle} inert={!interactive || undefined}
-      onDragStart={e => e.preventDefault()}
-      onPointerDown={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); moveLine(e); }}
-      onPointerMove={moveLine} onPointerUp={e => { e.currentTarget.releasePointerCapture(e.pointerId); }}>
-      <img draggable={false} src={sources.rgb} alt={labels.rgb} onError={() => setFailed(true)} />
-      <img draggable={false} className="mini-image" src={sources.mini} alt={labels.mini} onError={() => setFailed(true)} />
-      <div className="image-divider" aria-hidden="true" />
-      <span className="screen-label screen-label--mini">{labels.mini}</span>
-      <span className="screen-label screen-label--rgb">{labels.rgb}</span>
-    </div>}
-    <div className="comparison-ui" inert={!interactive || undefined}>
-      <div className="comparison-labels"><span>{labels.mini}</span><span>{labels.rgb}</span></div>
-      <div className="range-wrap">
-        <div className="range-track" /><div className="range-handle" aria-hidden="true">‹<span />›</div>
-        <input type="range" min="0" max="100" step="1" value={value}
+  return (
+    <div
+      ref={rootRef}
+      className="comparison comparison--figma"
+      data-testid="comparison"
+      data-node-id="2:321"
+      style={{ '--split': `${value}%`, '--cmp-scale': String(coverScale) } as CSSProperties}
+    >
+      <div className="comparison-stage" data-testid="comparison-stage">
+        <div className="comparison-env" aria-hidden="true">
+          <img className="comparison-env__wide" src={envWide} alt="" draggable={false} />
+          <img className="comparison-env__main" src={env} alt="" draggable={false} />
+          <div className="comparison-env__glow comparison-env__glow--left" />
+          <div className="comparison-env__glow comparison-env__glow--right" />
+        </div>
+
+        {valid && sources && (
+          <div
+            className="comparison-screen"
+            data-testid="comparison-screen"
+            inert={!interactive || undefined}
+            onDragStart={e => e.preventDefault()}
+            onPointerDown={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.setPointerCapture(e.pointerId); moveLine(e); }}
+            onPointerMove={moveLine}
+            onPointerUp={e => { e.currentTarget.releasePointerCapture(e.pointerId); }}
+          >
+            <div className="comparison-plane" data-testid="comparison-plane">
+              <img
+                className="comparison-plane__rgb"
+                draggable={false}
+                src={sources.rgb}
+                alt=""
+                onError={() => setFailed(true)}
+              />
+              <img
+                className="mini-image"
+                draggable={false}
+                src={sources.mini}
+                alt=""
+                onError={() => setFailed(true)}
+              />
+              <div className="image-divider" aria-hidden="true">
+                <img src={divider} alt="" draggable={false} />
+              </div>
+              <span className="screen-label screen-label--mini">{labels.mini}</span>
+              <span className="screen-label screen-label--rgb">{labels.rgb}</span>
+            </div>
+          </div>
+        )}
+
+        <img className="comparison-cat" src={cat} alt="" draggable={false} aria-hidden="true" />
+      </div>
+
+      <div className="comparison-a11y">
+        <label className="sr-only" htmlFor={hintId}>Граница сравнения {labels.mini} и {labels.rgb}</label>
+        <input
+          id={hintId}
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={value}
+          disabled={!interactive || !valid}
           aria-label={`Граница сравнения ${labels.mini} и ${labels.rgb}`}
           aria-valuetext={`${value}% ${labels.mini}`}
-          aria-describedby={valid ? undefined : hintId}
           onChange={e => setValue(Number(e.target.value))}
-          onPointerDown={e => e.stopPropagation()} />
+          onPointerDown={e => e.stopPropagation()}
+        />
+        {!valid && (
+          <p className="material-note" role="status">
+            {failed ? 'Не удалось загрузить изображения сравнения.' : 'Сравнение недоступно: нужны два исходных изображения.'}
+          </p>
+        )}
       </div>
-      {!valid && <p className="material-note" id={hintId} role="status">{failed ? 'Не удалось загрузить изображения сравнения.' : 'Сравнение недоступно: нужны два исходных изображения.'}</p>}
     </div>
-  </div>;
+  );
 }
