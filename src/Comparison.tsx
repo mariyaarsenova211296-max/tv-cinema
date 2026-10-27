@@ -8,7 +8,7 @@ const DESIGN_W = 1440;
 
 /**
  * Screen 5 — Figma Component 551 (2:321 / 2:400).
- * Dual-image mask fills the TV glass exactly so content stays inside the bezel.
+ * Dual-image plane fills the TV glass flush (no env orange at R/B bezel).
  */
 export function Comparison({ design, interactive }: { design: Design; width?: number; height?: number; interactive: boolean }) {
   const [value, setValue] = useState(50);
