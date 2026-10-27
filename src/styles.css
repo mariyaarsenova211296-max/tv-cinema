@@ -237,11 +237,13 @@ button, a, input { touch-action: manipulation; }
 .comparison-layer { z-index: 6; pointer-events: none; }
 .comparison { position: absolute; inset: 0; overflow: hidden; background: #000; }
 
-/* Figma 2:321 — 1440×833 composition, cover-scaled into the sticky stage (no letterbox) */
+/* Figma 2:321 — 1440×833 composition, cover-scaled into the sticky stage.
+ * top: 42% (not 50%) lifts the TV so the top isn’t clipped and leaves room
+ * under the cat for feature cards. */
 .comparison--figma .comparison-stage {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 42%;
   width: 1440px;
   height: 833px;
   transform: translate(-50%, -50%) scale(var(--cmp-scale, 1));
@@ -364,6 +366,56 @@ button, a, input { touch-action: manipulation; }
   object-position: center center;
   pointer-events: none;
   z-index: 10;
+}
+
+/* Figma 2:334 — feature pair under the cat */
+.comparison-features {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--bottom-space) + 8px);
+  transform: translateX(-50%);
+  width: min(570px, 90vw);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  pointer-events: none;
+  z-index: 7;
+}
+.feature-block {
+  display: flex;
+  flex-direction: column;
+  gap: 47px;
+  width: 265px;
+  max-width: 100%;
+}
+.feature-block img {
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.feature-block__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.feature-block h2 {
+  margin: 0;
+  font-family: "SB Sans Text", "SB Sans Display", sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 0.93;
+  letter-spacing: -1.3px;
+  color: #fff;
+  white-space: nowrap;
+}
+.feature-block p {
+  margin: 0;
+  font-family: "SB Sans Display", "SB Sans Text", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.6px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .comparison-a11y {
@@ -528,6 +580,11 @@ button, a, input { touch-action: manipulation; }
   .reveal-section { height: 280px; min-height: 280px; padding: 0 16px; }
   .reveal-title { font-size: 32px; letter-spacing: -0.96px; }
   .finale-copy h2 { font-size: 32px; letter-spacing: -0.96px; }
+  .comparison-features { gap: 20px; bottom: calc(var(--bottom-space) + 4px); }
+  .feature-block { gap: 24px; }
+  .feature-block img { width: 48px; height: 48px; }
+  .feature-block h2 { font-size: 20px; letter-spacing: -1px; }
+  .feature-block p { font-size: 16px; letter-spacing: -0.48px; }
 }
 
 @media (max-width: 700px) {
@@ -544,6 +601,11 @@ button, a, input { touch-action: manipulation; }
     max-height: 112px;
     transform: scale(0.86);
     transform-origin: center bottom;
+  }
+  .comparison-features {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: min(320px, 88vw);
   }
 }
 

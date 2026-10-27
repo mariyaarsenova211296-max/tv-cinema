@@ -48,7 +48,10 @@ def design_fixture():
       'cards':[{'src':svg('#222'), 'alt':'Тестовая карточка', 'aspectRatio':'3 / 4'}],
       'revealTitle':None,
       'comparisonLabels': {'mini':'Mini','rgb':'RGB'},
-      'comparisonFeatures': [],
+      'comparisonFeatures': [
+        {'icon':svg('#fff'), 'title':'DLG 288 Гц', 'body':'Тест слева'},
+        {'icon':svg('#fff'), 'title':'RGB-miniled', 'body':'Тест справа'},
+      ],
       'finale': None,
       'comparison': {'mini':svg('#f00'), 'rgb':svg('#00f'),
         'corners':[[.1,.02],[.9,.02],[.89,.72],[.11,.72]]}
@@ -110,6 +113,10 @@ with sync_playwright() as p:
     assert control.input_value()=='51'
     assert page.locator('.comparison-plane').count() == 1
     assert page.locator('.mini-image').count() == 1
+    assert page.locator('.comparison-features').count() == 1
+    assert page.locator('.feature-block').count() == 2
+    assert 'DLG 288' in page.locator('.feature-block').nth(0).inner_text()
+    assert 'RGB-miniled' in page.locator('.feature-block').nth(1).inner_text()
     page.screenshot(path=str(OUT/'desktop-comparison.png'))
     record('comparison interface: 50% initial, keyboard accessible, dual-image plane present')
 
@@ -155,7 +162,8 @@ with sync_playwright() as p:
     assert control.input_value() == '25'
     assert page.locator('.mini-image').evaluate('(el)=>getComputedStyle(el).clipPath')=='inset(0px 75% 0px 0px)'
     assert page.locator('.comparison-screen').count() == 1
-    assert page.locator('.comparison-features').count() == 0
+    assert page.locator('.comparison-features').count() == 1
+    assert page.locator('.feature-block').count() == 2
     # Pointer drag directly on the clipped TV screen.
     plane=page.locator('.comparison-screen').bounding_box()
     y=plane['y']+plane['height']*.4

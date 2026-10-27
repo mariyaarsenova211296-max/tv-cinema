@@ -170,6 +170,24 @@ export default function App() {
               </div>
             </div>
           </div>
+          {design.comparisonFeatures.length > 0 && (
+            <div
+              className="comparison-features"
+              data-testid="comparison-features"
+              style={{ opacity: comparisonOpacity }}
+              inert={!comparisonActive || undefined}
+            >
+              {design.comparisonFeatures.map(feature => (
+                <article className="feature-block" key={feature.title}>
+                  <img src={feature.icon} alt="" width={64} height={64} />
+                  <div className="feature-block__copy">
+                    <h2>{feature.title}</h2>
+                    <p>{feature.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
           {design.finale && (
             <div className="finale-copy" style={{ opacity: finaleOpacity }} inert={phase !== 'finale' || undefined}>
               <p className="finale-eyebrow">{design.finale.eyebrow}</p>
