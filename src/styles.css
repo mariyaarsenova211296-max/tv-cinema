@@ -7,8 +7,8 @@
   --bottom-space: 136px;
   --nav-bg: #f4f7fa;
   --nav-muted: #6b737b;
-  --cta-green: #b2ff66;
-  --cta-green-hot: #a6ff4a;
+  --cta-green: #c3fd7c; /* hero-target lime */
+  --cta-green-hot: #b5f56a;
   --design-width: 1440px;
   --design-scale: 1;
   /* Horizontal inset so fixed chrome stays inside the 1440 column on wide screens */
@@ -108,7 +108,7 @@ button, a, input { touch-action: manipulation; }
 }
 .nav-icon img, .nav-pill img { display: block; width: 24px; height: 24px; }
 
-/* Screen 1 — Figma 17:529 video + 17:467 copy on end frame (1440×810). */
+/* Screen 1 — 1920×1080 intro, 16:9 contain (full composition, no crop/zoom). */
 .intro { height: 100svh; background: #000; position: relative; overflow: hidden; }
 .intro-stage {
   position: absolute;
@@ -118,13 +118,25 @@ button, a, input { touch-action: manipulation; }
   justify-content: center;
   background: #000;
 }
+/* Media plane = letterboxed 16:9 fitting the stage; copy % are relative to this box. */
+.intro-media {
+  position: relative;
+  width: min(100%, calc(100svh * 16 / 9));
+  height: min(100%, calc(100vw * 9 / 16));
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+  flex: none;
+  overflow: hidden;
+  background: #000;
+}
 .intro-video,
 .intro-still {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
   pointer-events: none;
   user-select: none;
@@ -134,16 +146,14 @@ button, a, input { touch-action: manipulation; }
 .intro-still { z-index: 0; opacity: 0; }
 .intro-still.is-visible { opacity: 1; z-index: 1; }
 
-/* Figma 17:467 text — absolute centers within 1440×810; soft Shopify-like entrance. */
+/*
+ * Copy relative to the 16:9 media box (Figma 17:467 / 1440×810 ratios).
+ * «кинотеатр» sits under the TV stand, above the viewer’s head.
+ * No «серия 9000».
+ */
 .intro-copy {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 1440px;
-  height: 810px;
-  max-width: 100%;
-  max-height: 100%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   z-index: 3;
   pointer-events: none;
   color: #fff;
@@ -163,76 +173,46 @@ button, a, input { touch-action: manipulation; }
     opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.intro-copy.is-in p:not(.intro-copy__series),
+.intro-copy.is-in p,
 .intro-copy.is-in h1 {
   opacity: 1;
   transform: translate(-50%, 0);
 }
 .intro-copy__title {
-  left: calc(50% - 6.5px);
-  top: calc(50% - 105.5px);
-  font-size: 100px;
+  left: 50%;
+  top: 52%; /* under stand / above head in full 16:9 composition */
+  font-size: clamp(40px, 6.94vw, 100px);
   font-weight: 500;
   line-height: 0.85;
-  letter-spacing: -5px;
+  letter-spacing: -0.05em;
   transition-delay: 0.08s;
 }
 .intro-copy__left-top {
-  left: calc(50% - 575.07px);
-  top: calc(50% - 90.5px);
-  font-size: 36px;
+  left: 10.07%;
+  top: 38.8%;
+  font-size: clamp(14px, 2.5vw, 36px);
   font-weight: 400;
   line-height: 0.85;
-  letter-spacing: -1.8px;
+  letter-spacing: -0.05em;
   transition-delay: 0.18s;
 }
 .intro-copy__left-bottom {
-  left: calc(50% - 594.02px);
-  top: calc(50% - 51.54px);
-  font-size: 36px;
+  left: 8.75%;
+  top: 43.6%;
+  font-size: clamp(14px, 2.5vw, 36px);
   font-weight: 400;
   line-height: 0.85;
-  letter-spacing: -1.8px;
+  letter-spacing: -0.05em;
   transition-delay: 0.26s;
 }
 .intro-copy__right {
-  left: calc(50% + 558.48px);
-  top: calc(50% - 56.5px);
-  font-size: 36px;
+  left: 88.78%;
+  top: 43%;
+  font-size: clamp(14px, 2.5vw, 36px);
   font-weight: 400;
   line-height: 0.85;
-  letter-spacing: -1.8px;
+  letter-spacing: -0.05em;
   transition-delay: 0.22s;
-}
-.intro-copy__series {
-  left: calc(50% - 656px);
-  top: 723px;
-  width: 356px;
-  font-size: 26px;
-  font-weight: 400;
-  line-height: 1.09;
-  letter-spacing: -0.52px;
-  color: #f3ebe5;
-  opacity: 0;
-  transform: translate(0, 12px);
-  text-align: left;
-  transition-delay: 0.34s;
-}
-.intro-copy.is-in .intro-copy__series {
-  opacity: 0.84;
-  transform: translate(0, 0);
-}
-@media (max-width: 900px) {
-  .intro-copy {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1440 / 810;
-  }
-  .intro-copy__title { font-size: clamp(40px, 14vw, 100px); letter-spacing: -0.05em; }
-  .intro-copy__left-top,
-  .intro-copy__left-bottom,
-  .intro-copy__right { font-size: clamp(14px, 4vw, 36px); letter-spacing: -0.05em; }
-  .intro-copy__series { font-size: clamp(12px, 3vw, 26px); top: 89%; left: 4%; width: auto; }
 }
 
 /* Cards 1:1156 — Figma radius 153, heights 700, widths 833/607/900/607/901/901 */
