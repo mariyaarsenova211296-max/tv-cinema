@@ -1,32 +1,34 @@
 import { asset } from './base';
 
 export const config = {
-  // STV-43: after breath-hold — autoplay video-2 once (scroll discarded), stop on
-  // horse+sitting-cat (video-3 stitch), wait for NEW scroll → scale-only retreat,
-  // then static Mini→RGB→DLG UTPs, then spatial sound finale as before.
+  // STV-44: scroll approach → autoplay video-2 (gated) → stronger scale retreat →
+  // RGB→DLG UTPs → scroll orbit (video-3) into sound framing → Dolby finale.
   distances: {
-    autoplay: 0.2, // enter sticky; progress ignored until play finishes
-    waitClose: 0.4, // parked on close-up until new scroll
-    retreat: 1.5, // scale-only pull-back of the still
-    utpMini: 1.6,
-    comparison: 1.6,
-    utpDlg: 1.6,
+    approach: 1.6, // scroll-driven TV approach before clip
+    autoplay: 0.2, // locked while video-2 plays; scroll discarded
+    waitClose: 0.35, // parked on close-up until new scroll
+    retreat: 2.2, // stronger scale-only pull-back to UTP framing
+    comparison: 1.6, // RGB-miniled
+    utpDlg: 1.6, // DLG 288 гц
+    orbit: 2.4, // scroll-driven camera retreat/angle (video-3) before sound
     finale: 3.5,
     ambience: 4.5,
     rotate: 3.2,
     obsolete: 2.2,
   },
-  // Soft opacity fade-in when sticky media appears.
-  reveal: { from: 0, to: 0.35, scale: 0.52 },
-  zoom: { from: 0.52, to: 1 },
+  // Soft opacity fade-in during approach.
+  reveal: { from: 0, to: 0.28 },
   // UTP card fades ~0.7s feel via enter/leave window + CSS transition.
   text: { enterEnd: 0.22, leaveEnd: 0.22 },
   ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
   driveEndRatio: 0.2634,
   // Early video-3 frame: horse + sitting cat (freeze / UTP still).
   utpHoldRatio: 0.04,
-  // Close-up scale while waiting; retreat eases down to 1.
-  breathScale: { close: 1.2, retreated: 1 },
+  // Single breath scale rail (applied once via --breath-scale; crop is separate).
+  // Approach far→close stitches into autoplay; retreat close→utp is a clear pull-back.
+  breathScale: { far: 0.62, close: 1.42, utp: 0.92, sound: 1 },
+  // Letterbox crop on the decoded plane — never multiply with breath on another node.
+  cropScale: 1.12,
   playback: { loopVideo1: false, loopVideo4: false, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
   zoomMedia: {
     src: asset('media/zoom.mp4'),
@@ -59,8 +61,30 @@ export const phaseOffset = (phase: Phase) => phases.slice(0, phases.indexOf(phas
 export const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 export const smooth = (p: number) => { const n = clamp(p); return n * n * (3 - 2 * n); };
 
-/** Phases after autoplay unlock (scroll maps here; autoplay scroll is discarded). */
-export const postAutoplayPhases = phases.filter(p => p !== 'autoplay');
+/** Start of autoplay lock (= end of scroll approach). */
+export const autoplayLockStart = phaseOffset('autoplay');
+
+/**
+ * STV-44 story resolver:
+ * - approach is scroll-mapped normally
+ * - once past approach, force autoplay until the clip finishes
+ * - then map from unlock baseline so mid-play scroll is discarded (no retreat queue)
+ */
+export function resolveBreathStory(
+  distance: number,
+  autoplayDone: boolean,
+  unlockDistance: number,
+): { phase: Phase; progress: number } {
+  if (distance < autoplayLockStart) {
+    return resolvePhase(distance);
+  }
+  if (!autoplayDone) {
+    return { phase: 'autoplay', progress: 0 };
+  }
+  const post = Math.max(0, distance - unlockDistance);
+  const waitStart = phaseOffset('waitClose');
+  return resolvePhase(waitStart + post);
+}
 
 export function resolvePhase(distance: number): { phase: Phase; progress: number } {
   for (const phase of phases) {
@@ -70,28 +94,15 @@ export function resolvePhase(distance: number): { phase: Phase; progress: number
   return { phase: 'obsolete', progress: 1 };
 }
 
-/**
- * STV-43 story resolver: force autoplay until done; then map scroll from unlock
- * baseline so scroll during autoplay is discarded (not queued into retreat).
- */
-export function resolveBreathStory(
-  distance: number,
-  autoplayDone: boolean,
-  unlockDistance: number,
-): { phase: Phase; progress: number } {
-  if (!autoplayDone) return { phase: 'autoplay', progress: 0 };
-  const post = Math.max(0, distance - unlockDistance);
-  const waitStart = phaseOffset('waitClose');
-  return resolvePhase(waitStart + post);
-}
-
-/** Scale for breath media: close-up until retreat progresses. */
+/** Single breath scale rail — stitch approach end == autoplay/wait close. */
 export function breathMediaScale(phase: Phase, progress: number): number {
-  const { close, retreated } = config.breathScale;
+  const { far, close, utp, sound } = config.breathScale;
+  if (phase === 'approach') return far + (close - far) * smooth(progress);
   if (phase === 'autoplay' || phase === 'waitClose') return close;
-  if (phase === 'retreat') return close + (retreated - close) * smooth(progress);
-  if (phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg') return retreated;
-  return 1;
+  if (phase === 'retreat') return close + (utp - close) * smooth(progress);
+  if (phase === 'comparison' || phase === 'utpDlg') return utp;
+  if (phase === 'orbit') return utp + (sound - utp) * smooth(progress);
+  return sound;
 }
 
 /** @deprecated */

@@ -8,11 +8,13 @@ type Props = {
   progress: number;
   active: boolean;
   reduced: boolean;
+  /** Breath scale rail — applied once via --breath-scale (crop is separate). */
+  breathScale: number;
   /** Fired once when video-2→video-3 stitch parks on horse+sitting-cat close-up. */
   onAutoplayDone?: () => void;
 };
 
-export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }: Props) {
+export function MediaStage({ phase, progress, active, reduced, breathScale, onAutoplayDone }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
   const ambienceRef = useRef<HTMLVideoElement | null>(null);
   const rotateRef = useRef<HTMLVideoElement | null>(null);
@@ -36,16 +38,18 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
   const [visible, setVisible] = useState(!document.hidden);
   const [video4Ended, setVideo4Ended] = useState(false);
   const [breathEnded, setBreathEnded] = useState(false);
+  const [breathPlaying, setBreathPlaying] = useState(false);
 
-  // STV-43: autoplay video-2 once → stitch/hold video-3; no currentTime↔scroll.
+  // STV-44: approach (still) → autoplay video-2 → hold → orbit scrub video-3 → sound.
+  const inApproach = phase === 'approach';
   const inAutoplay = phase === 'autoplay';
   const holdingBreathStill =
     phase === 'waitClose'
     || phase === 'retreat'
-    || phase === 'utpMini'
     || phase === 'comparison'
     || phase === 'utpDlg';
-  const inBreathFlow = inAutoplay || holdingBreathStill;
+  const scrubbingOrbit = phase === 'orbit';
+  const inBreathFlow = inApproach || inAutoplay || holdingBreathStill || scrubbingOrbit;
   const inAmbience = phase === 'ambience';
   const scrubbingRotate = phase === 'rotate';
   const holdingRotateEnd = phase === 'obsolete';
@@ -58,13 +62,17 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
   const index = inRotateScene
     ? 0
     : holdSoundStill ? 3
-      : inAutoplay && !breathEnded ? 1
-        : holdingCloseStill ? 2
+      : inApproach || (inAutoplay && !breathEnded) ? 1
+        : holdingCloseStill || scrubbingOrbit ? 2
           : phase === 'finale' ? 3
             : inAmbience ? 0
               : 0;
 
   const rotateRatio = scrubbingRotate ? smooth(progress) : holdingRotateEnd ? 1 : 0;
+  // Orbit: scrub from UTP hold frame → end (camera retreat/angle into sound).
+  const orbitRatio = scrubbingOrbit
+    ? config.utpHoldRatio + (1 - config.utpHoldRatio) * smooth(progress)
+    : 0;
 
   const soundFade =
     phase === 'finale'
@@ -83,7 +91,6 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
   const playingAmbience = Boolean(
     active && visible && ambiencePlayingPhase && !ambienceEnded && !ambienceError && (!reduced || manual),
   );
-  const [breathPlaying, setBreathPlaying] = useState(false);
   const playingBreath = Boolean(
     inAutoplay && breathPlaying && !breathEnded && (!reduced || manual),
   );
@@ -102,15 +109,14 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
     if (breathDoneNotified.current) return;
     breathDoneNotified.current = true;
     setBreathEnded(true);
+    setBreathPlaying(false);
     onDoneRef.current?.();
   }
 
   function ready(i: number) {
     const el = videos.current[i];
     if (!el || el.seeking || el.readyState < 2) return;
-    if (i === index || (breathEnded && i === 2) || (holdingBreathStill && i === 2)) {
-      setDisplay(i);
-    }
+    if (i === index) setDisplay(i);
   }
 
   useEffect(() => {
@@ -212,7 +218,7 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
     }).finally(() => playPending.current.delete('ambience'));
   });
 
-  // Finale (spatial sound): play video-4 for its full duration — no early seek/timeout.
+  // Finale (spatial sound): play video-4 AFTER orbit — Dolby copy lives in App.
   useEffect(() => {
     if (phase !== 'finale') return;
     const el = videos.current[3];
@@ -249,7 +255,7 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
     }).finally(() => playPending.current.delete(3));
   });
 
-  // STV-43 breath: autoplay video-2 once (ignore scroll), stitch to video-3 hold, then freeze.
+  // Breath: approach still → gated autoplay → hold → orbit scrub.
   useEffect(() => {
     if (inRotateScene || phase === 'finale' || inAmbience) {
       if (inRotateScene || inAmbience) {
@@ -263,11 +269,47 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
       return;
     }
 
-    // Prefetch breath clips.
     [1, 2].forEach(i => {
       const el = videos.current[i];
       if (el && el.preload !== 'auto') el.preload = 'auto';
     });
+
+    // Approach: freeze video-2 at start — do not start clip until approach is done.
+    if (inApproach) {
+      const v2 = videos.current[1];
+      if (!v2 || errors[1]) return;
+      v2.pause();
+      if (!v2.seeking && v2.currentTime > config.playback.seekTolerance) {
+        try { v2.currentTime = 0; } catch { /* ignore */ }
+      }
+      setDisplay(1);
+      ready(1);
+      // Warm video-3 for the later stitch.
+      const v3 = videos.current[2];
+      if (v3) {
+        if (v3.preload !== 'auto') v3.preload = 'auto';
+        try { parkUtpHold(v3); } catch { /* ignore */ }
+      }
+      return;
+    }
+
+    // Orbit: scroll-scrub video-3 from hold → end (camera into sound framing).
+    if (scrubbingOrbit) {
+      const v2 = videos.current[1];
+      v2?.pause();
+      const v3 = videos.current[2];
+      if (!v3 || errors[2]) return;
+      if (!Number.isFinite(v3.duration) || v3.duration <= 0) return;
+      const last = Math.max(0, v3.duration - 1 / 24);
+      const target = reduced ? last : clamp(orbitRatio * v3.duration, 0, last);
+      v3.pause();
+      if (!v3.seeking && Math.abs(v3.currentTime - target) > config.playback.seekTolerance) {
+        v3.currentTime = target;
+      }
+      setDisplay(2);
+      ready(2);
+      return;
+    }
 
     // Hold still across wait / retreat / UTPs (and after autoplay stitch).
     if (holdingCloseStill) {
@@ -282,7 +324,7 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
       return;
     }
 
-    // Autoplay phase — play video-2 once; continues even if user stops scrolling.
+    // Autoplay — only start once approach is done AND user is in the sticky scene.
     const v2 = videos.current[1];
     const v3 = videos.current[2];
     if (!v2 || errors[1]) return;
@@ -295,11 +337,24 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
       return;
     }
 
+    // Gate: do not arm/play until sticky is in view.
+    if (!active || document.hidden) {
+      if (!breathPlayArmed.current) {
+        v2.pause();
+        try { if (v2.currentTime !== 0) v2.currentTime = 0; } catch { /* ignore */ }
+        setDisplay(1);
+      } else if (!breathEnded) {
+        // Once armed, keep playing even if scroll stops — only pause when tab hidden.
+        if (document.hidden) v2.pause();
+      }
+      if (!breathPlayArmed.current) return;
+    }
+
     if (!breathPlayArmed.current) {
+      if (!active) return;
       try { if (v2.currentTime !== 0) v2.currentTime = 0; } catch { /* ignore */ }
       breathPlayArmed.current = true;
       setDisplay(1);
-      // Warm video-3 for continuous stitch (horse frame ≈ start of next file).
       if (v3) {
         if (v3.preload !== 'auto') v3.preload = 'auto';
         try { parkUtpHold(v3); } catch { /* ignore */ }
@@ -311,7 +366,6 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
       return;
     }
 
-    // Keep playing to end once armed — scroll stop / brief leave must not abort.
     if (!breathPlayArmed.current || breathEnded) return;
     if (!v2.paused || playPending.current.has('breath')) return;
     if (!Number.isFinite(v2.duration) || v2.duration <= 0) return;
@@ -358,17 +412,17 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
   }, [index, active, inAmbience, inRotateScene, phase]);
 
   const still = reduced && !manual;
-  const fallback = inBreathFlow
-    ? (holdingCloseStill || reduced
-      ? (config.media[2].poster)
-      : config.media[1].poster)
-    : inRotateScene
-      ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
-      : inAmbience
-        ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-        : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
-          holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'
-        ];
+  const fallback = inApproach || (inAutoplay && !breathEnded)
+    ? config.media[1].poster
+    : holdingCloseStill || scrubbingOrbit
+      ? (scrubbingOrbit && orbitRatio > 0.95 ? config.media[2].end : config.media[2].poster)
+      : inRotateScene
+        ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
+        : inAmbience
+          ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
+          : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
+            holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'
+          ];
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
   const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
   const showSound = (phase === 'finale' || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene;
@@ -385,18 +439,26 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
 
   return <div
     className={`media-stage${inRotateScene ? ' media-stage--rotate' : ''}`}
-    style={{ '--media-crossfade': `${config.playback.crossfadeMs}ms` } as CSSProperties}
+    style={{
+      '--media-crossfade': `${config.playback.crossfadeMs}ms`,
+      '--breath-scale': String(breathScale),
+      '--crop-scale': String(inRotateScene ? 1 : config.cropScale),
+    } as CSSProperties}
     data-media-index={inRotateScene ? 'rotate' : inAmbience ? 'ambience' : (phase === 'finale' || holdSoundStill ? 4 : index + 1)}
     data-mode={
-      inAutoplay && !breathEnded ? (playingBreath ? 'play-breath' : 'still-breath')
-        : holdingCloseStill ? 'still-utp'
-          : inRotateScene ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
-            : ambiencePlayingPhase ? (playingAmbience ? 'play-ambience' : 'still-ambience')
-              : phase === 'finale' ? (playingFinale ? 'play' : 'still')
-                : 'still'
+      inApproach ? 'scroll-approach'
+        : inAutoplay && !breathEnded ? (playingBreath ? 'play-breath' : 'still-breath')
+          : holdingCloseStill ? 'still-utp'
+            : scrubbingOrbit ? 'scroll-orbit'
+              : inRotateScene ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
+                : ambiencePlayingPhase ? (playingAmbience ? 'play-ambience' : 'still-ambience')
+                  : phase === 'finale' ? (playingFinale ? 'play' : 'still')
+                    : 'still'
     }
     data-testid="tv-drive"
     data-breath-ended={holdingCloseStill ? '1' : '0'}
+    data-breath-scale={breathScale.toFixed(3)}
+    data-orbit-ratio={scrubbingOrbit ? orbitRatio.toFixed(3) : undefined}
     data-rotate-ratio={inRotateScene ? rotateRatio.toFixed(3) : undefined}
     data-rotate-ready={inRotateScene ? (rotateReady ? '1' : '0') : undefined}
   >
@@ -453,7 +515,6 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
       onSeeked={() => { ready(i); setErrors(old => ({ ...old })); }}
       onEnded={() => {
         if (i === 1 && breathPlayArmed.current && !breathDoneNotified.current) {
-          // Continuous stitch: horse frame is start of video-3 — park & unlock wait.
           const v2 = videos.current[1];
           const v3 = videos.current[2];
           v2?.pause();
@@ -484,7 +545,7 @@ export function MediaStage({ phase, progress, active, reduced, onAutoplayDone }:
             breathPlayArmed.current = true;
             if (el) {
               el.currentTime = 0;
-              el.play().then(() => setAutoplayBlocked(false)).catch(() => setAutoplayBlocked(true));
+              el.play().then(() => { setAutoplayBlocked(false); setBreathPlaying(true); }).catch(() => setAutoplayBlocked(true));
             }
             return;
           }

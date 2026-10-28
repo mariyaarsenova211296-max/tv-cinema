@@ -310,12 +310,16 @@ button, a, input { touch-action: manipulation; }
 .media-layer {
   position: absolute;
   inset: 0;
-  /* Near-instant follow for scroll-driven scale retreat (easing lives in JS). */
   transition: opacity 280ms linear, transform 0.05s linear;
   transform-origin: center center;
   will-change: transform, opacity;
 }
 .media-stage, .comparison-layer { position: absolute; inset: 0; overflow: hidden; }
+/* STV-44: one breath scale rail + separate letterbox crop — no nested media-layer×video scales. */
+.media-stage {
+  --breath-scale: 1;
+  --crop-scale: 1.12;
+}
 
 /* Figma 12:429 — TV object scaled as a unit (contain, never cover-crop). */
 .drive-tv {
@@ -343,8 +347,8 @@ button, a, input { touch-action: manipulation; }
   height: 100%;
   object-fit: cover; /* fill stage; crop letterbox */
   object-position: center center;
-  /* Slight zoom crops baked-in black bars on the filmed TV glass */
-  transform: scale(1.12);
+  /* crop × breath on the same node — never also scale .media-layer */
+  transform: scale(calc(var(--crop-scale, 1.12) * var(--breath-scale, 1)));
   transform-origin: center center;
   position: absolute;
   inset: 0;

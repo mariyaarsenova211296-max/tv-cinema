@@ -22,7 +22,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-43: autoplay once after breath-hold (no scroll scrub); stitches into video-3 horse+cat"
+    "note": "STV-44: scroll approach (still) then autoplay once; stitches into video-3 horse+cat"
   },
   {
     "video": 3,
@@ -34,7 +34,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-43: continuous stitch at horse+sitting-cat (hold); scale retreat then Mini→RGB→DLG; no orbit scrub"
+    "note": "STV-44: hold for RGB→DLG; then scroll orbit (camera retreat/angle) before sound video-4"
   },
   {
     "video": 4,

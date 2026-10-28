@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { asset } from './base';
 import { Comparison } from './Comparison';
 import {
+  autoplayLockStart,
   breathMediaScale,
   config,
   phaseOffset,
@@ -29,10 +30,10 @@ const emptyDesign: Design = {
 };
 /* scene-3 is the static title section outside the sticky experience */
 const anchors = [
-  { id: 4, phase: 'waitClose' as const },
-  { id: 5, phase: 'utpMini' as const },
-  { id: 6, phase: 'comparison' as const },
-  { id: 7, phase: 'utpDlg' as const },
+  { id: 4, phase: 'approach' as const },
+  { id: 5, phase: 'comparison' as const },
+  { id: 6, phase: 'utpDlg' as const },
+  { id: 7, phase: 'orbit' as const },
   { id: 8, phase: 'finale' as const },
   { id: 9, phase: 'ambience' as const },
   { id: 10, phase: 'rotate' as const },
@@ -142,9 +143,10 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  // Leave sticky upward → re-arm autoplay (scroll during prior play stays discarded).
+  // Reverse past approach end → re-arm autoplay; leave sticky upward also clears.
   useEffect(() => {
-    if (distance < 0 && autoplayDone) {
+    if (!autoplayDone) return;
+    if (distance < 0 || distance < autoplayLockStart) {
       setAutoplayDone(false);
       setUnlockDistance(0);
     }
@@ -152,23 +154,24 @@ export default function App() {
 
   const handleAutoplayDone = () => {
     // Baseline = current scroll so mid-play scroll is discarded (no retreat queue).
-    setUnlockDistance(Math.max(0, distanceRef.current));
+    setUnlockDistance(Math.max(autoplayLockStart, distanceRef.current));
     setAutoplayDone(true);
   };
 
-  const mediaOpacity = 1;
+  const mediaOpacity = reduced
+    ? 1
+    : phase === 'approach'
+      ? smooth((progress - config.reveal.from) / Math.max(0.001, config.reveal.to - config.reveal.from))
+      : 1;
   const mediaScale = breathMediaScale(phase, progress);
 
-  // Feature slider retired on main breath path (STV-43).
+  // Feature slider retired on main breath path.
   const featureSliderOpacity = 0;
   const featureSliderActive = false;
 
-  // Soft Mini → RGB → DLG fades on frozen still after scale retreat.
-  const utpPhases = phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg';
-  const activeUtpIndex = phase === 'utpMini' ? 0
-    : phase === 'comparison' ? 1
-      : phase === 'utpDlg' ? 2
-        : -1;
+  // Exactly two UTPs: RGB → DLG (Mini LED removed).
+  const utpPhases = phase === 'comparison' || phase === 'utpDlg';
+  const activeUtpIndex = phase === 'comparison' ? 0 : phase === 'utpDlg' ? 1 : -1;
   const utpOpacity = (() => {
     if (!utpPhases) return 0;
     if (progress < config.text.enterEnd) return smooth(progress / config.text.enterEnd);
@@ -181,17 +184,15 @@ export default function App() {
   const activeUtp = activeUtpIndex >= 0 && utpOpacity > 0.01 ? design.comparisonFeatures[activeUtpIndex] : null;
   const utpIn = utpOpacity > 0.08;
 
-  // Keep finale copy readable through most of the phase; soft leave near the end only.
+  // Dolby copy only after orbit — during finale (not during camera retreat).
   const finaleOpacity = phase === 'finale'
     ? (progress > 0.88 ? 1 - smooth((progress - 0.88) / 0.12) : smooth((progress - 0.08) / 0.35))
     : 0;
-  // Figma 28:541 — soft entrance after TV turn-on scrub (28:540).
   const ambienceCopyIn = phase === 'ambience' && progress >= config.ambience.turnOnAt;
   const ambienceCopyOpacity = phase === 'ambience' && progress >= config.ambience.turnOnAt
     ? smooth((progress - config.ambience.turnOnAt) / 0.22)
     : 0;
 
-  // Figma 54:848 — title/body early in rotate; plate lift + UTPs in obsolete (reverse-safe).
   const inObsoleteScene = phase === 'rotate' || phase === 'obsolete';
   const obsoleteTitleOpacity = phase === 'rotate'
     ? smooth((progress - config.rotate.titleIn) / Math.max(0.001, config.rotate.titleEnd - config.rotate.titleIn))
@@ -203,12 +204,10 @@ export default function App() {
   const obsoleteUtpOpacity = phase === 'obsolete'
     ? smooth((progress - config.obsolete.utpIn) / Math.max(0.001, config.obsolete.utpEnd - config.obsolete.utpIn))
     : 0;
-  // Obsolete lift wins; otherwise scale-only breath retreat (horse/cat still).
+  // Breath scale lives on MediaStage (--breath-scale); media-layer only lifts in obsolete.
   const layerTransform = obsoleteLift > 0.5
     ? `translate3d(0, ${-obsoleteLift}px, 0)`
-    : Math.abs(mediaScale - 1) > 0.001
-      ? `scale(${mediaScale})`
-      : undefined;
+    : undefined;
 
   return <>
     <a href="#scene-1" className="skip-link">В начало</a>
@@ -270,7 +269,6 @@ export default function App() {
         </div>
       </section>
 
-      {/* Figma 1:1500 — static title beat; video follows immediately in the sticky stage */}
       <section id="scene-3" className="reveal-section" aria-label="Экран 3" data-node-id="1:1500">
         {design.revealTitle && <h1 className="reveal-title" data-node-id="1:1501">{design.revealTitle}</h1>}
       </section>
@@ -282,7 +280,7 @@ export default function App() {
           className="stage-sticky"
           data-phase={phase}
           data-progress={progress.toFixed(3)}
-          data-autoplay={autoplayDone ? 'done' : 'play'}
+          data-autoplay={autoplayDone ? 'done' : phase === 'autoplay' ? 'play' : 'pending'}
         >
           <div className="visual-position">
             <div className="visual-frame" ref={frame}>
@@ -299,6 +297,7 @@ export default function App() {
                   progress={progress}
                   active={inView}
                   reduced={reduced}
+                  breathScale={mediaScale}
                   onAutoplayDone={handleAutoplayDone}
                 />
               </div>
@@ -309,7 +308,6 @@ export default function App() {
               >
                 <FeatureSlider design={design} interactive={featureSliderActive} />
               </div>
-              {/* Hold layer — video-2 end frame is the visible scene; no still env. */}
               <div className="comparison-layer" style={{ opacity: 0, visibility: 'hidden' }} aria-hidden="true">
                 <Comparison design={design} width={size.width} height={size.height} />
               </div>
@@ -319,7 +317,7 @@ export default function App() {
             <div
               className={`comparison-features comparison-features--single${utpIn ? ' is-in' : ''}`}
               data-testid="comparison-features"
-              data-node-id={activeUtpIndex === 0 ? 'utp-mini' : activeUtpIndex === 1 ? '81:2087' : '81:2180'}
+              data-node-id={activeUtpIndex === 0 ? '81:2087' : '81:2180'}
               style={{ opacity: utpOpacity }}
               inert={!utpActive || undefined}
             >
@@ -348,7 +346,6 @@ export default function App() {
             <h2>{design.ambience?.title ?? 'Атмосферная\nподсветка'}</h2>
             <p>{design.ambience?.body ?? 'Создает ощущение настоящего кинотеатра\nу вас в доме'}</p>
           </div>
-          {/* Figma 54:848 — copy rides with the lifted plate; UTPs stay pinned below. */}
           <div
             className={`obsolete-copy${obsoleteTitleOpacity > 0.2 ? ' is-in' : ''}`}
             data-node-id="54:848"
@@ -400,9 +397,9 @@ export default function App() {
     )}
 
     <span className="sr-only" aria-live="polite">{inView && `Сцена ${
-      phase === 'autoplay' || phase === 'waitClose' || phase === 'retreat' ? 4
-        : phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg' ? 5
-          : phase === 'finale' ? 6
+      phase === 'approach' || phase === 'autoplay' || phase === 'waitClose' || phase === 'retreat' ? 4
+        : phase === 'comparison' || phase === 'utpDlg' ? 5
+          : phase === 'orbit' || phase === 'finale' ? 6
             : phase === 'ambience' ? 7
               : 8
     }`}</span>
