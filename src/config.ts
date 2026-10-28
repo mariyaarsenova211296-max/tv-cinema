@@ -14,7 +14,8 @@ export const config = {
     orbit: 2.5,
     // Long enough that typical scroll doesn't outrun video-4 (~4s) before `ended`.
     finale: 3.5,
-    ambience: 2.2,
+    // Sticky stay covers ~5s ambience play-once + 28:541 text soft-enter.
+    ambience: 4.5,
   },
   // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).
   reveal: { from: 0, to: 0.35, scale: 0.52 },

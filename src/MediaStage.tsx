@@ -89,11 +89,13 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   }, [phase]);
 
   useEffect(() => {
-    if (!inAmbience) {
+    // Only clear arm after the play-through finished (or never started).
+    // Leaving the sticky mid-play must not interrupt the ~5s file.
+    if (!inAmbience && ambienceEnded) {
       ambiencePlayArmed.current = false;
       setAmbienceEnded(false);
     }
-  }, [inAmbience]);
+  }, [inAmbience, ambienceEnded]);
 
   // Scroll-scrub Figma 12:464 zoom.mp4 during reveal→zoom.
   useEffect(() => {
@@ -115,12 +117,17 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   });
 
   // Ambience (Figma 34:547 Video 2): on scroll enter after black, play start→end once (not scrubbed).
+  // After arm, continues to native `ended` without needing more scroll.
   useEffect(() => {
     const el = ambienceRef.current;
-    if (!el || !ambiencePlayingPhase) {
-      if (!inAmbience) el?.pause();
+    if (!el) return;
+
+    const keepPlayingToEnd = ambiencePlayArmed.current && !ambienceEnded && !reduced;
+    if (!ambiencePlayingPhase && !keepPlayingToEnd) {
+      if (!inAmbience) el.pause();
       return;
     }
+
     if (el.preload !== 'auto') el.preload = 'auto';
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
     setAmbienceReady(true);
@@ -132,7 +139,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       return;
     }
 
-    if (!ambiencePlayArmed.current) {
+    if (ambiencePlayingPhase && !ambiencePlayArmed.current) {
       el.pause();
       el.currentTime = 0;
       ambiencePlayArmed.current = true;
@@ -145,7 +152,11 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       return;
     }
 
-    if (!active || document.hidden || !playingAmbience) {
+    if (document.hidden) {
+      el.pause();
+      return;
+    }
+    if (!ambiencePlayArmed.current) {
       el.pause();
       return;
     }
@@ -199,7 +210,9 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     if (!active || document.hidden) {
       videos.current.forEach(el => el?.pause());
       zoomRef.current?.pause();
-      if (!ambiencePlayingPhase) ambienceRef.current?.pause();
+      // Do not pause an armed ambience play-through when sticky unpins.
+      if (!ambiencePlayArmed.current || ambienceEnded) ambienceRef.current?.pause();
+      else if (document.hidden) ambienceRef.current?.pause();
       return;
     }
     if (scrubbingZoom || phase === 'finale' || inAmbience) {
