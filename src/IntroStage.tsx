@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { asset } from './base';
 
 /**
- * Screen 1 — Figma 34:547 Video 1 (17:527) play-once from t=0 (never scroll-scrubbed)
- * + 17:467 text overlay on end frame with soft Shopify-like entrance.
+ * Screen 1 — Figma 34:547 Video 1 play-once for the full file duration.
+ * Never ends early via timeout/seek/still swap — only native `ended` unlocks the end still + copy.
  */
 export function IntroStage({ reduced }: { reduced: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [ended, setEnded] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [metaDuration, setMetaDuration] = useState<number | null>(null);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -17,19 +18,33 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
       return;
     }
     let cancelled = false;
+
     const startFromZero = () => {
-      if (cancelled) return;
+      if (cancelled || !el) return;
+      if (Number.isFinite(el.duration) && el.duration > 0) {
+        setMetaDuration(el.duration);
+      }
+      // Do not clamp or seek toward the end — play the whole file.
       try {
-        el.pause();
-        el.currentTime = 0;
+        if (el.currentTime !== 0) el.currentTime = 0;
       } catch { /* ignore seek before metadata */ }
       el.play().catch(() => {
-        if (!cancelled) setEnded(true);
+        // Autoplay blocked: keep the video element visible; do NOT fake `ended`.
       });
     };
-    if (el.readyState >= 1) startFromZero();
-    else el.addEventListener('loadedmetadata', startFromZero, { once: true });
-    return () => { cancelled = true; el.pause(); };
+
+    const onLoadedMeta = () => {
+      if (Number.isFinite(el.duration) && el.duration > 0) setMetaDuration(el.duration);
+      startFromZero();
+    };
+
+    if (el.readyState >= 1) onLoadedMeta();
+    else el.addEventListener('loadedmetadata', onLoadedMeta, { once: true });
+
+    return () => {
+      cancelled = true;
+      el.pause();
+    };
   }, [reduced]);
 
   return (
@@ -44,13 +59,11 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
             muted
             playsInline
             preload="auto"
-            // Never bind currentTime to scroll — play once from the start.
+            data-testid="intro-video"
+            data-meta-duration={metaDuration != null ? metaDuration.toFixed(3) : undefined}
+            // Full-file playback only — no scroll binding, no early still swap.
             onEnded={() => {
-              const el = videoRef.current;
-              if (el && Number.isFinite(el.duration)) {
-                el.currentTime = Math.max(0, el.duration - 1 / 24);
-                el.pause();
-              }
+              // Mark ended first so overlay/copy unlock; do not seek before `ended` settles.
               setEnded(true);
             }}
             onError={() => { setFailed(true); setEnded(true); }}

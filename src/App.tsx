@@ -127,8 +127,9 @@ export default function App() {
   // Features fade in over the held video-2 end frame (no still overlay).
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
+  // Keep finale copy readable through most of the phase; soft leave near the end only.
   const finaleOpacity = phase === 'finale'
-    ? (progress > 0.72 ? 1 - smooth((progress - 0.72) / 0.28) : smooth((progress - 0.12) / 0.4))
+    ? (progress > 0.88 ? 1 - smooth((progress - 0.88) / 0.12) : smooth((progress - 0.08) / 0.35))
     : 0;
   // Figma 28:541 — soft entrance after TV turn-on scrub (28:540).
   const ambienceCopyIn = phase === 'ambience' && progress >= config.ambience.turnOnAt;

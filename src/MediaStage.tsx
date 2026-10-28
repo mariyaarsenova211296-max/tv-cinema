@@ -44,10 +44,11 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const scrubbing = scrubbingZoom || phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
   const zoomRatio = zoomProgress(phase, progress);
 
-  // Spatial-sound (video-4) fades to black at end of finale / start of ambience.
+  // Spatial-sound (video-4): stay fully visible while playing the full file.
+  // Only fade after native `ended` (or during the ambience black beat).
   const soundFade =
     phase === 'finale'
-      ? (progress > 0.72 ? 1 - smooth((progress - 0.72) / 0.28) : 1)
+      ? (video4Ended && progress > 0.85 ? 1 - smooth((progress - 0.85) / 0.15) : 1)
       : ambienceBlack
         ? 1 - smooth(progress / config.ambience.blackEnd)
         : 0;
@@ -155,7 +156,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     }).finally(() => playPending.current.delete('ambience'));
   });
 
-  // Finale (spatial sound): play video-4 from start once, then hold end.
+  // Finale (spatial sound): play video-4 for its full duration — no early seek/timeout.
   useEffect(() => {
     if (phase !== 'finale') return;
     const el = videos.current[3];
@@ -163,24 +164,30 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
 
     if (!finalePlayArmed.current) {
-      el.pause();
-      el.currentTime = reduced ? Math.max(0, el.duration - 1 / 24) : 0;
+      // Arm once from t=0; never jump to the end before `ended`.
+      if (!reduced) {
+        try { if (el.currentTime !== 0) el.currentTime = 0; } catch { /* ignore */ }
+      } else {
+        el.pause();
+        el.currentTime = Math.max(0, el.duration - 1 / 24);
+        setVideo4Ended(true);
+      }
       finalePlayArmed.current = true;
       setDisplay(3);
-      if (reduced) setVideo4Ended(true);
     }
 
     if (video4Ended || reduced) {
       el.pause();
-      el.currentTime = Math.max(0, el.duration - 1 / 24);
       setDisplay(3);
       return;
     }
 
-    if (!active || document.hidden || !playingFinale) {
+    if (!active || document.hidden) {
+      // Stay in-view sticky: if briefly inactive, pause but do not seek forward.
       el.pause();
       return;
     }
+    if (!playingFinale) return;
     if (!el.paused || playPending.current.has(3)) return;
     playPending.current.add(3);
     el.play().then(() => setAutoplayBlocked(false)).catch(err => {
@@ -352,9 +359,8 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       onSeeked={() => { ready(i); setErrors(old => ({ ...old })); }}
       onEnded={() => {
         if (i === 3) {
-          const el = videos.current[3];
-          if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
-          el?.pause();
+          // Full file finished — only now mark ended (no preemptive seek).
+          videos.current[3]?.pause();
           setVideo4Ended(true);
           setDisplay(3);
           return;

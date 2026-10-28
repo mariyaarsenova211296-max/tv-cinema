@@ -12,7 +12,8 @@ export const config = {
     retreat: 2.5,
     comparison: 1.5,
     orbit: 2.5,
-    finale: 2.0,
+    // Long enough that typical scroll doesn't outrun video-4 (~4s) before `ended`.
+    finale: 3.5,
     ambience: 2.2,
   },
   // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).

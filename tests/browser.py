@@ -153,7 +153,7 @@ with sync_playwright() as p:
     record('video 3 seeks in both directions')
 
     # finale distance starts at 0.45+0.85+1.3+2.5+1.5+2.5 = 9.1; mid ~9.6
-    scroll(page,9.6,'finale')
+    scroll(page,9.3,'finale')
     page.wait_for_function('document.querySelector("[data-testid=video-4]")?.classList.contains("visible")')
     page.wait_for_function('!document.querySelector("[data-testid=video-4]").paused || document.querySelector("[data-testid=tv-drive]")?.dataset.mode === "still"')
     t0=video(page,4).evaluate('(v)=>v.currentTime')
@@ -165,7 +165,7 @@ with sync_playwright() as p:
 
     # After spatial sound: Video 2 plays once on scroll (not scrubbed); text soft-enters.
     # ambience starts at 9.1+2.0=11.1
-    scroll(page, 11.5, 'ambience')
+    scroll(page, 13.0, 'ambience')
     amb = page.locator('[data-testid=video-ambience]')
     assert amb.count() == 1
     page.wait_for_function('document.querySelector("[data-testid=video-ambience]")?.classList.contains("visible")')
@@ -175,7 +175,7 @@ with sync_playwright() as p:
     mid = float(amb.evaluate('(v)=>v.currentTime'))
     # Play-once advances without needing further scroll.
     assert mid > early or amb.evaluate('(v)=>v.ended || v.paused')
-    scroll(page, 12.3, 'ambience')
+    scroll(page, 14.0, 'ambience')
     page.wait_for_function('document.querySelector(".ambience-copy")?.classList.contains("is-in")')
     assert 'Атмосферная' in page.locator('.ambience-copy h2').inner_text()
     page.screenshot(path=str(OUT/'desktop-ambience.png'))
