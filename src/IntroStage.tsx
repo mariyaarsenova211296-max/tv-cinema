@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { asset } from './base';
 
 /**
- * Screen 1 — Figma 17:529 video (play once) + 17:467 text overlay on end frame.
- * Soft Shopify-like text entrance; placement/sizes from Figma 17:467 (1440×810).
+ * Screen 1 — Figma 17:529 video play-once from t=0 (never scroll-bound)
+ * + 17:467 text overlay on end frame with soft Shopify-like entrance.
  */
 export function IntroStage({ reduced }: { reduced: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,7 +16,20 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
       setEnded(true);
       return;
     }
-    el.play().catch(() => setEnded(true));
+    let cancelled = false;
+    const startFromZero = () => {
+      if (cancelled) return;
+      try {
+        el.pause();
+        el.currentTime = 0;
+      } catch { /* ignore seek before metadata */ }
+      el.play().catch(() => {
+        if (!cancelled) setEnded(true);
+      });
+    };
+    if (el.readyState >= 1) startFromZero();
+    else el.addEventListener('loadedmetadata', startFromZero, { once: true });
+    return () => { cancelled = true; el.pause(); };
   }, [reduced]);
 
   return (
@@ -31,6 +44,7 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
             muted
             playsInline
             preload="auto"
+            // Never bind currentTime to scroll — play once from the start.
             onEnded={() => {
               const el = videoRef.current;
               if (el && Number.isFinite(el.duration)) {

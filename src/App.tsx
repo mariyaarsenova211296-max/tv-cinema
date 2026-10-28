@@ -16,10 +16,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 const emptyDesign: Design = {
   logo: null, menu: [], utilities: [], cta: null, cardsTitle: null, cards: [],
-  revealTitle: null, comparisonLabels: null, comparisonFeatures: [], finale: null, comparison: null,
+  revealTitle: null, comparisonLabels: null, comparisonFeatures: [], finale: null, ambience: null, comparison: null,
 };
 /* scene-3 is the static title section outside the sticky experience */
-const anchors = [{ id: 4, phase: 'feature' }, { id: 5, phase: 'comparison' }, { id: 6, phase: 'finale' }] as const;
+const anchors = [
+  { id: 4, phase: 'feature' as const },
+  { id: 5, phase: 'comparison' as const },
+  { id: 6, phase: 'finale' as const },
+  { id: 7, phase: 'ambience' as const },
+];
 
 function resolveDesign(raw: Design): Design {
   return {
@@ -122,7 +127,14 @@ export default function App() {
   // Features fade in over the held video-2 end frame (no still overlay).
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
-  const finaleOpacity = phase === 'finale' ? smooth((progress - 0.12) / 0.4) : 0;
+  const finaleOpacity = phase === 'finale'
+    ? (progress > 0.72 ? 1 - smooth((progress - 0.72) / 0.28) : smooth((progress - 0.12) / 0.4))
+    : 0;
+  // Figma 28:541 — soft entrance after TV turn-on scrub (28:540).
+  const ambienceCopyIn = phase === 'ambience' && progress >= config.ambience.turnOnAt;
+  const ambienceCopyOpacity = phase === 'ambience' && progress >= config.ambience.turnOnAt
+    ? smooth((progress - config.ambience.turnOnAt) / 0.22)
+    : 0;
 
   return <>
     <a href="#scene-1" className="skip-link">В начало</a>
@@ -189,7 +201,7 @@ export default function App() {
         {design.revealTitle && <h1 className="reveal-title" data-node-id="1:1501">{design.revealTitle}</h1>}
       </section>
 
-      <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–6">
+      <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–7">
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
         <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
           <div className="visual-position">
@@ -237,6 +249,15 @@ export default function App() {
               <p>{design.finale.body}</p>
             </div>
           )}
+          <div
+            className={`ambience-copy${ambienceCopyIn ? ' is-in' : ''}`}
+            data-node-id="28:541"
+            style={{ opacity: ambienceCopyOpacity }}
+            inert={!ambienceCopyIn || undefined}
+          >
+            <h2>{design.ambience?.title ?? 'Атмосферная\nподсветка'}</h2>
+            <p>{design.ambience?.body ?? 'Создает ощущение настоящего кинотеатра\nу вас в доме'}</p>
+          </div>
         </div>
       </section>
     </main>
@@ -253,7 +274,7 @@ export default function App() {
       </div>
     )}
 
-    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : 6}`}</span>
+    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : phase === 'finale' ? 6 : 7}`}</span>
     <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
   </>;
 }

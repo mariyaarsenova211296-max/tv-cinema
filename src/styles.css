@@ -734,6 +734,46 @@ button, a, input { touch-action: manipulation; }
   z-index: 7;
   pointer-events: none;
 }
+
+/* Ambience copy — Figma 28:541 / 28:544 within 1440×811 */
+.ambience-copy {
+  position: absolute;
+  left: max(24px, calc(50% - 720px + 218px));
+  top: max(48px, calc(50% - 405.5px + 222px));
+  width: 382px;
+  max-width: calc(100vw - 48px);
+  z-index: 7;
+  pointer-events: none;
+  text-align: left;
+  transition: opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1), transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ambience-copy:not(.is-in) {
+  transform: translateY(18px);
+}
+.ambience-copy.is-in {
+  transform: translateY(0);
+}
+.ambience-copy h2 {
+  margin: 0 0 24px;
+  font-family: "SB Sans Display", sans-serif;
+  font-size: 46px;
+  font-weight: 600;
+  letter-spacing: -1.38px;
+  line-height: 0.896;
+  white-space: pre-line;
+  color: #fff;
+}
+.ambience-copy p {
+  margin: 0;
+  max-width: 251px;
+  font-family: "SB Sans Display", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.54px;
+  line-height: 1.3;
+  white-space: pre-line;
+  color: rgba(255, 255, 255, 0.6);
+}
 .finale-eyebrow {
   margin: 0 0 12px;
   font-family: "SB Sans Display", sans-serif;

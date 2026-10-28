@@ -4,20 +4,38 @@ export const config = {
   // Scroll distances are viewport heights, independent of video durations.
   // After the static title, sticky reveal→zoom scrubs Figma 12:464 TV enlarge (zoom.mp4),
   // then feature plays the walking-cat tail of combined video-1 from driveEndRatio.
-  distances: { reveal: 0.45, zoom: 0.85, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
+  // After spatial-sound finale: fade to black → scrub Figma 28:540 ambience → text 28:541.
+  distances: {
+    reveal: 0.45,
+    zoom: 0.85,
+    feature: 1.3,
+    retreat: 2.5,
+    comparison: 1.5,
+    orbit: 2.5,
+    finale: 1.6,
+    ambience: 2.2,
+  },
   // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).
   reveal: { from: 0, to: 0.35, scale: 0.52 },
   zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
+  // Finale → black → ambience video. turnOnAt = scroll progress when backlight is lit + text enters.
+  ambience: { blackEnd: 0.14, videoIn: 0.28, turnOnAt: 0.52 },
   // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = start of walking-cat tail.
   driveEndRatio: 0.2634,
-  // Video 1 plays once at 1.5× after zoom; later clips are scroll-scrubbed (finale plays).
-  playback: { loopVideo1: false, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
+  // Video 1 plays once at 1.5× after zoom; later clips are scroll-scrubbed (finale holds; ambience scrubs).
+  playback: { loopVideo1: false, loopVideo4: false, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
   /** Figma 12:464 — scroll-scrubbed TV enlarge before feature. */
   zoomMedia: {
     src: asset('media/zoom.mp4'),
     poster: asset('media/zoom-start.jpg'),
     end: asset('media/zoom-end.jpg'),
+  },
+  /** Figma 28:540 — atmospheric backlight TV turn-on after spatial sound. */
+  ambienceMedia: {
+    src: asset('media/ambience.mp4'),
+    poster: asset('media/ambience-start.jpg'),
+    end: asset('media/ambience-end.jpg'),
   },
   media: [1, 2, 3, 4].map(n => ({
     src: asset(`media/video-${n}.mp4`),
@@ -31,6 +49,17 @@ export function zoomProgress(phase: Phase, progress: number): number {
   if (phase === 'reveal') return smooth(progress) * 0.4;
   if (phase === 'zoom') return 0.4 + smooth(progress) * 0.6;
   return 1;
+}
+
+/** 0–1 scrub through ambience.mp4 after the black beat. */
+export function ambienceVideoProgress(progress: number): number {
+  const { blackEnd, turnOnAt } = config.ambience;
+  if (progress <= blackEnd) return 0;
+  // Scrub most of the clip by turnOnAt, then ease to end.
+  if (progress <= turnOnAt) {
+    return smooth((progress - blackEnd) / Math.max(0.001, turnOnAt - blackEnd)) * 0.72;
+  }
+  return 0.72 + smooth((progress - turnOnAt) / Math.max(0.001, 1 - turnOnAt)) * 0.28;
 }
 
 /** @deprecated Use zoomProgress — kept for any leftover imports. */
@@ -47,7 +76,7 @@ export function resolvePhase(distance: number): { phase: Phase; progress: number
     const start = phaseOffset(phase);
     if (distance < start + config.distances[phase]) return { phase, progress: clamp((distance - start) / config.distances[phase]) };
   }
-  return { phase: 'finale', progress: 1 };
+  return { phase: 'ambience', progress: 1 };
 }
 
 export interface DesignCard {
@@ -69,6 +98,7 @@ export interface Design {
   comparisonLabels: { mini: string; rgb: string } | null;
   comparisonFeatures: { icon: string; title: string; body: string }[];
   finale: { eyebrow: string; title: string; body: string } | null;
+  ambience: { title: string; body: string } | null;
   comparison: null | {
     mini: string;
     rgb: string;

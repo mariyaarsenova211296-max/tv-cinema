@@ -53,6 +53,7 @@ def design_fixture():
         {'icon':svg('#fff'), 'title':'RGB-miniled', 'body':'Тест справа'},
       ],
       'finale': None,
+      'ambience': None,
       'comparison': {'mini':svg('#f00'), 'rgb':svg('#00f'),
         'corners':[[.1,.02],[.9,.02],[.89,.72],[.11,.72]]}
     }
@@ -66,15 +67,15 @@ with sync_playwright() as p:
     page.on('console', lambda msg: errors.append(msg.text) if msg.type=='error' else None)
     page.goto(BASE)
     # intro + zoom + feature videos 1–4
-    page.wait_for_function('document.querySelectorAll("video").length>=5')
-    assert page.locator('[id^="scene-"]').count() == 6
+    page.wait_for_function('document.querySelectorAll("video").length>=6')
+    assert page.locator('[id^="scene-"]').count() == 7
     assert page.locator('.intro').evaluate('(el)=>getComputedStyle(el).backgroundColor') == 'rgb(0, 0, 0)'
     assert page.locator('[data-testid=video-zoom]').count() == 1
     page.wait_for_selector('.cta')
     assert page.locator('.card img').count() == 6
     assert page.locator('.site-header .nav-pill').count() >= 2
     page.screenshot(path=str(OUT/'desktop-intro.png'))
-    record('six scenes; black intro; Figma menu/CTA/cards present')
+    record('seven scenes; black intro; Figma menu/CTA/cards present')
 
     # Screen 3 title is static; sticky reveal→zoom scrubs Figma 12:464 TV enlarge (zoom.mp4).
     assert page.locator('#scene-3.reveal-section .reveal-title').count() == 1
@@ -152,13 +153,24 @@ with sync_playwright() as p:
     record('video 3 seeks in both directions')
 
     scroll(page,9.5,'finale')
-    page.wait_for_function('!document.querySelector("[data-testid=video-4]").paused')
-    t=video(page,4).evaluate('(v)=>v.currentTime')
-    page.wait_for_timeout(550)
-    assert video(page,4).evaluate('(v)=>v.currentTime')>t+.2
-    assert page.locator('video').evaluate_all('(vs)=>vs.filter(v=>!v.paused).length')==1
+    page.wait_for_function('document.querySelector("[data-testid=video-4]")?.classList.contains("visible")')
+    page.wait_for_timeout(200)
     page.screenshot(path=str(OUT/'desktop-finale.png'))
-    record('video 4 plays independently after orbit')
+    record('video 4 holds spatial-sound end frame')
+
+    # After spatial sound: scrub Figma 28:540; text after turn-on (~progress 0.52).
+    scroll(page, 11.5, 'ambience')
+    amb = page.locator('[data-testid=video-ambience]')
+    assert amb.count() == 1
+    page.wait_for_timeout(150)
+    early = float(amb.evaluate('(v)=>v.currentTime'))
+    scroll(page, 12.3, 'ambience')
+    mid = float(amb.evaluate('(v)=>v.currentTime'))
+    assert mid >= early
+    page.wait_for_function('document.querySelector(".ambience-copy")?.classList.contains("is-in")')
+    assert 'Атмосферная' in page.locator('.ambience-copy h2').inner_text()
+    page.screenshot(path=str(OUT/'desktop-ambience.png'))
+    record('ambience scrub after spatial sound; 28:541 text soft-enters')
 
     # Fast direction reversals: allow only the final requested seek to settle.
     for d,ph in [(3.35,'retreat'),(9.5,'finale'),(7.35,'orbit'),(5.4,'comparison'),(1.6,'feature'),(3.85,'retreat')]:
