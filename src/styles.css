@@ -116,15 +116,10 @@ button, a, input { touch-action: manipulation; }
   display: flex;
   align-items: center;
   justify-content: center;
-  /* screens12: shrink the 16:9 plate so TV isn’t edge-tight in the viewport */
-  --intro-pad-y: clamp(24px, 6vh, 64px);
-  --intro-pad-x: clamp(28px, 5.5vw, 80px);
-  padding: var(--intro-pad-y) var(--intro-pad-x);
-  box-sizing: border-box;
   background: #000;
 }
-/* Media plane = letterboxed 16:9 inside the padded stage; copy % relative to this box.
-   width:100% + aspect-ratio + max-height (not 100vw) — #root caps at 1440, so vw breaks AR. */
+/* STV-34: 16:9 plate fills the stage (no inset padding) — full-viewport contain, centered.
+   Copy % stay on this box; do not use 100vw for height (#root max-width 1440). */
 .intro-media {
   position: relative;
   width: 100%;
