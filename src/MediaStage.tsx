@@ -123,19 +123,22 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     setZoomReady(el.readyState >= 2);
   });
 
-  // Scroll-scrub Figma 54:751 rotate.mp4 — no autoplay/loop; hold end in obsolete.
+  // Scroll-scrub Figma 54:751 rotate.mp4 (~4s) — no autoplay/loop; true last frame at phase end.
   useEffect(() => {
     const el = rotateRef.current;
     if (!el || !inRotateScene) return;
     if (el.preload !== 'auto') el.preload = 'auto';
     el.pause();
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    if (reduced || holdingRotateEnd) {
-      el.currentTime = Math.max(0, el.duration - 1 / 24);
+    const last = Math.max(0, el.duration - 1 / 24);
+    if (reduced || holdingRotateEnd || rotateRatio >= 0.999) {
+      if (!el.seeking && Math.abs(el.currentTime - last) > config.playback.seekTolerance) {
+        el.currentTime = last;
+      }
       setRotateReady(true);
       return;
     }
-    const target = clamp(rotateRatio * el.duration, 0, Math.max(0, el.duration - 1 / 24));
+    const target = clamp(rotateRatio * el.duration, 0, last);
     if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
       el.currentTime = target;
     }
@@ -337,7 +340,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const showFeature = !scrubbingZoom && !inAmbience && !inRotateScene && phase !== 'finale';
 
   return <div
-    className="media-stage"
+    className={`media-stage${inRotateScene ? ' media-stage--rotate' : ''}`}
     style={{ '--media-crossfade': `${config.playback.crossfadeMs}ms` } as CSSProperties}
     data-media-index={scrubbingZoom ? 'zoom' : inRotateScene ? 'rotate' : inAmbience ? 'ambience' : (phase === 'finale' || holdSoundStill ? 4 : index + 1)}
     data-mode={

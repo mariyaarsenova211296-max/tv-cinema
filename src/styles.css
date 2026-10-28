@@ -349,6 +349,15 @@ button, a, input { touch-action: manipulation; }
   inset: 0;
   background: #000;
 }
+/* STV-36: rotate plate = full 1440×810 contain (letterbox). cover+1.12 was
+   cropping the composition so the baked edge glow floated off the TV frame. */
+.media-stage--rotate video,
+.media-stage--rotate .media-fallback,
+.media-stage--rotate .media-still {
+  object-fit: contain;
+  object-position: center center;
+  transform: none;
+}
 .media-stage video { opacity: 0; transition: opacity var(--media-crossfade, 180ms) linear; }
 .media-stage video.visible { opacity: 1; }
 .media-fallback { z-index: -1; }

@@ -16,8 +16,8 @@ export const config = {
     finale: 3.5,
     // Sticky stay covers ~5s ambience play-once + 28:541 text soft-enter.
     ambience: 4.5,
-    // Figma 54:751 — scroll-scrub TV rotate (~2s file); title/body fade early.
-    rotate: 2.4,
+    // Figma 54:751 — scroll-scrub TV rotate (~4s full export); title/body fade early.
+    rotate: 3.2,
     // Figma 54:848 — lift plate + reveal 4 UTPs (reverse: UTPs out, then scrub back).
     obsolete: 2.2,
   },
@@ -44,7 +44,7 @@ export const config = {
     poster: asset('media/ambience-start.jpg'),
     end: asset('media/ambience-end.jpg'),
   },
-  /** Figma 54:751 / 54:752 — scroll-scrubbed rotate (no autoplay/loop). */
+  /** Figma 54:751 / 54:752 — full ~4s VIDEO fill, scroll-scrubbed (no autoplay/loop). */
   rotateMedia: {
     src: asset('media/rotate.mp4'),
     poster: asset('media/rotate-start.jpg'),
