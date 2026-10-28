@@ -168,28 +168,35 @@ button, a, input { touch-action: manipulation; }
   margin: 0;
   white-space: nowrap;
   opacity: 0;
-  transform: translate(-50%, 14px);
   transition:
     opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.intro-copy.is-in p,
-.intro-copy.is-in h1 {
+.intro-copy p {
+  transform: translate(-50%, 14px);
+}
+.intro-copy.is-in p {
   opacity: 1;
   transform: translate(-50%, 0);
 }
 .intro-copy__title {
   left: 50%;
-  top: 52%; /* under stand / above head in full 16:9 composition */
+  /* screens11 target: under TV stand / above viewer head (center ~56% of media box) */
+  top: 56%;
   font-size: clamp(40px, 6.94vw, 100px);
   font-weight: 500;
   line-height: 0.85;
   letter-spacing: -0.05em;
   transition-delay: 0.08s;
+  transform: translate(-50%, calc(-50% + 14px));
+}
+.intro-copy.is-in .intro-copy__title {
+  opacity: 1;
+  transform: translate(-50%, -50%);
 }
 .intro-copy__left-top {
-  left: 10.07%;
-  top: 38.8%;
+  left: 12%;
+  top: 42%;
   font-size: clamp(14px, 2.5vw, 36px);
   font-weight: 400;
   line-height: 0.85;
@@ -197,8 +204,8 @@ button, a, input { touch-action: manipulation; }
   transition-delay: 0.18s;
 }
 .intro-copy__left-bottom {
-  left: 8.75%;
-  top: 43.6%;
+  left: 11%;
+  top: 48%;
   font-size: clamp(14px, 2.5vw, 36px);
   font-weight: 400;
   line-height: 0.85;
@@ -206,8 +213,8 @@ button, a, input { touch-action: manipulation; }
   transition-delay: 0.26s;
 }
 .intro-copy__right {
-  left: 88.78%;
-  top: 43%;
+  left: 88%;
+  top: 55%;
   font-size: clamp(14px, 2.5vw, 36px);
   font-weight: 400;
   line-height: 0.85;
