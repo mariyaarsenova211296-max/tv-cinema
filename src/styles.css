@@ -310,7 +310,10 @@ button, a, input { touch-action: manipulation; }
 .media-layer {
   position: absolute;
   inset: 0;
+  /* Near-instant follow for scroll-driven scale retreat (easing lives in JS). */
   transition: opacity 280ms linear, transform 0.05s linear;
+  transform-origin: center center;
+  will-change: transform, opacity;
 }
 .media-stage, .comparison-layer { position: absolute; inset: 0; overflow: hidden; }
 
@@ -673,6 +676,16 @@ button, a, input { touch-action: manipulation; }
   width: min(357px, 90vw);
   /* Figma UTP y≈767 in 932 frame → sit just under stand */
   bottom: calc(var(--bottom-space) + 24px);
+  /* STV-43: soft 0.6–0.9s fade + ~12–20px rise on Mini→RGB→DLG */
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.comparison-features--single:not(.is-in) {
+  transform: translateX(-50%) translateY(16px);
+}
+.comparison-features--single.is-in {
+  transform: translateX(-50%) translateY(0);
 }
 .feature-block {
   display: flex;
@@ -680,7 +693,7 @@ button, a, input { touch-action: manipulation; }
   gap: 47px;
   width: 265px;
   max-width: 100%;
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .feature-block--single {
   flex-direction: row;
@@ -688,6 +701,17 @@ button, a, input { touch-action: manipulation; }
   gap: 49px; /* Figma 81:2100 */
   width: 357px;
   max-width: 100%;
+  animation: utp-soft-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes utp-soft-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .feature-block img {
   width: 64px;

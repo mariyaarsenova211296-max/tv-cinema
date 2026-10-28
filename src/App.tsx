@@ -4,7 +4,15 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { asset } from './base';
 import { Comparison } from './Comparison';
-import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
+import {
+  breathMediaScale,
+  config,
+  phaseOffset,
+  resolveBreathStory,
+  smooth,
+  totalDistance,
+  clamp,
+} from './config';
 import type { Design } from './config';
 import { FeatureSlider } from './FeatureSlider';
 import { IntroStage } from './IntroStage';
@@ -21,7 +29,7 @@ const emptyDesign: Design = {
 };
 /* scene-3 is the static title section outside the sticky experience */
 const anchors = [
-  { id: 4, phase: 'feature' as const },
+  { id: 4, phase: 'waitClose' as const },
   { id: 5, phase: 'utpMini' as const },
   { id: 6, phase: 'comparison' as const },
   { id: 7, phase: 'utpDlg' as const },
@@ -55,11 +63,19 @@ export default function App() {
   const [distance, setDistance] = useState(-1);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [inView, setInView] = useState(false);
+  const [autoplayDone, setAutoplayDone] = useState(false);
+  const [unlockDistance, setUnlockDistance] = useState(0);
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const cardsTrack = useRef<HTMLDivElement>(null);
+  const distanceRef = useRef(distance);
+  distanceRef.current = distance;
   const reduced = useMotionPreference();
-  const { phase, progress } = resolvePhase(Math.max(0, distance));
+  const { phase, progress } = resolveBreathStory(
+    Math.max(0, distance),
+    autoplayDone,
+    unlockDistance,
+  );
   useDesignScale();
 
   useEffect(() => {
@@ -126,33 +142,45 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  // After «Задержите дыхание»: fade in + scroll-scrub full video-2 (no stray zoom.mp4).
-  const mediaOpacity = reduced
-    ? 1
-    : phase === 'reveal'
-      ? smooth((progress - config.reveal.from) / Math.max(0.001, config.reveal.to - config.reveal.from))
-      : 1;
-  const featureSliderOpacity = phase === 'feature' ? 1 : 0;
-  const featureSliderActive = phase === 'feature' && inView;
-  // STV-42: frozen horse+cat still — Mini LED → RGB → DLG with fade swaps.
+  // Leave sticky upward → re-arm autoplay (scroll during prior play stays discarded).
+  useEffect(() => {
+    if (distance < 0 && autoplayDone) {
+      setAutoplayDone(false);
+      setUnlockDistance(0);
+    }
+  }, [distance, autoplayDone]);
+
+  const handleAutoplayDone = () => {
+    // Baseline = current scroll so mid-play scroll is discarded (no retreat queue).
+    setUnlockDistance(Math.max(0, distanceRef.current));
+    setAutoplayDone(true);
+  };
+
+  const mediaOpacity = 1;
+  const mediaScale = breathMediaScale(phase, progress);
+
+  // Feature slider retired on main breath path (STV-43).
+  const featureSliderOpacity = 0;
+  const featureSliderActive = false;
+
+  // Soft Mini → RGB → DLG fades on frozen still after scale retreat.
   const utpPhases = phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg';
   const activeUtpIndex = phase === 'utpMini' ? 0
     : phase === 'comparison' ? 1
-      : (phase === 'utpDlg' || phase === 'orbit') ? 2
+      : phase === 'utpDlg' ? 2
         : -1;
   const utpOpacity = (() => {
-    if (utpPhases) {
-      if (progress < config.text.enterEnd) return smooth(progress / config.text.enterEnd);
-      if (progress > 1 - config.text.leaveEnd) {
-        return 1 - smooth((progress - (1 - config.text.leaveEnd)) / config.text.leaveEnd);
-      }
-      return 1;
+    if (!utpPhases) return 0;
+    if (progress < config.text.enterEnd) return smooth(progress / config.text.enterEnd);
+    if (progress > 1 - config.text.leaveEnd) {
+      return 1 - smooth((progress - (1 - config.text.leaveEnd)) / config.text.leaveEnd);
     }
-    if (phase === 'orbit') return 1 - smooth(progress / config.text.leaveEnd);
-    return 0;
+    return 1;
   })();
   const utpActive = utpPhases && utpOpacity > 0.5 && inView;
   const activeUtp = activeUtpIndex >= 0 && utpOpacity > 0.01 ? design.comparisonFeatures[activeUtpIndex] : null;
+  const utpIn = utpOpacity > 0.08;
+
   // Keep finale copy readable through most of the phase; soft leave near the end only.
   const finaleOpacity = phase === 'finale'
     ? (progress > 0.88 ? 1 - smooth((progress - 0.88) / 0.12) : smooth((progress - 0.08) / 0.35))
@@ -175,7 +203,12 @@ export default function App() {
   const obsoleteUtpOpacity = phase === 'obsolete'
     ? smooth((progress - config.obsolete.utpIn) / Math.max(0.001, config.obsolete.utpEnd - config.obsolete.utpIn))
     : 0;
-  const plateTransform = obsoleteLift > 0.5 ? `translate3d(0, ${-obsoleteLift}px, 0)` : undefined;
+  // Obsolete lift wins; otherwise scale-only breath retreat (horse/cat still).
+  const layerTransform = obsoleteLift > 0.5
+    ? `translate3d(0, ${-obsoleteLift}px, 0)`
+    : Math.abs(mediaScale - 1) > 0.001
+      ? `scale(${mediaScale})`
+      : undefined;
 
   return <>
     <a href="#scene-1" className="skip-link">В начало</a>
@@ -245,7 +278,12 @@ export default function App() {
       <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–8">
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
         <div className="scene-anchor" id="scene-10" style={{ top: `${phaseOffset('obsolete') / (totalDistance + 1) * 100}%` }} />
-        <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
+        <div
+          className="stage-sticky"
+          data-phase={phase}
+          data-progress={progress.toFixed(3)}
+          data-autoplay={autoplayDone ? 'done' : 'play'}
+        >
           <div className="visual-position">
             <div className="visual-frame" ref={frame}>
               <div
@@ -253,14 +291,21 @@ export default function App() {
                 style={{
                   opacity: mediaOpacity,
                   visibility: mediaOpacity > 0.01 ? 'visible' : 'hidden',
-                  transform: plateTransform,
+                  transform: layerTransform,
                 }}
               >
-                <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
+                <MediaStage
+                  phase={phase}
+                  progress={progress}
+                  active={inView}
+                  reduced={reduced}
+                  onAutoplayDone={handleAutoplayDone}
+                />
               </div>
               <div
                 className="feature-slider-layer"
-                style={{ opacity: featureSliderOpacity, visibility: featureSliderOpacity > 0 ? 'visible' : 'hidden' }}
+                style={{ opacity: featureSliderOpacity, visibility: 'hidden' }}
+                aria-hidden="true"
               >
                 <FeatureSlider design={design} interactive={featureSliderActive} />
               </div>
@@ -272,7 +317,7 @@ export default function App() {
           </div>
           {activeUtp && (
             <div
-              className="comparison-features comparison-features--single"
+              className={`comparison-features comparison-features--single${utpIn ? ' is-in' : ''}`}
               data-testid="comparison-features"
               data-node-id={activeUtpIndex === 0 ? 'utp-mini' : activeUtpIndex === 1 ? '81:2087' : '81:2180'}
               style={{ opacity: utpOpacity }}
@@ -354,7 +399,13 @@ export default function App() {
       </div>
     )}
 
-    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg' || phase === 'orbit' ? 5 : phase === 'finale' ? 6 : phase === 'ambience' ? 7 : 8}`}</span>
-    <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
+    <span className="sr-only" aria-live="polite">{inView && `Сцена ${
+      phase === 'autoplay' || phase === 'waitClose' || phase === 'retreat' ? 4
+        : phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg' ? 5
+          : phase === 'finale' ? 6
+            : phase === 'ambience' ? 7
+              : 8
+    }`}</span>
+    <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} data-autoplay={autoplayDone ? '1' : '0'} />
   </>;
 }
