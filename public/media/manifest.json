@@ -1,14 +1,16 @@
 [
   {
     "video": 1,
-    "original_filename": "_________________________________________________________-_1___-____________2___-___________3___-___ad0nlmnc8tav9ub7ajgp_1.mp4",
-    "original_sha256": "081c18db34dfea437e85977fd0f2449aceaf36c80a02a38bcad1a08c43f57f4f",
-    "duration": 6.08,
+    "original_filename": "figma-17-466-export+walking-cat-combined.mp4",
+    "original_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
+    "duration": 7.75,
     "original_codec": "h264",
     "width": 1280,
     "height": 720,
     "fps": "24/1",
-    "output_sha256": "12b1ad75acad0a945bbd3292cb62f20e9b6643609af7c94e05a677b3ace4e290"
+    "output_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
+    "figma_node": "17:466",
+    "drive_end_sec": 2.041667
   },
   {
     "video": 2,

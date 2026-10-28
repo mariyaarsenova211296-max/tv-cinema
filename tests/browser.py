@@ -74,18 +74,15 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-intro.png'))
     record('six scenes; black intro; Figma menu/CTA/cards present')
 
-    # Screen 3 title is static; sticky reveal→zoom drives the TV toward the viewer before feature video.
+    # Screen 3 title is static; sticky reveal→zoom scrubs Figma 17:466 appear+drive head of video 1.
     assert page.locator('#scene-3.reveal-section .reveal-title').count() == 1
     scroll(page, 0.2, 'reveal')
-    early = float(page.locator('[data-testid=tv-drive]').evaluate(
-        "(el)=>{ const m=getComputedStyle(el).transform.match(/matrix\\(([^)]+)\\)/); return m?parseFloat(m[1].split(',')[0]):1; }"))
-    assert early < 0.7
+    early = float(video(page, 1).evaluate('(v)=>v.currentTime'))
     scroll(page, 0.9, 'zoom')
-    mid = float(page.locator('[data-testid=tv-drive]').evaluate(
-        "(el)=>{ const m=getComputedStyle(el).transform.match(/matrix\\(([^)]+)\\)/); return m?parseFloat(m[1].split(',')[0]):1; }"))
+    mid = float(video(page, 1).evaluate('(v)=>v.currentTime'))
     assert mid > early
     page.screenshot(path=str(OUT/'desktop-reveal.png'))
-    record('static title; scroll-driven TV drive-in (reveal→zoom scale)')
+    record('static title; scroll-driven appear+drive scrub on combined video 1')
 
     scroll(page, 1.6, 'feature')
     page.wait_for_function('!document.querySelector("video").paused')

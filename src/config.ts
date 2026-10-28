@@ -2,13 +2,15 @@ import { asset } from './base';
 
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
-  // After the static title, sticky reveal→zoom drives the TV toward the viewer, then feature plays video 1.
+  // After the static title, sticky reveal→zoom scrubs the Figma 17:466 appear+drive head of video 1, then feature plays the walking-cat tail.
   distances: { reveal: 0.45, zoom: 0.85, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
-  // Reveal: fade TV in at startScale. Zoom: scroll-bound scale startScale→1 (drive toward camera).
+  // Reveal fade-in window (opacity only — drive-in lives inside video 1 now).
   reveal: { from: 0, to: 0.7, scale: 0.52 },
   zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
-  // Video 1 (cat-walk) plays once at 1.5×; later clips are scroll-scrubbed (finale plays).
+  // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = end of appear/drive head.
+  driveEndRatio: 0.2634,
+  // Video 1 plays once at 1.5× after the drive head; later clips are scroll-scrubbed (finale plays).
   playback: { loopVideo1: false, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
   media: [1, 2, 3, 4].map(n => ({
     src: asset(`media/video-${n}.mp4`),
@@ -16,6 +18,13 @@ export const config = {
     end: asset(`media/video-${n}-end.jpg`),
   })),
 } as const;
+
+/** 0–1 progress through the appear+drive head of video 1 across reveal→zoom. */
+export function driveHeadProgress(phase: Phase, progress: number): number {
+  if (phase === 'reveal') return smooth(progress) * 0.4;
+  if (phase === 'zoom') return 0.4 + smooth(progress) * 0.6;
+  return 1;
+}
 
 export type Phase = keyof typeof config.distances;
 export const phases = Object.keys(config.distances) as Phase[];

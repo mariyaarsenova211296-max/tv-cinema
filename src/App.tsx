@@ -6,7 +6,6 @@ import { asset } from './base';
 import { Comparison } from './Comparison';
 import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
 import type { Design } from './config';
-import { DriveTv } from './DriveTv';
 import { FeatureSlider } from './FeatureSlider';
 import { MediaStage } from './MediaStage';
 import { useDesignScale } from './useDesignScale';
@@ -111,23 +110,12 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  // After «Задержите дыхание»: scale Figma TV object 12:429 (not a video-plane crop), then feature video.
-  const driving = !reduced && (phase === 'reveal' || phase === 'zoom');
-  const driveScale = reduced
+  // After «Задержите дыхание»: scrub Figma 17:466 appear+drive head of combined video-1, then play walking-cat tail.
+  const mediaOpacity = reduced
     ? 1
     : phase === 'reveal'
-      ? config.reveal.scale
-      : phase === 'zoom'
-        ? config.zoom.from + smooth(progress) * (config.zoom.to - config.zoom.from)
-        : 1;
-  const driveOpacity = reduced
-    ? 0
-    : phase === 'reveal'
       ? smooth((progress - config.reveal.from) / Math.max(0.001, config.reveal.to - config.reveal.from))
-      : phase === 'zoom'
-        ? 1
-        : 0;
-  const mediaOpacity = driving ? 0 : 1;
+      : 1;
   const featureSliderOpacity = phase === 'feature' ? 1 : 0;
   const featureSliderActive = phase === 'feature' && inView;
   // Features fade in over the held video-2 end frame (no still overlay).
@@ -211,7 +199,6 @@ export default function App() {
               >
                 <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
               </div>
-              <DriveTv scale={driveScale} opacity={driveOpacity} />
               <div
                 className="feature-slider-layer"
                 style={{ opacity: featureSliderOpacity, visibility: featureSliderOpacity > 0 ? 'visible' : 'hidden' }}
