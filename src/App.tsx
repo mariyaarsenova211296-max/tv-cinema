@@ -6,6 +6,7 @@ import { asset } from './base';
 import { Comparison } from './Comparison';
 import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
 import type { Design } from './config';
+import { DriveTv } from './DriveTv';
 import { FeatureSlider } from './FeatureSlider';
 import { MediaStage } from './MediaStage';
 import { useDesignScale } from './useDesignScale';
@@ -110,7 +111,8 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  // After «Задержите дыхание»: scroll-bound TV drive-in (reveal fade + zoom scale), then feature video.
+  // After «Задержите дыхание»: scale Figma TV object 12:429 (not a video-plane crop), then feature video.
+  const driving = !reduced && (phase === 'reveal' || phase === 'zoom');
   const driveScale = reduced
     ? 1
     : phase === 'reveal'
@@ -118,13 +120,17 @@ export default function App() {
       : phase === 'zoom'
         ? config.zoom.from + smooth(progress) * (config.zoom.to - config.zoom.from)
         : 1;
-  const revealOpacity = reduced
-    ? 1
+  const driveOpacity = reduced
+    ? 0
     : phase === 'reveal'
       ? smooth((progress - config.reveal.from) / Math.max(0.001, config.reveal.to - config.reveal.from))
-      : 1;
+      : phase === 'zoom'
+        ? 1
+        : 0;
+  const mediaOpacity = driving ? 0 : 1;
   const featureSliderOpacity = phase === 'feature' ? 1 : 0;
   const featureSliderActive = phase === 'feature' && inView;
+  // Features fade in over the held video-2 end frame (no still overlay).
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
   const finaleOpacity = phase === 'finale' ? smooth((progress - 0.12) / 0.4) : 0;
@@ -198,23 +204,22 @@ export default function App() {
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
         <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
           <div className="visual-position">
-            <div
-              className="visual-frame"
-              ref={frame}
-              data-testid="tv-drive"
-              style={{
-                transform: `scale(${driveScale})`,
-                opacity: revealOpacity,
-              }}
-            >
-              <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
+            <div className="visual-frame" ref={frame}>
+              <div
+                className="media-layer"
+                style={{ opacity: mediaOpacity, visibility: mediaOpacity > 0.01 ? 'visible' : 'hidden' }}
+              >
+                <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
+              </div>
+              <DriveTv scale={driveScale} opacity={driveOpacity} />
               <div
                 className="feature-slider-layer"
                 style={{ opacity: featureSliderOpacity, visibility: featureSliderOpacity > 0 ? 'visible' : 'hidden' }}
               >
                 <FeatureSlider design={design} interactive={featureSliderActive} />
               </div>
-              <div className="comparison-layer" style={{ opacity: comparisonOpacity, visibility: comparisonOpacity > 0 ? 'visible' : 'hidden' }}>
+              {/* Hold layer — video-2 end frame is the visible scene; no still env. */}
+              <div className="comparison-layer" style={{ opacity: 0, visibility: 'hidden' }} aria-hidden="true">
                 <Comparison design={design} width={size.width} height={size.height} />
               </div>
             </div>

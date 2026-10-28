@@ -182,15 +182,41 @@ button, a, input { touch-action: manipulation; }
 }
 .visual-frame {
   /* Full sticky stage — videos cover the plane (no letterbox black bars).
-   * Inline transform scale() drives the TV toward the viewer on reveal→zoom. */
+   * Drive-in scales the discrete Figma TV object (.drive-tv), not this frame. */
   width: 100%;
   height: 100%;
   flex: none;
   position: relative;
   transform-origin: center center;
-  will-change: transform, opacity;
+}
+.media-layer {
+  position: absolute;
+  inset: 0;
+  transition: opacity 280ms linear;
 }
 .media-stage, .comparison-layer { position: absolute; inset: 0; overflow: hidden; }
+
+/* Figma 12:429 — TV object scaled as a unit (contain, never cover-crop). */
+.drive-tv {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(92vw, calc(100svh * 1440 / 1081));
+  max-width: 1440px;
+  aspect-ratio: 1440 / 1081;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  z-index: 4;
+}
+.drive-tv__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  pointer-events: none;
+  user-select: none;
+}
 .media-stage video, .media-fallback, .media-still {
   width: 100%;
   height: 100%;
@@ -335,15 +361,15 @@ button, a, input { touch-action: manipulation; }
 .feature-slider__label--mini { left: calc(118.5px - 152px); }
 .feature-slider__label--rgb { left: calc(1313.5px - 152px); }
 
-/* Soft Shopify-like copy entrances */
+/* Soft Shopify-like copy entrances — keep translateX(-50%) so copy stays centered. */
 .finale-copy {
   transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .finale-copy:not(.is-in) {
-  transform: translateY(18px);
+  transform: translate(-50%, 18px);
 }
 .finale-copy.is-in {
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 /* Figma 2:321 — 1440×833 composition, cover-scaled into the sticky stage.

@@ -16,6 +16,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
   const index = phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1 : phase === 'orbit' ? 2 : phase === 'finale' ? 3 : 0;
   // Retreat: scroll-scrub video-2 (zoom-out pull-back). Comparison (+ orbit fade): hold end frame.
+  // Comparison (+ early orbit fade): park on the last decoded frame — never a mismatched still.
   const holdVideo2End = phase === 'comparison' || fadingComparison;
   const scrubbing = phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
   const normalizedTime = holdVideo2End ? 1 : phase === 'orbit' ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd)) : progress;
@@ -57,9 +58,16 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       const position = holdVideo2End
         ? 1
         : phase === 'reveal' || phase === 'zoom' || reduced ? 0 : normalizedTime;
-      const target = clamp(position * el.duration, 0, Math.max(0, el.duration - 1 / 24));
-      if ((scrubbing || phase === 'reveal' || phase === 'zoom') && !el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
+      // Park one frame before EOF so the decoder keeps a real last frame (not a black/poster flash).
+      const target = holdVideo2End
+        ? Math.max(0, el.duration - 1 / 24)
+        : clamp(position * el.duration, 0, Math.max(0, el.duration - 1 / 24));
+      if ((scrubbing || holdVideo2End || phase === 'reveal' || phase === 'zoom') && !el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
         el.currentTime = target;
+      }
+      if (holdVideo2End) {
+        el.pause();
+        setDisplay(index);
       }
       if (playing && el.paused && !playPending.current.has(index)) {
         playPending.current.add(index);

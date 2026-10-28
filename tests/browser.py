@@ -120,17 +120,19 @@ with sync_playwright() as p:
 
     scroll(page,5.4,'comparison')
     seeked(page,2,1)
-    # Screen 5: TV + cat + feature copy only — no divider/labels/dual-image
+    # Screen 5: hold video-2 last frame + feature copy — no still env / divider / dual-image
     assert float(page.locator('.feature-slider-layer').evaluate('(el)=>getComputedStyle(el).opacity')) < 0.05
     assert page.locator('.comparison-plane').count() == 0
     assert page.locator('.mini-image').count() == 0
-    assert page.locator('.comparison-cat').count() == 1
+    assert page.locator('.comparison-cat').count() == 0
+    assert page.locator('.comparison-env').count() == 0
+    assert video(page,2).evaluate('(v)=>v.classList.contains("visible")')
     assert page.locator('.comparison-features').count() == 1
     assert page.locator('.feature-block').count() == 2
     assert 'DLG 288' in page.locator('.feature-block').nth(0).inner_text()
     assert 'RGB-miniled' in page.locator('.feature-block').nth(1).inner_text()
     page.screenshot(path=str(OUT/'desktop-comparison.png'))
-    record('screen 5: TV+cat+features only; no comparison chrome')
+    record('screen 5: video-2 end frame + features; no still overlay')
 
     scroll(page,7.35,'orbit')
     page.wait_for_function('document.querySelector("[data-testid=video-3]")?.readyState >= 2')
