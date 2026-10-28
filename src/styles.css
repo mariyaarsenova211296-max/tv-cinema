@@ -358,6 +358,30 @@ button, a, input { touch-action: manipulation; }
   object-position: center center;
   transform: none;
 }
+/* STV-37: solid black underplate + opaque scrub stack — no underlayer flash between seeks. */
+.media-stage--rotate {
+  background: #000;
+  isolation: isolate;
+}
+.media-stage--rotate .media-fallback {
+  z-index: 0;
+  opacity: 1;
+  visibility: visible;
+}
+.media-stage--rotate video[data-testid="video-rotate"],
+.media-stage--rotate video[data-testid="video-rotate"].visible {
+  z-index: 1;
+  opacity: 1;
+  transition: none;
+}
+.media-stage--rotate video:not([data-testid="video-rotate"]) {
+  opacity: 0 !important;
+  visibility: hidden;
+  transition: none;
+}
+.media-stage--rotate .media-still {
+  z-index: 2;
+}
 .media-stage video { opacity: 0; transition: opacity var(--media-crossfade, 180ms) linear; }
 .media-stage video.visible { opacity: 1; }
 .media-fallback { z-index: -1; }

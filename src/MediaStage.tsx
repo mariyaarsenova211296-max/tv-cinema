@@ -355,6 +355,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     data-testid="tv-drive"
     data-zoom-ratio={scrubbingZoom ? zoomRatio.toFixed(3) : undefined}
     data-rotate-ratio={inRotateScene ? rotateRatio.toFixed(3) : undefined}
+    data-rotate-ready={inRotateScene ? (rotateReady ? '1' : '0') : undefined}
   >
     <img className="media-fallback" src={fallback} alt="Телевизор Sber TV" />
     <video
@@ -403,7 +404,9 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       playsInline
       preload="auto"
       aria-hidden="true"
-      className={showRotate && rotateReady && !still ? 'visible' : ''}
+      /* Keep opaque for entire rotate/obsolete scrub — do not gate on rotateReady
+         (readyState flicker during seek was flashing the underlayer). */
+      className={showRotate && !still ? 'visible' : ''}
       onLoadedData={() => setRotateReady(true)}
       onCanPlay={() => setRotateReady(true)}
       onSeeked={() => setRotateReady(true)}
