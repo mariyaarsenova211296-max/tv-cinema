@@ -16,6 +16,10 @@ export const config = {
     finale: 3.5,
     // Sticky stay covers ~5s ambience play-once + 28:541 text soft-enter.
     ambience: 4.5,
+    // Figma 54:751 — scroll-scrub TV rotate (~2s file); title/body fade early.
+    rotate: 2.4,
+    // Figma 54:848 — lift plate + reveal 4 UTPs (reverse: UTPs out, then scrub back).
+    obsolete: 2.2,
   },
   // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).
   reveal: { from: 0, to: 0.35, scale: 0.52 },
@@ -40,6 +44,16 @@ export const config = {
     poster: asset('media/ambience-start.jpg'),
     end: asset('media/ambience-end.jpg'),
   },
+  /** Figma 54:751 / 54:752 — scroll-scrubbed rotate (no autoplay/loop). */
+  rotateMedia: {
+    src: asset('media/rotate.mp4'),
+    poster: asset('media/rotate-start.jpg'),
+    end: asset('media/rotate-end.jpg'),
+  },
+  // Early soft-enter for 54:854 / 54:855 during rotate scrub.
+  rotate: { titleIn: 0.06, titleEnd: 0.22, bodyIn: 0.14, bodyEnd: 0.34 },
+  // Plate lift + UTP reveal during obsolete (progress 0→1).
+  obsolete: { liftPx: 210, utpIn: 0.12, utpEnd: 0.42 },
   media: [1, 2, 3, 4].map(n => ({
     src: asset(`media/video-${n}.mp4`),
     poster: asset(`media/video-${n}-start.jpg`),
@@ -68,7 +82,7 @@ export function resolvePhase(distance: number): { phase: Phase; progress: number
     const start = phaseOffset(phase);
     if (distance < start + config.distances[phase]) return { phase, progress: clamp((distance - start) / config.distances[phase]) };
   }
-  return { phase: 'ambience', progress: 1 };
+  return { phase: 'obsolete', progress: 1 };
 }
 
 export interface DesignCard {
@@ -91,6 +105,11 @@ export interface Design {
   comparisonFeatures: { icon: string; title: string; body: string }[];
   finale: { eyebrow: string; title: string; body: string } | null;
   ambience: { title: string; body: string } | null;
+  neverObsolete: {
+    title: string;
+    body: string;
+    utps: { icon: string; title: string; body: string }[];
+  } | null;
   comparison: null | {
     mini: string;
     rgb: string;

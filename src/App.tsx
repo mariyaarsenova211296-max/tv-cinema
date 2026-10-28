@@ -16,7 +16,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 const emptyDesign: Design = {
   logo: null, menu: [], utilities: [], cta: null, cardsTitle: null, cards: [],
-  revealTitle: null, comparisonLabels: null, comparisonFeatures: [], finale: null, ambience: null, comparison: null,
+  revealTitle: null, comparisonLabels: null, comparisonFeatures: [], finale: null, ambience: null,
+  neverObsolete: null, comparison: null,
 };
 /* scene-3 is the static title section outside the sticky experience */
 const anchors = [
@@ -24,6 +25,7 @@ const anchors = [
   { id: 5, phase: 'comparison' as const },
   { id: 6, phase: 'finale' as const },
   { id: 7, phase: 'ambience' as const },
+  { id: 8, phase: 'rotate' as const },
 ];
 
 function resolveDesign(raw: Design): Design {
@@ -34,6 +36,12 @@ function resolveDesign(raw: Design): Design {
     cta: raw.cta ? { ...raw.cta, thumb: asset(raw.cta.thumb) } : null,
     cards: raw.cards.map(c => ({ ...c, src: asset(c.src) })),
     comparisonFeatures: raw.comparisonFeatures.map(f => ({ ...f, icon: asset(f.icon) })),
+    neverObsolete: raw.neverObsolete
+      ? {
+          ...raw.neverObsolete,
+          utps: raw.neverObsolete.utps.map(u => ({ ...u, icon: asset(u.icon) })),
+        }
+      : null,
     comparison: raw.comparison
       ? { ...raw.comparison, mini: asset(raw.comparison.mini), rgb: asset(raw.comparison.rgb) }
       : null,
@@ -137,6 +145,20 @@ export default function App() {
     ? smooth((progress - config.ambience.turnOnAt) / 0.22)
     : 0;
 
+  // Figma 54:848 — title/body early in rotate; plate lift + UTPs in obsolete (reverse-safe).
+  const inObsoleteScene = phase === 'rotate' || phase === 'obsolete';
+  const obsoleteTitleOpacity = phase === 'rotate'
+    ? smooth((progress - config.rotate.titleIn) / Math.max(0.001, config.rotate.titleEnd - config.rotate.titleIn))
+    : phase === 'obsolete' ? 1 : 0;
+  const obsoleteBodyOpacity = phase === 'rotate'
+    ? smooth((progress - config.rotate.bodyIn) / Math.max(0.001, config.rotate.bodyEnd - config.rotate.bodyIn))
+    : phase === 'obsolete' ? 1 : 0;
+  const obsoleteLift = phase === 'obsolete' ? smooth(progress) * config.obsolete.liftPx : 0;
+  const obsoleteUtpOpacity = phase === 'obsolete'
+    ? smooth((progress - config.obsolete.utpIn) / Math.max(0.001, config.obsolete.utpEnd - config.obsolete.utpIn))
+    : 0;
+  const plateTransform = obsoleteLift > 0.5 ? `translate3d(0, ${-obsoleteLift}px, 0)` : undefined;
+
   return <>
     <a href="#scene-1" className="skip-link">В начало</a>
     <header className="site-header" data-node-id="1:1110">
@@ -202,14 +224,19 @@ export default function App() {
         {design.revealTitle && <h1 className="reveal-title" data-node-id="1:1501">{design.revealTitle}</h1>}
       </section>
 
-      <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–7">
+      <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–8">
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
+        <div className="scene-anchor" id="scene-9" style={{ top: `${phaseOffset('obsolete') / (totalDistance + 1) * 100}%` }} />
         <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
           <div className="visual-position">
             <div className="visual-frame" ref={frame}>
               <div
                 className="media-layer"
-                style={{ opacity: mediaOpacity, visibility: mediaOpacity > 0.01 ? 'visible' : 'hidden' }}
+                style={{
+                  opacity: mediaOpacity,
+                  visibility: mediaOpacity > 0.01 ? 'visible' : 'hidden',
+                  transform: plateTransform,
+                }}
               >
                 <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
               </div>
@@ -259,6 +286,41 @@ export default function App() {
             <h2>{design.ambience?.title ?? 'Атмосферная\nподсветка'}</h2>
             <p>{design.ambience?.body ?? 'Создает ощущение настоящего кинотеатра\nу вас в доме'}</p>
           </div>
+          {/* Figma 54:848 — copy rides with the lifted plate; UTPs stay pinned below. */}
+          <div
+            className={`obsolete-copy${obsoleteTitleOpacity > 0.2 ? ' is-in' : ''}`}
+            data-node-id="54:848"
+            data-testid="obsolete-copy"
+            style={{
+              opacity: Math.max(obsoleteTitleOpacity, obsoleteBodyOpacity) > 0.01 ? 1 : 0,
+              pointerEvents: inObsoleteScene ? 'none' : undefined,
+            }}
+            inert={!inObsoleteScene || undefined}
+          >
+            <h2 style={{ opacity: obsoleteTitleOpacity }}>
+              {design.neverObsolete?.title ?? 'Кинотеатр, который не устареет'}
+            </h2>
+            <p style={{ opacity: obsoleteBodyOpacity }}>
+              {design.neverObsolete?.body ?? 'Платформа постоянно обновляется, а технологии будут актуальны ещё долго'}
+            </p>
+          </div>
+          {design.neverObsolete && design.neverObsolete.utps.length > 0 && (
+            <div
+              className={`obsolete-utps${obsoleteUtpOpacity > 0.35 ? ' is-in' : ''}`}
+              data-node-id="54:856"
+              data-testid="obsolete-utps"
+              style={{ opacity: obsoleteUtpOpacity }}
+              inert={obsoleteUtpOpacity < 0.4 || undefined}
+            >
+              {design.neverObsolete.utps.map(utp => (
+                <article className="obsolete-utp" key={utp.title}>
+                  <img src={utp.icon} alt="" width={64} height={64} />
+                  <h3>{utp.title}</h3>
+                  <p>{utp.body}</p>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </main>
@@ -275,7 +337,7 @@ export default function App() {
       </div>
     )}
 
-    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : phase === 'finale' ? 6 : 7}`}</span>
+    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : phase === 'finale' ? 6 : phase === 'ambience' ? 7 : 8}`}</span>
     <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
   </>;
 }

@@ -68,7 +68,7 @@ with sync_playwright() as p:
     page.goto(BASE)
     # intro + zoom + feature videos 1–4
     page.wait_for_function('document.querySelectorAll("video").length>=6')
-    assert page.locator('[id^="scene-"]').count() == 7
+    assert page.locator('[id^="scene-"]').count() == 9
     assert page.locator('.intro').evaluate('(el)=>getComputedStyle(el).backgroundColor') == 'rgb(0, 0, 0)'
     assert page.locator('[data-testid=video-zoom]').count() == 1
     page.wait_for_selector('.cta')
