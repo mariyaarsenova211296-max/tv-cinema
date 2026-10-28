@@ -317,7 +317,8 @@ export default function App() {
             <div
               className={`comparison-features comparison-features--single${utpIn ? ' is-in' : ''}`}
               data-testid="comparison-features"
-              data-node-id={activeUtpIndex === 0 ? '81:2087' : '81:2180'}
+              data-node-id={activeUtpIndex === 0 ? '72:1975' : '72:1938'}
+              data-figma-frame={activeUtpIndex === 0 ? '72:1864' : '81:1994'}
               style={{ opacity: utpOpacity }}
               inert={!utpActive || undefined}
             >

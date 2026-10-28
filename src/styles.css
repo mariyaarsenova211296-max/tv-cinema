@@ -389,7 +389,9 @@ button, a, input { touch-action: manipulation; }
 }
 .media-stage video { opacity: 0; transition: opacity var(--media-crossfade, 180ms) linear; }
 .media-stage video.visible { opacity: 1; }
-.media-fallback { z-index: -1; }
+/* STV-45: breath hard-cuts — no dual-frame crossfade ghosts between video-2/3. */
+.media-stage--breath video { transition: none; }
+.media-fallback { z-index: -1; pointer-events: none; }
 .media-still { z-index: 5; }
 .media-message {
   position: absolute;
@@ -678,8 +680,8 @@ button, a, input { touch-action: manipulation; }
   display: flex;
   justify-content: center;
   width: min(357px, 90vw);
-  /* Figma UTP y≈767 in 932 frame → sit just under stand */
-  bottom: calc(var(--bottom-space) + 24px);
+  /* Figma 81:2086 / 72:1975 / 72:1938 — UTP below sitting cat (y≈767 in 932) */
+  bottom: calc(var(--bottom-space) + 8px);
   /* STV-43: soft 0.6–0.9s fade + ~12–20px rise on Mini→RGB→DLG */
   transition:
     opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),

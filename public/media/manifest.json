@@ -22,7 +22,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-44: scroll approach (still) then autoplay once; stitches into video-3 horse+cat"
+    "note": "STV-45: scroll-scrub 0→1.75s approach; autoplay 1.75s→end; hard-cut stitch to video-3 hold"
   },
   {
     "video": 3,
@@ -34,7 +34,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-44: hold for RGB→DLG; then scroll orbit (camera retreat/angle) before sound video-4"
+    "note": "STV-45: hold 0.20s (81:2086); orbit scrub 0.20→2.50s cat-exit; stop before horse-return ~4.25s"
   },
   {
     "video": 4,
