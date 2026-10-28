@@ -258,7 +258,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     }).finally(() => playPending.current.delete(3));
   });
 
-  // Breath: scroll approach → gated autoplay → hold → cat-exit orbit.
+  // Breath: scroll approach → gated autoplay remaining @1× → seated freeze → orbit.
   useEffect(() => {
     if (inRotateScene || phase === 'finale' || inAmbience) {
       if (inRotateScene || inAmbience) {
@@ -277,10 +277,11 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       if (el && el.preload !== 'auto') el.preload = 'auto';
     });
 
-    // Approach: scroll-scrub video-2 0→approachEndSec (no autoplay, no CSS zoom).
+    // Approach: scroll-scrub video-2 0→approachEndSec (paused; no autoplay / no replay).
     if (inApproach) {
       const v2 = videos.current[1];
       if (!v2 || errors[1]) return;
+      v2.playbackRate = config.playback.breathRate;
       const sec = reduced ? timebase.approachEndSec : approachSec;
       seekPaused(v2, sec);
       setDisplay(1);
@@ -317,10 +318,11 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       return;
     }
 
-    // Autoplay — only after final close-up (approach done) AND sticky in view.
+    // Autoplay remaining clip @ 1× from approachEnd — never seek to 0 / re-play approach.
     const v2 = videos.current[1];
     const v3 = videos.current[2];
     if (!v2 || errors[1]) return;
+    v2.playbackRate = config.playback.breathRate;
 
     if (reduced) {
       v2.pause();
@@ -331,7 +333,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     }
 
     if (!active && !breathPlayArmed.current) {
-      // Stay parked at approach end until user is in scene.
+      // Stay parked at approach end until sticky is in view.
       seekPaused(v2, timebase.approachEndSec);
       setDisplay(1);
       return;
@@ -344,6 +346,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
 
     if (!breathPlayArmed.current) {
       if (!active) return;
+      // Resume from approach end only — do not restart the approach segment.
       seekPaused(v2, timebase.approachEndSec);
       breathPlayArmed.current = true;
       setDisplay(1);
@@ -362,12 +365,13 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     if (!v2.paused || playPending.current.has('breath')) return;
     if (!Number.isFinite(v2.duration) || v2.duration <= 0) return;
 
-    // Ensure we resume from approach end on first play (not 0).
+    // Guard: never restart from t≈0 (would re-play approach).
     if (v2.currentTime + 0.05 < timebase.approachEndSec) {
       seekPaused(v2, timebase.approachEndSec);
     }
 
     playPending.current.add('breath');
+    v2.playbackRate = config.playback.breathRate;
     v2.play().then(() => {
       setAutoplayBlocked(false);
       setBreathPlaying(true);
@@ -553,6 +557,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
             setManual(true);
             breathPlayArmed.current = true;
             if (el) {
+              el.playbackRate = config.playback.breathRate;
               el.currentTime = timebase.approachEndSec;
               el.play().then(() => { setAutoplayBlocked(false); setBreathPlaying(true); }).catch(() => setAutoplayBlocked(true));
             }

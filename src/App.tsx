@@ -153,7 +153,7 @@ export default function App() {
   }, [distance, autoplayDone]);
 
   const handleAutoplayDone = () => {
-    // Baseline = current scroll so mid-play scroll is discarded (no retreat queue).
+    // Freeze unlock: mid-play scroll discarded; NEW scroll only for retreat→UTP.
     setUnlockDistance(Math.max(autoplayLockStart, distanceRef.current));
     setAutoplayDone(true);
   };

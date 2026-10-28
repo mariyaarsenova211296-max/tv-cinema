@@ -10,7 +10,8 @@
     "fps": "24/1",
     "output_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
     "figma_node": "17:466",
-    "drive_end_sec": 2.041667
+    "drive_end_sec": 2.041667,
+    "note": "STV-46: checked for ~7s seated finale — v1@~7s is dinosaur/lizard on TV, NOT horse+seated cat; not used in breath stitch"
   },
   {
     "video": 2,
@@ -22,7 +23,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-45: scroll-scrub 0→1.75s approach; autoplay 1.75s→end; hard-cut stitch to video-3 hold"
+    "note": "STV-46: scroll-scrub 0→1.75s approach; autoplay remaining 1.75s→end @1×; hard-cut to video-3@0.08 (no video-1 stitch — v1@~7s is dinosaur, not seated UTP)"
   },
   {
     "video": 3,
@@ -34,7 +35,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-45: hold 0.20s (81:2086); orbit scrub 0.20→2.50s cat-exit; stop before horse-return ~4.25s"
+    "note": "STV-46: hold 0.08s (=video-3-utp.jpg / 81:2086); orbit scrub 0.08→2.50s cat-exit; stop before horse-return ~4.25s"
   },
   {
     "video": 4,

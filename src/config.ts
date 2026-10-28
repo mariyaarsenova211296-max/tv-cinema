@@ -1,24 +1,26 @@
 import { asset } from './base';
 
 /**
- * STV-45 media timebases (seconds @ 24fps).
- * Confirmed against public/media/video-{2,3}.mp4 + Figma 81:2086 still.
+ * STV-46 media timebases (seconds @ 24fps).
+ * True cat-seated hold = video-3 @ 0.08s (= public/media/video-3-utp.jpg).
+ * video-1 (~7.75s) checked — end is dinosaur beat, not seated UTP; no v1 stitch.
  */
 export const timebase = {
   fps: 24,
+  video1Sec: 7.75,
   video2Sec: 5.041667,
   video3Sec: 5.041667,
   /** Scroll approach ends here — camera settle / final close-up; then autoplay. */
   approachEndSec: 1.75,
-  /** Horse + sitting cat freeze (Figma 81:2086 / 72:1864 / 81:1994). */
-  utpHoldSec: 0.2,
+  /** Horse + sitting cat freeze (= video-3-utp.jpg / Figma 81:2086). */
+  utpHoldSec: 0.08,
   /** Scroll cat-exit / camera pull ends before horse-return tail (~4.25s). */
   catExitEndSec: 2.5,
 } as const;
 
 export const config = {
-  // STV-45: scroll-scrub approach (no CSS auto-zoom) → autoplay after close-up →
-  // still → scale retreat → RGB→DLG UTPs below cat → scroll cat-exit → sound.
+  // STV-46: scroll approach (scrub + ease to close) → autoplay remaining @ 1× →
+  // freeze seated → NEW scroll retreat → RGB→DLG → cat-exit → sound.
   distances: {
     approach: 1.8, // scroll-scrub video-2 0→approachEndSec
     autoplay: 0.2, // locked while clip plays; scroll discarded
@@ -39,9 +41,8 @@ export const config = {
   timebase,
   /** Hold ratio on video-3 (utpHoldSec / video3Sec). */
   utpHoldRatio: timebase.utpHoldSec / timebase.video3Sec,
-  // Breath scale: approach is IN the video — no CSS far→close zoom.
-  // Retreat pulls the still back for UTP space below the cat.
-  breathScale: { play: 1, utp: 0.88, sound: 1 },
+  // Approach eases play→close; hold close through autoplay/wait; retreat→utp.
+  breathScale: { play: 1, close: 1.2, utp: 0.88, sound: 1 },
   cropScale: 1.12,
   // Breath transitions hard-cut (no dual-frame crossfade ghosts).
   playback: {
@@ -50,7 +51,8 @@ export const config = {
     crossfadeMs: 280,
     breathCrossfadeMs: 0,
     seekTolerance: 0.035,
-    video1Rate: 1.5,
+    /** Normal-speed autoplay of remaining breath clip (no approach replay). */
+    breathRate: 1,
   },
   zoomMedia: {
     src: asset('media/zoom.mp4'),
@@ -86,10 +88,10 @@ export const smooth = (p: number) => { const n = clamp(p); return n * n * (3 - 2
 export const autoplayLockStart = phaseOffset('autoplay');
 
 /**
- * STV-45 story resolver:
- * - approach scroll-mapped (video scrub)
- * - past approach → force autoplay until clip reaches horse+sitting-cat
- * - then map from unlock baseline (mid-play scroll discarded)
+ * STV-46 story resolver:
+ * - approach scroll-mapped (video scrub + scale ease to close)
+ * - past approach → force autoplay remaining clip @ 1× until seated freeze
+ * - mid-play scroll discarded; NEW scroll only after unlock (retreat→UTP)
  */
 export function resolveBreathStory(
   distance: number,
@@ -115,11 +117,12 @@ export function resolvePhase(distance: number): { phase: Phase; progress: number
   return { phase: 'obsolete', progress: 1 };
 }
 
-/** Breath scale rail — approach lives in video; CSS only retreats for UTPs. */
+/** Breath scale rail — ease to close on approach; hold close; retreat for UTPs. */
 export function breathMediaScale(phase: Phase, progress: number): number {
-  const { play, utp, sound } = config.breathScale;
-  if (phase === 'approach' || phase === 'autoplay' || phase === 'waitClose') return play;
-  if (phase === 'retreat') return play + (utp - play) * smooth(progress);
+  const { play, close, utp, sound } = config.breathScale;
+  if (phase === 'approach') return play + (close - play) * smooth(progress);
+  if (phase === 'autoplay' || phase === 'waitClose') return close;
+  if (phase === 'retreat') return close + (utp - close) * smooth(progress);
   if (phase === 'comparison' || phase === 'utpDlg') return utp;
   if (phase === 'orbit') return utp + (sound - utp) * smooth(progress);
   return sound;
