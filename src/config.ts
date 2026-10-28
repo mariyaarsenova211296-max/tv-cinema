@@ -28,9 +28,9 @@ export const config = {
   // Last screen (ambience / “finale” 5.04s): 1st scroll starts video after black;
   // 2nd scroll (turnOnAt) TV/text soft-enter; video keeps playing to file end.
   ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
-  // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = start of walking-cat tail.
+  // Combined video-1 (Figma 17:466 appear+drive + walking cat). Kept for zoom handoff / fallback.
   driveEndRatio: 0.2634,
-  // Feature video-1 plays once after zoom; retreat/orbit scrub; finale + ambience play once.
+  // STV-40: feature plays video-2 (screen 4 / 72:1038); comparison holds video-3 (screen 5 / 72:1039).
   playback: { loopVideo1: false, loopVideo4: false, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
   /** Figma 12:464 — scroll-scrubbed TV enlarge before feature. */
   zoomMedia: {

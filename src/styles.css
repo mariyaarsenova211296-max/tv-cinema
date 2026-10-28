@@ -226,22 +226,20 @@ button, a, input { touch-action: manipulation; }
   transition-delay: 0.22s;
 }
 
-/* Cards 1:1156 — Figma radius 153, heights 700, widths 833/607/900/607/901/901 */
-/* Screen 2 — Figma 1:1156 (1440×1079): title 1:1499 at x=132; cards 1:1157 gap 24, radius 153 */
+/* Screen 2 — Figma 72:1095 / 72:1863: title 72:1452 centered x=515; cards gap 9, radius 153 */
 .cards-section {
   min-height: 100svh;
   padding: 96px 0 calc(var(--bottom-space) + 48px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 46px; /* title bottom (175+82) → cards y=303 */
+  gap: 80px; /* Figma title y=108 h=82 → cards y=270 */
   background: #000;
 }
 .cards-title {
-  margin: 0;
-  margin-left: max(24px, calc(50% - 720px + 132px)); /* Figma x=132 in 1440 */
+  margin: 0 auto;
   max-width: 409px;
-  text-align: left;
+  text-align: center;
   font-family: "SB Sans Display", sans-serif;
   font-size: 46px;
   font-weight: 500;
@@ -256,7 +254,7 @@ button, a, input { touch-action: manipulation; }
   scroll-snap-type: x mandatory;
   scrollbar-width: none; /* hide track/bar; scroll still works */
   -ms-overflow-style: none;
-  padding: 0; /* Figma cards flush left at x=0 */
+  padding: 0;
   -webkit-overflow-scrolling: touch;
 }
 .cards-scroller::-webkit-scrollbar {
@@ -268,9 +266,9 @@ button, a, input { touch-action: manipulation; }
 .cards-track {
   display: flex;
   align-items: stretch;
-  gap: 24px;
+  gap: 9px; /* Figma 72:1096 card x deltas */
   width: max-content;
-  padding-bottom: 0;
+  padding: 0 0 0 10px; /* first card x=10 */
 }
 .card {
   flex: none;
@@ -444,7 +442,7 @@ button, a, input { touch-action: manipulation; }
 }
 .comparison { position: absolute; inset: 0; overflow: hidden; background: #000; }
 
-/* Figma 12:457 — slider chrome over walking-cat video (screen 4) */
+/* Figma 72:1462 / 12:457 — slider chrome over screen-4 video */
 .feature-slider {
   position: absolute;
   inset: 0;
@@ -656,7 +654,7 @@ button, a, input { touch-action: manipulation; }
   z-index: 10;
 }
 
-/* Figma 2:334 — feature pair under the cat */
+/* Figma 72:1540 — 570×245 @ x=435 (centered on 1440) under screen-5 media */
 .comparison-features {
   position: absolute;
   left: 50%;
@@ -1011,7 +1009,7 @@ button, a, input { touch-action: manipulation; }
   .cards-section { padding-top: 72px; gap: 32px; }
   .cards-scroller { padding: 0 16px; }
   .cards-title {
-    margin-left: 16px;
+    margin: 0 auto; /* keep Figma 72:1452 centered */
     font-size: 32px;
     letter-spacing: -0.96px;
   }

@@ -196,7 +196,7 @@ export default function App() {
     <main>
       <IntroStage reduced={reduced} />
 
-      <section id="scene-2" className="cards-section" aria-label="Экран 2" data-node-id="1:1156">
+      <section id="scene-2" className="cards-section" aria-label="Экран 2" data-node-id="72:1095">
         {design.cardsTitle && <h2 className="cards-title">{design.cardsTitle}</h2>}
         <div className="cards-scroller" tabIndex={0} aria-label="Карточки возможностей">
           <div className="cards-track" ref={cardsTrack}>

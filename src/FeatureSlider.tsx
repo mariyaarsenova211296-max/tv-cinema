@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Design } from './config';
 
-/** Figma Component 554 (12:457) — 1440×854 frame over walking-cat video. */
+/** Figma 72:1462 / Component 554 — 1440×854 frame over screen-4 video. */
 const DESIGN_W = 1440;
 const DESIGN_H = 854;
 
@@ -50,7 +50,7 @@ export function FeatureSlider({
       ref={rootRef}
       className="feature-slider"
       data-testid="feature-slider"
-      data-node-id="12:457"
+      data-node-id="72:1462"
       style={{ '--split': `${value}%`, '--fs-scale': String(coverScale) } as CSSProperties}
     >
       <div className="feature-slider__stage">

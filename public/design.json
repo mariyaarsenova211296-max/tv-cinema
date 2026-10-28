@@ -55,20 +55,20 @@
     {
       "src": "assets/cards/card-1-rgb.png",
       "alt": "Технология RGB-miniLED — высокая детализация и насыщенный чёрный цвет",
-      "aspectRatio": "756 / 700",
-      "width": 756
+      "aspectRatio": "764 / 700",
+      "width": 764
     },
     {
       "src": "assets/cards/card-2-144.png",
       "alt": "144 кадра в секунду — с DLG скорость обновления вдвое больше: 288 Гц",
-      "aspectRatio": "571 / 700",
-      "width": 571
+      "aspectRatio": "555 / 700",
+      "width": 555
     },
     {
       "src": "assets/cards/card-3-sound.png",
       "alt": "Мощный звук до 75 Вт — Dolby Atmos, эффект полного погружения",
-      "aspectRatio": "823 / 700",
-      "width": 823
+      "aspectRatio": "900 / 700",
+      "width": 900
     },
     {
       "src": "assets/cards/card-4-glow.png",

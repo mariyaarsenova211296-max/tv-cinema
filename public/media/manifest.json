@@ -14,25 +14,27 @@
   },
   {
     "video": 2,
-    "original_filename": "____4__________1______2______________-_________01_-___________1____________________-________________kklxlau2vkpau5sx2srh_1.mp4",
-    "original_sha256": "287db4cf05153369b466e74d359b85e2ebbfaaafe30fa4c0ccd81e1359dacfd6",
-    "duration": 4.064,
-    "original_codec": "hevc",
+    "original_filename": "screen4-full.mp4",
+    "figma_node": "72:1038",
+    "duration": 5.041667,
+    "original_codec": "h264",
     "width": 1920,
     "height": 1080,
     "fps": "24/1",
-    "output_sha256": "c5994319242e52587090092ce1c4e5587030b14fd9c8dab6fc687f4476a04e44"
+    "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
+    "note": "STV-40 full 5s export via setTimelineDuration helper from Section 72:1037"
   },
   {
     "video": 3,
-    "original_filename": "____4_______1______2_____________________-__________________01_-__________________________________1_in2g9rsmo1sb1cgd4541_1.mp4",
-    "original_sha256": "184cc180b222eeabdab579b574eb0bd1288940f005eda13203cbf7e235bb46f0",
-    "duration": 4.064,
+    "original_filename": "screen5-full.mp4",
+    "figma_node": "72:1039",
+    "duration": 5.041667,
     "original_codec": "h264",
-    "width": 1280,
-    "height": 720,
+    "width": 1920,
+    "height": 1080,
     "fps": "24/1",
-    "output_sha256": "b4679c3bb5c5caa994cbcce05e4cebfe4b0e9d45d50ad149b884725ad9a827fb"
+    "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
+    "note": "STV-40 full 5s export via setTimelineDuration helper from Section 72:1037"
   },
   {
     "video": 4,

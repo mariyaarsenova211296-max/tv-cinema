@@ -26,6 +26,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const [manual, setManual] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
   const [video1Ended, setVideo1Ended] = useState(false);
+  const [featureVideoEnded, setFeatureVideoEnded] = useState(false);
   const [video4Ended, setVideo4Ended] = useState(false);
 
   const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
@@ -38,15 +39,17 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const ambiencePlayingPhase = inAmbience && progress >= config.ambience.blackEnd;
   // Hold faded spatial-sound still only during the black beat into ambience.
   const holdSoundStill = ambienceBlack;
+  // STV-40: screen 4 = video-2 (Figma 72:1038), screen 5 = video-3 (72:1039).
+  // Feature plays screen 4 under FeatureSlider; retreat scrubs it; comparison holds screen 5 end.
   const index = scrubbingZoom || inRotateScene
     ? 0
     : holdSoundStill ? 3
-      : phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1
-        : phase === 'orbit' ? 2
+      : phase === 'feature' || phase === 'retreat' ? 1
+        : phase === 'comparison' || fadingComparison || phase === 'orbit' ? 2
           : phase === 'finale' ? 3
             : inAmbience ? 0
               : 0;
-  const holdVideo2End = phase === 'comparison' || fadingComparison;
+  const holdScreen5End = phase === 'comparison' || fadingComparison;
   const scrubbing = scrubbingZoom || scrubbingRotate || phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
   const zoomRatio = zoomProgress(phase, progress);
   const rotateRatio = scrubbingRotate ? smooth(progress) : holdingRotateEnd ? 1 : 0;
@@ -73,9 +76,10 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const playing = Boolean(
     active && visible && !scrubbing && !scrubbingZoom && !inAmbience && !inRotateScene && phase !== 'finale'
     && !(index === 0 && video1Ended)
+    && !(phase === 'feature' && index === 1 && featureVideoEnded)
     && (!reduced || manual),
   );
-  desired.current = { index, timeSec: 0, scrubbing: scrubbing && !holdVideo2End && !scrubbingZoom };
+  desired.current = { index, timeSec: 0, scrubbing: scrubbing && !holdScreen5End && !scrubbingZoom };
 
   function ready(i: number) {
     const el = videos.current[i];
@@ -85,7 +89,11 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   }
 
   useEffect(() => {
-    if (phase !== 'feature') featureSeekDone.current = false;
+    // Arm feature play of screen-4 (video-2) from t=0 once per enter.
+    if (phase !== 'feature') {
+      featureSeekDone.current = false;
+      setFeatureVideoEnded(false);
+    }
   }, [phase]);
 
   useEffect(() => {
@@ -246,7 +254,9 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       return;
     }
     if (scrubbingZoom || inRotateScene || phase === 'finale' || inAmbience) {
-      if (scrubbingZoom || inRotateScene || inAmbience) videos.current.forEach((el, i) => { if (!(holdSoundStill && i === 3)) el?.pause(); });
+      if (scrubbingZoom || inRotateScene || inAmbience) {
+        videos.current.forEach((el, i) => { if (!(holdSoundStill && i === 3)) el?.pause(); });
+      }
       return;
     }
     videos.current.forEach((el, i) => {
@@ -260,25 +270,26 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
 
     let target = el.currentTime;
-    if (holdVideo2End) {
+    if (holdScreen5End) {
       target = Math.max(0, el.duration - 1 / 24);
-    } else if (phase === 'feature' && index === 0 && !featureSeekDone.current) {
-      target = config.driveEndRatio * el.duration;
+    } else if (phase === 'feature' && index === 1 && !featureSeekDone.current) {
+      // Screen 4 (video-2 / Figma 72:1038): start from t=0 under FeatureSlider.
+      target = 0;
       featureSeekDone.current = true;
     } else if (phase === 'retreat' || phase === 'orbit') {
-      const normalized = holdVideo2End ? 1 : phase === 'orbit'
+      const normalized = phase === 'orbit'
         ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd))
         : progress;
       target = clamp(normalized * el.duration, 0, Math.max(0, el.duration - 1 / 24));
     }
 
-    const needsSeek = holdVideo2End
-      || ((phase === 'retreat' || phase === 'orbit') && !reduced)
-      || (phase === 'feature' && index === 0 && Math.abs(el.currentTime - target) > 0.2 && el.currentTime < config.driveEndRatio * el.duration);
-    if (needsSeek && !el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
+    // Seek to armed target (hold end, scrub, or feature t=0 once).
+    if ((holdScreen5End || phase === 'retreat' || phase === 'orbit' || (phase === 'feature' && index === 1 && target === 0 && el.currentTime > 0.05))
+      && !el.seeking
+      && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
       el.currentTime = target;
     }
-    if (holdVideo2End) {
+    if (holdScreen5End) {
       el.pause();
       setDisplay(index);
     }
@@ -332,7 +343,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
       : inAmbience
         ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-        : config.media[holdSoundStill || phase === 'finale' ? 3 : index][holdVideo2End || holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'];
+        : config.media[holdSoundStill || phase === 'finale' ? 3 : index][holdScreen5End || holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'];
   const showZoom = scrubbingZoom && !zoomError && !(reduced && still);
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
   const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
@@ -431,6 +442,15 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
           videos.current[3]?.pause();
           setVideo4Ended(true);
           setDisplay(3);
+          return;
+        }
+        if (i === 1) {
+          // Screen 4 (video-2): park on last frame after feature play-through.
+          const el = videos.current[1];
+          if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
+          el?.pause();
+          setFeatureVideoEnded(true);
+          setDisplay(1);
           return;
         }
         if (i !== 0) return;
