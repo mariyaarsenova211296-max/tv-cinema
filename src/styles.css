@@ -257,7 +257,94 @@ button, a, input { touch-action: manipulation; }
 }
 
 .comparison-layer { z-index: 6; pointer-events: none; }
+.feature-slider-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
 .comparison { position: absolute; inset: 0; overflow: hidden; background: #000; }
+
+/* Figma 12:457 — slider chrome over walking-cat video (screen 4) */
+.feature-slider {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.feature-slider__stage {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 1440px;
+  height: 854px;
+  transform: translate(-50%, -50%) scale(var(--fs-scale, 1));
+  transform-origin: center center;
+  pointer-events: none;
+}
+.feature-slider__hit {
+  position: absolute;
+  left: 152px;
+  top: 40px;
+  width: 1145px;
+  height: 520px;
+  overflow: visible;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: ew-resize;
+}
+.feature-slider__divider {
+  position: absolute;
+  top: 0;
+  left: var(--split);
+  width: 2px;
+  height: 539px;
+  margin-left: -1px;
+  background: #fff;
+  pointer-events: none;
+}
+.feature-slider__divider::before,
+.feature-slider__divider::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateX(-50%);
+}
+.feature-slider__divider::before { top: -6px; }
+.feature-slider__divider::after { bottom: -6px; }
+.feature-slider__label {
+  position: absolute;
+  top: 207px;
+  z-index: 2;
+  color: #fff;
+  font-family: "SB Sans Display", sans-serif;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 0.93;
+  letter-spacing: -0.78px;
+  pointer-events: none;
+  white-space: nowrap;
+  text-align: center;
+  transform: translateX(-50%);
+}
+/* Figma 12:459 / 12:460 — absolute centers within 1440 frame, relative to hit box origin */
+.feature-slider__label--mini { left: calc(118.5px - 152px); }
+.feature-slider__label--rgb { left: calc(1313.5px - 152px); }
+
+/* Soft Shopify-like copy entrances */
+.finale-copy {
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.finale-copy:not(.is-in) {
+  transform: translateY(18px);
+}
+.finale-copy.is-in {
+  transform: translateY(0);
+}
 
 /* Figma 2:321 — 1440×833 composition, cover-scaled into the sticky stage.
  * top: 42% (not 50%) lifts the TV so the top isn’t clipped and leaves room
@@ -409,6 +496,7 @@ button, a, input { touch-action: manipulation; }
   gap: 47px;
   width: 265px;
   max-width: 100%;
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .feature-block img {
   width: 64px;

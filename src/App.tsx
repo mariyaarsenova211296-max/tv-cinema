@@ -6,6 +6,7 @@ import { asset } from './base';
 import { Comparison } from './Comparison';
 import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
 import type { Design } from './config';
+import { FeatureSlider } from './FeatureSlider';
 import { MediaStage } from './MediaStage';
 import { useDesignScale } from './useDesignScale';
 import { useMotionPreference } from './useMotionPreference';
@@ -72,22 +73,42 @@ export default function App() {
     return () => { cancelAnimationFrame(scheduled); observer.disconnect(); window.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule); };
   }, []);
 
+  // Soft Shopify-like entrances (text/cards only — never touch feature video assets).
   useEffect(() => {
-    if (reduced || !cardsTrack.current) return;
-    const cards = cardsTrack.current.querySelectorAll('.card');
-    if (!cards.length) return;
+    if (reduced) return;
     const ctx = gsap.context(() => {
-      gsap.from(cards, {
+      gsap.from('.site-header', { opacity: 0, y: -14, duration: 1.05, ease: 'power3.out' });
+      gsap.from('.cta', { opacity: 0, y: 18, duration: 1.15, delay: 0.12, ease: 'power3.out' });
+      if (cardsTrack.current) {
+        const cards = cardsTrack.current.querySelectorAll('.card');
+        gsap.from('.cards-title', {
+          opacity: 0,
+          y: 36,
+          duration: 1.15,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.cards-section', start: 'top 78%', once: true },
+        });
+        if (cards.length) {
+          gsap.from(cards, {
+            opacity: 0,
+            y: 56,
+            duration: 1.15,
+            stagger: 0.1,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: cardsTrack.current, start: 'top 82%', once: true },
+          });
+        }
+      }
+      gsap.from('.reveal-title', {
         opacity: 0,
-        y: 48,
-        duration: 0.8,
-        stagger: 0.08,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: cardsTrack.current, start: 'top 80%', once: true },
+        y: 28,
+        duration: 1.2,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: '.reveal-section', start: 'top 75%', once: true },
       });
     });
     return () => ctx.revert();
-  }, [design.cards, reduced]);
+  }, [design.cards, design.cta, reduced]);
 
   // After «Задержите дыхание»: scroll-bound TV drive-in (reveal fade + zoom scale), then feature video.
   const driveScale = reduced
@@ -102,6 +123,8 @@ export default function App() {
     : phase === 'reveal'
       ? smooth((progress - config.reveal.from) / Math.max(0.001, config.reveal.to - config.reveal.from))
       : 1;
+  const featureSliderOpacity = phase === 'feature' ? 1 : 0;
+  const featureSliderActive = phase === 'feature' && inView;
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
   const finaleOpacity = phase === 'finale' ? smooth((progress - 0.12) / 0.4) : 0;
@@ -185,8 +208,14 @@ export default function App() {
               }}
             >
               <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
+              <div
+                className="feature-slider-layer"
+                style={{ opacity: featureSliderOpacity, visibility: featureSliderOpacity > 0 ? 'visible' : 'hidden' }}
+              >
+                <FeatureSlider design={design} interactive={featureSliderActive} />
+              </div>
               <div className="comparison-layer" style={{ opacity: comparisonOpacity, visibility: comparisonOpacity > 0 ? 'visible' : 'hidden' }}>
-                <Comparison design={design} width={size.width} height={size.height} interactive={comparisonActive} />
+                <Comparison design={design} width={size.width} height={size.height} />
               </div>
             </div>
           </div>
@@ -209,7 +238,7 @@ export default function App() {
             </div>
           )}
           {design.finale && (
-            <div className="finale-copy" style={{ opacity: finaleOpacity }} inert={phase !== 'finale' || undefined}>
+            <div className={`finale-copy${finaleOpacity > 0.2 ? ' is-in' : ''}`} style={{ opacity: finaleOpacity }} inert={phase !== 'finale' || undefined}>
               <p className="finale-eyebrow">{design.finale.eyebrow}</p>
               <h2>{design.finale.title}</h2>
               <p>{design.finale.body}</p>
