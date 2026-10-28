@@ -654,7 +654,7 @@ button, a, input { touch-action: manipulation; }
   z-index: 10;
 }
 
-/* Figma 72:1540 — 570×245 @ x=435 (centered on 1440) under screen-5 media */
+/* Figma 81:2086 / 81:2100 — single centered UTP 357×132 under TV (RGB then DLG) */
 .comparison-features {
   position: absolute;
   left: 50%;
@@ -667,6 +667,13 @@ button, a, input { touch-action: manipulation; }
   pointer-events: none;
   z-index: 7;
 }
+.comparison-features--single {
+  display: flex;
+  justify-content: center;
+  width: min(357px, 90vw);
+  /* Figma UTP y≈767 in 932 frame → sit just under stand */
+  bottom: calc(var(--bottom-space) + 24px);
+}
 .feature-block {
   display: flex;
   flex-direction: column;
@@ -674,6 +681,13 @@ button, a, input { touch-action: manipulation; }
   width: 265px;
   max-width: 100%;
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.feature-block--single {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 49px; /* Figma 81:2100 */
+  width: 357px;
+  max-width: 100%;
 }
 .feature-block img {
   width: 64px;
@@ -684,25 +698,33 @@ button, a, input { touch-action: manipulation; }
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 .feature-block h2 {
   margin: 0;
   font-family: "SB Sans Display", "SB Sans Text", sans-serif;
-  font-size: 26px; /* Figma 1:1615 / 1:1634 Medium */
+  font-size: 26px; /* Figma 81:2117 Medium */
   font-weight: 500;
   line-height: 0.93;
   letter-spacing: -0.78px; /* -3% */
   color: #fff;
   white-space: nowrap;
+  text-align: center;
+}
+.feature-block--single h2 {
+  text-align: left;
 }
 .feature-block p {
   margin: 0;
   font-family: "SB Sans Display", "SB Sans Text", sans-serif;
-  font-size: 18px; /* Figma 1:1616 / 1:1635 Regular */
+  font-size: 18px; /* Figma 81:2118 Regular */
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.54px;
   color: rgba(255, 255, 255, 0.6);
+  white-space: pre-line;
+  max-width: 292px;
 }
 
 .comparison-a11y {
@@ -1021,7 +1043,9 @@ button, a, input { touch-action: manipulation; }
   .reveal-title { font-size: 32px; letter-spacing: -0.96px; }
   .finale-copy h2, .obsolete-copy h2 { font-size: 32px; letter-spacing: -0.96px; }
   .comparison-features { gap: 20px; bottom: calc(var(--bottom-space) + 4px); }
+  .comparison-features--single { width: min(320px, 92vw); gap: 0; }
   .feature-block { gap: 24px; }
+  .feature-block--single { gap: 24px; width: 100%; }
   .feature-block img { width: 48px; height: 48px; }
   .feature-block h2 { font-size: 20px; letter-spacing: -0.6px; }
   .feature-block p { font-size: 16px; letter-spacing: -0.48px; }
@@ -1048,6 +1072,12 @@ button, a, input { touch-action: manipulation; }
     grid-template-columns: 1fr;
     gap: 16px;
     width: min(320px, 88vw);
+  }
+  .comparison-features--single {
+    width: min(300px, 92vw);
+  }
+  .feature-block--single {
+    gap: 16px;
   }
   .obsolete-utps {
     flex-wrap: wrap;

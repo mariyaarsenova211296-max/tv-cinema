@@ -22,7 +22,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-40 full 5s export via setTimelineDuration helper from Section 72:1037"
+    "note": "STV-41: full untrimmed 5s scrub across reveal→retreat (replaces stray zoom.mp4)"
   },
   {
     "video": 3,
@@ -34,7 +34,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-40 full 5s export via setTimelineDuration helper from Section 72:1037"
+    "note": "STV-41: UTP hold on early frame (81:2086) then orbit scrub pull-away"
   },
   {
     "video": 4,

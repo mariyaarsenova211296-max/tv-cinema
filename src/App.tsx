@@ -23,9 +23,10 @@ const emptyDesign: Design = {
 const anchors = [
   { id: 4, phase: 'feature' as const },
   { id: 5, phase: 'comparison' as const },
-  { id: 6, phase: 'finale' as const },
-  { id: 7, phase: 'ambience' as const },
-  { id: 8, phase: 'rotate' as const },
+  { id: 6, phase: 'utpDlg' as const },
+  { id: 7, phase: 'finale' as const },
+  { id: 8, phase: 'ambience' as const },
+  { id: 9, phase: 'rotate' as const },
 ];
 
 function resolveDesign(raw: Design): Design {
@@ -124,7 +125,7 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  // After «Задержите дыхание»: soft fade + scroll-scrub Figma 12:464 TV enlarge, then play walking-cat tail.
+  // After «Задержите дыхание»: fade in + scroll-scrub full video-2 (no stray zoom.mp4).
   const mediaOpacity = reduced
     ? 1
     : phase === 'reveal'
@@ -132,9 +133,18 @@ export default function App() {
       : 1;
   const featureSliderOpacity = phase === 'feature' ? 1 : 0;
   const featureSliderActive = phase === 'feature' && inView;
-  // Features fade in over the held video-2 end frame (no still overlay).
-  const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
-  const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
+  // Figma 81:2086 — one UTP at a time on video-3 hold (RGB → DLG), then orbit scrub.
+  const activeUtpIndex = phase === 'comparison' ? 0 : (phase === 'utpDlg' || phase === 'orbit') ? 1 : -1;
+  const utpOpacity = (() => {
+    if (phase === 'comparison' || phase === 'utpDlg') {
+      if (progress < config.text.enterEnd) return smooth(progress / config.text.enterEnd);
+      return 1;
+    }
+    if (phase === 'orbit') return 1 - smooth(progress / config.text.leaveEnd);
+    return 0;
+  })();
+  const utpActive = (phase === 'comparison' || phase === 'utpDlg') && utpOpacity > 0.5 && inView;
+  const activeUtp = activeUtpIndex >= 0 && utpOpacity > 0.01 ? design.comparisonFeatures[activeUtpIndex] : null;
   // Keep finale copy readable through most of the phase; soft leave near the end only.
   const finaleOpacity = phase === 'finale'
     ? (progress > 0.88 ? 1 - smooth((progress - 0.88) / 0.12) : smooth((progress - 0.08) / 0.35))
@@ -226,7 +236,7 @@ export default function App() {
 
       <section className="experience" ref={stage} style={{ '--story-distance': totalDistance } as CSSProperties} aria-label="Экраны 4–8">
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
-        <div className="scene-anchor" id="scene-9" style={{ top: `${phaseOffset('obsolete') / (totalDistance + 1) * 100}%` }} />
+        <div className="scene-anchor" id="scene-10" style={{ top: `${phaseOffset('obsolete') / (totalDistance + 1) * 100}%` }} />
         <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
           <div className="visual-position">
             <div className="visual-frame" ref={frame}>
@@ -252,22 +262,21 @@ export default function App() {
               </div>
             </div>
           </div>
-          {design.comparisonFeatures.length > 0 && (
+          {activeUtp && (
             <div
-              className="comparison-features"
+              className="comparison-features comparison-features--single"
               data-testid="comparison-features"
-              style={{ opacity: comparisonOpacity }}
-              inert={!comparisonActive || undefined}
+              data-node-id={activeUtpIndex === 0 ? '81:2087' : '81:2180'}
+              style={{ opacity: utpOpacity }}
+              inert={!utpActive || undefined}
             >
-              {design.comparisonFeatures.map(feature => (
-                <article className="feature-block" key={feature.title}>
-                  <img src={feature.icon} alt="" width={64} height={64} />
-                  <div className="feature-block__copy">
-                    <h2>{feature.title}</h2>
-                    <p>{feature.body}</p>
-                  </div>
-                </article>
-              ))}
+              <article className="feature-block feature-block--single" key={activeUtp.title}>
+                <img src={activeUtp.icon} alt="" width={64} height={64} />
+                <div className="feature-block__copy">
+                  <h2>{activeUtp.title}</h2>
+                  <p>{activeUtp.body}</p>
+                </div>
+              </article>
             </div>
           )}
           {design.finale && (
@@ -337,7 +346,7 @@ export default function App() {
       </div>
     )}
 
-    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' ? 5 : phase === 'finale' ? 6 : phase === 'ambience' ? 7 : 8}`}</span>
+    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' || phase === 'utpDlg' ? 5 : phase === 'orbit' ? 5 : phase === 'finale' ? 6 : phase === 'ambience' ? 7 : 8}`}</span>
     <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
   </>;
 }

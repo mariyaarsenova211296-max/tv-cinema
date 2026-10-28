@@ -2,16 +2,17 @@ import { asset } from './base';
 
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
-  // After the static title, sticky reveal→zoom scrubs Figma 12:464 TV enlarge (zoom.mp4),
-  // then feature plays the walking-cat tail of combined video-1 from driveEndRatio.
-  // After spatial-sound finale: fade to black → play Figma 34:547 Video 2 once → text 28:541.
+  // STV-41: after breath-hold, full video-2 (72:1038) is scroll-scrubbed through
+  // approach → cat/TV → retreat (no stray zoom.mp4). Then sequential single UTPs
+  // on video-3 start frame (81:2086 / 81:2087→81:2180), then orbit scrubs video-3.
   distances: {
     reveal: 0.45,
-    zoom: 0.85,
-    feature: 1.3,
-    retreat: 2.5,
-    comparison: 1.5,
-    orbit: 2.5,
+    zoom: 1.1,
+    feature: 1.6,
+    retreat: 2.2,
+    comparison: 1.2, // RGB-miniled UTP (81:2087)
+    utpDlg: 1.2, // DLG 288 гц UTP (81:2180)
+    orbit: 2.5, // camera pull-away scrub of video-3
     // Long enough that typical scroll doesn't outrun video-4 (~4s) before `ended`.
     finale: 3.5,
     // Sticky stay covers ~5s ambience play-once + 28:541 text soft-enter.
@@ -21,18 +22,19 @@ export const config = {
     // Figma 54:848 — lift plate + reveal 4 UTPs (reverse: UTPs out, then scrub back).
     obsolete: 2.2,
   },
-  // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).
+  // Soft opacity fade-in at the start of reveal (media is video-2, not zoom.mp4).
   reveal: { from: 0, to: 0.35, scale: 0.52 },
   zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
   // Last screen (ambience / “finale” 5.04s): 1st scroll starts video after black;
   // 2nd scroll (turnOnAt) TV/text soft-enter; video keeps playing to file end.
   ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
-  // Combined video-1 (Figma 17:466 appear+drive + walking cat). Kept for zoom handoff / fallback.
+  // Legacy combined video-1 ratio — unused for breath flow after STV-41.
   driveEndRatio: 0.2634,
-  // STV-40: feature plays video-2 (screen 4 / 72:1038); comparison holds video-3 (screen 5 / 72:1039).
+  // Hold UTP cards on an early video-3 frame (cat + cowboy) matching 81:2086.
+  utpHoldRatio: 0.04,
   playback: { loopVideo1: false, loopVideo4: false, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
-  /** Figma 12:464 — scroll-scrubbed TV enlarge before feature. */
+  /** @deprecated STV-41 — stray zoom.mp4 removed from breath flow; kept for asset refs. */
   zoomMedia: {
     src: asset('media/zoom.mp4'),
     poster: asset('media/zoom-start.jpg'),
@@ -61,15 +63,29 @@ export const config = {
   })),
 } as const;
 
-/** 0–1 progress through Figma 12:464 zoom.mp4 across reveal→zoom. */
-export function zoomProgress(phase: Phase, progress: number): number {
-  if (phase === 'reveal') return smooth(progress) * 0.4;
-  if (phase === 'zoom') return 0.4 + smooth(progress) * 0.6;
-  return 1;
+const breathPhases = ['reveal', 'zoom', 'feature', 'retreat'] as const;
+
+/** 0–1 progress through full video-2 across reveal→zoom→feature→retreat (no trim). */
+export function breathVideoProgress(phase: Phase, progress: number): number {
+  const total = breathPhases.reduce((sum, p) => sum + config.distances[p], 0);
+  let offset = 0;
+  for (const p of breathPhases) {
+    if (phase === p) return clamp((offset + smooth(progress) * config.distances[p]) / total);
+    offset += config.distances[p];
+  }
+  if (phase === 'comparison' || phase === 'utpDlg' || phase === 'orbit' || phase === 'finale' || phase === 'ambience' || phase === 'rotate' || phase === 'obsolete') {
+    return 1;
+  }
+  return 0;
 }
 
-/** @deprecated Use zoomProgress — kept for any leftover imports. */
-export const driveHeadProgress = zoomProgress;
+/** @deprecated STV-41 — zoom.mp4 scrub removed; breath uses breathVideoProgress. */
+export function zoomProgress(phase: Phase, progress: number): number {
+  return breathVideoProgress(phase, progress);
+}
+
+/** @deprecated Use breathVideoProgress — kept for any leftover imports. */
+export const driveHeadProgress = breathVideoProgress;
 
 export type Phase = keyof typeof config.distances;
 export const phases = Object.keys(config.distances) as Phase[];

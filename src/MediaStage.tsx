@@ -1,61 +1,55 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { config, clamp, zoomProgress, smooth } from './config';
+import { config, clamp, breathVideoProgress, smooth } from './config';
 import type { Phase } from './config';
 
 export function MediaStage({ phase, progress, active, reduced }: { phase: Phase; progress: number; active: boolean; reduced: boolean }) {
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
-  const zoomRef = useRef<HTMLVideoElement | null>(null);
   const ambienceRef = useRef<HTMLVideoElement | null>(null);
   const rotateRef = useRef<HTMLVideoElement | null>(null);
   const desired = useRef({ index: 0, timeSec: 0, scrubbing: false });
   const playPending = useRef(new Set<number | 'ambience'>());
-  const featureSeekDone = useRef(false);
   const finalePlayArmed = useRef(false);
   const ambiencePlayArmed = useRef(false);
   const [display, setDisplay] = useState(-1);
-  const [zoomReady, setZoomReady] = useState(false);
   const [ambienceReady, setAmbienceReady] = useState(false);
   const [ambienceEnded, setAmbienceEnded] = useState(false);
   const [rotateReady, setRotateReady] = useState(false);
   const [errors, setErrors] = useState<Record<number, boolean>>({});
-  const [zoomError, setZoomError] = useState(false);
   const [ambienceError, setAmbienceError] = useState(false);
   const [rotateError, setRotateError] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [manual, setManual] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
-  const [video1Ended, setVideo1Ended] = useState(false);
-  const [featureVideoEnded, setFeatureVideoEnded] = useState(false);
   const [video4Ended, setVideo4Ended] = useState(false);
 
-  const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
-  const scrubbingZoom = phase === 'reveal' || phase === 'zoom';
+  const inBreathFlow = phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat';
+  const holdingUtp = phase === 'comparison' || phase === 'utpDlg';
+  const fadingUtp = phase === 'orbit' && progress <= config.text.leaveEnd;
   const inAmbience = phase === 'ambience';
   const scrubbingRotate = phase === 'rotate';
   const holdingRotateEnd = phase === 'obsolete';
   const inRotateScene = scrubbingRotate || holdingRotateEnd;
   const ambienceBlack = inAmbience && progress < config.ambience.blackEnd;
   const ambiencePlayingPhase = inAmbience && progress >= config.ambience.blackEnd;
-  // Hold faded spatial-sound still only during the black beat into ambience.
   const holdSoundStill = ambienceBlack;
-  // STV-40: screen 4 = video-2 (Figma 72:1038), screen 5 = video-3 (72:1039).
-  // Feature plays screen 4 under FeatureSlider; retreat scrubs it; comparison holds screen 5 end.
-  const index = scrubbingZoom || inRotateScene
+
+  // STV-41: breath = full video-2 scrub; UTPs hold video-3 early frame; orbit scrubs video-3.
+  const index = inRotateScene
     ? 0
     : holdSoundStill ? 3
-      : phase === 'feature' || phase === 'retreat' ? 1
-        : phase === 'comparison' || fadingComparison || phase === 'orbit' ? 2
+      : inBreathFlow ? 1
+        : holdingUtp || fadingUtp || phase === 'orbit' ? 2
           : phase === 'finale' ? 3
             : inAmbience ? 0
               : 0;
-  const holdScreen5End = phase === 'comparison' || fadingComparison;
-  const scrubbing = scrubbingZoom || scrubbingRotate || phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
-  const zoomRatio = zoomProgress(phase, progress);
+
+  const holdUtpFrame = holdingUtp || fadingUtp;
+  const scrubbingOrbit = phase === 'orbit' && !fadingUtp;
+  const scrubbing = inBreathFlow || scrubbingOrbit || scrubbingRotate;
+  const breathRatio = breathVideoProgress(phase, progress);
   const rotateRatio = scrubbingRotate ? smooth(progress) : holdingRotateEnd ? 1 : 0;
 
-  // Spatial-sound (video-4): stay fully visible while playing the full file.
-  // Only fade after native `ended` (or during the ambience black beat).
   const soundFade =
     phase === 'finale'
       ? (video4Ended && progress > 0.85 ? 1 - smooth((progress - 0.85) / 0.15) : 1)
@@ -73,13 +67,8 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const playingAmbience = Boolean(
     active && visible && ambiencePlayingPhase && !ambienceEnded && !ambienceError && (!reduced || manual),
   );
-  const playing = Boolean(
-    active && visible && !scrubbing && !scrubbingZoom && !inAmbience && !inRotateScene && phase !== 'finale'
-    && !(index === 0 && video1Ended)
-    && !(phase === 'feature' && index === 1 && featureVideoEnded)
-    && (!reduced || manual),
-  );
-  desired.current = { index, timeSec: 0, scrubbing: scrubbing && !holdScreen5End && !scrubbingZoom };
+  // Breath + orbit are scrub-only; no autoplay on video-2/3.
+  desired.current = { index, timeSec: 0, scrubbing: scrubbing && !holdUtpFrame };
 
   function ready(i: number) {
     const el = videos.current[i];
@@ -89,14 +78,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   }
 
   useEffect(() => {
-    // Arm feature play of screen-4 (video-2) from t=0 once per enter.
-    if (phase !== 'feature') {
-      featureSeekDone.current = false;
-      setFeatureVideoEnded(false);
-    }
-  }, [phase]);
-
-  useEffect(() => {
     if (phase !== 'finale') {
       finalePlayArmed.current = false;
       setVideo4Ended(false);
@@ -104,32 +85,11 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   }, [phase]);
 
   useEffect(() => {
-    // Only clear arm after the play-through finished (or never started).
-    // Leaving the sticky mid-play must not interrupt the ~5s file.
     if (!inAmbience && ambienceEnded) {
       ambiencePlayArmed.current = false;
       setAmbienceEnded(false);
     }
   }, [inAmbience, ambienceEnded]);
-
-  // Scroll-scrub Figma 12:464 zoom.mp4 during reveal→zoom.
-  useEffect(() => {
-    const el = zoomRef.current;
-    if (!el || !scrubbingZoom) return;
-    if (el.preload !== 'auto') el.preload = 'auto';
-    el.pause();
-    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    if (reduced) {
-      el.currentTime = Math.max(0, el.duration - 1 / 24);
-      setZoomReady(true);
-      return;
-    }
-    const target = clamp(zoomRatio * el.duration, 0, Math.max(0, el.duration - 1 / 24));
-    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
-      el.currentTime = target;
-    }
-    setZoomReady(el.readyState >= 2);
-  });
 
   // Scroll-scrub Figma 54:751 rotate.mp4 (~4s) — no autoplay/loop; true last frame at phase end.
   useEffect(() => {
@@ -154,7 +114,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   });
 
   // Ambience (Figma 34:547 Video 2): on scroll enter after black, play start→end once (not scrubbed).
-  // After arm, continues to native `ended` without needing more scroll.
   useEffect(() => {
     const el = ambienceRef.current;
     if (!el) return;
@@ -212,7 +171,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
 
     if (!finalePlayArmed.current) {
-      // Arm once from t=0; never jump to the end before `ended`.
       if (!reduced) {
         try { if (el.currentTime !== 0) el.currentTime = 0; } catch { /* ignore */ }
       } else {
@@ -231,7 +189,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     }
 
     if (!active || document.hidden) {
-      // Stay in-view sticky: if briefly inactive, pause but do not seek forward.
       el.pause();
       return;
     }
@@ -243,66 +200,51 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     }).finally(() => playPending.current.delete(3));
   });
 
+  // Breath video-2 scrub + UTP hold / orbit scrub on video-3.
   useEffect(() => {
     if (!active || document.hidden) {
       videos.current.forEach(el => el?.pause());
-      zoomRef.current?.pause();
       rotateRef.current?.pause();
-      // Do not pause an armed ambience play-through when sticky unpins.
       if (!ambiencePlayArmed.current || ambienceEnded) ambienceRef.current?.pause();
       else if (document.hidden) ambienceRef.current?.pause();
       return;
     }
-    if (scrubbingZoom || inRotateScene || phase === 'finale' || inAmbience) {
-      if (scrubbingZoom || inRotateScene || inAmbience) {
+    if (inRotateScene || phase === 'finale' || inAmbience) {
+      if (inRotateScene || inAmbience) {
         videos.current.forEach((el, i) => { if (!(holdSoundStill && i === 3)) el?.pause(); });
       }
       return;
     }
+
     videos.current.forEach((el, i) => {
       if (!el) return;
-      if ((Math.abs(i - index) <= 1 || i === 3) && el.preload !== 'auto') el.preload = 'auto';
-      el.playbackRate = i === 0 ? config.playback.video1Rate : 1;
-      if (i !== index || !playing) el.pause();
+      if ((Math.abs(i - index) <= 1 || i === 3 || i === 1 || i === 2) && el.preload !== 'auto') el.preload = 'auto';
+      el.playbackRate = 1;
+      el.pause();
     });
+
     const el = videos.current[index];
     if (!el || errors[index]) return;
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+    const last = Math.max(0, el.duration - 1 / 24);
 
     let target = el.currentTime;
-    if (holdScreen5End) {
-      target = Math.max(0, el.duration - 1 / 24);
-    } else if (phase === 'feature' && index === 1 && !featureSeekDone.current) {
-      // Screen 4 (video-2 / Figma 72:1038): start from t=0 under FeatureSlider.
-      target = 0;
-      featureSeekDone.current = true;
-    } else if (phase === 'retreat' || phase === 'orbit') {
-      const normalized = phase === 'orbit'
-        ? clamp((progress - config.text.leaveEnd) / (1 - config.text.leaveEnd))
-        : progress;
-      target = clamp(normalized * el.duration, 0, Math.max(0, el.duration - 1 / 24));
+    if (holdUtpFrame) {
+      target = clamp(config.utpHoldRatio * el.duration, 0, last);
+    } else if (inBreathFlow) {
+      target = reduced ? last : clamp(breathRatio * el.duration, 0, last);
+    } else if (scrubbingOrbit) {
+      const normalized = clamp((progress - config.text.leaveEnd) / Math.max(0.001, 1 - config.text.leaveEnd));
+      target = reduced ? last : clamp(smooth(normalized) * el.duration, 0, last);
     }
 
-    // Seek to armed target (hold end, scrub, or feature t=0 once).
-    if ((holdScreen5End || phase === 'retreat' || phase === 'orbit' || (phase === 'feature' && index === 1 && target === 0 && el.currentTime > 0.05))
-      && !el.seeking
-      && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
+    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
       el.currentTime = target;
     }
-    if (holdScreen5End) {
-      el.pause();
-      setDisplay(index);
-    }
-    if (playing && el.paused && !playPending.current.has(index)) {
-      playPending.current.add(index);
-      el.play().then(() => setAutoplayBlocked(false)).catch(err => {
-        if (err.name !== 'AbortError') setAutoplayBlocked(true);
-      }).finally(() => playPending.current.delete(index));
-    }
+    setDisplay(index);
     ready(index);
   });
 
-  // Keep faded sound still parked on end during black beat.
   useEffect(() => {
     if (!holdSoundStill) return;
     const el = videos.current[3];
@@ -316,7 +258,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     const visibility = () => {
       if (document.hidden) {
         videos.current.forEach(el => el?.pause());
-        zoomRef.current?.pause();
         rotateRef.current?.pause();
         ambienceRef.current?.pause();
       }
@@ -326,64 +267,50 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     return () => {
       document.removeEventListener('visibilitychange', visibility);
       videos.current.forEach(el => el?.pause());
-      zoomRef.current?.pause();
       rotateRef.current?.pause();
       ambienceRef.current?.pause();
     };
   }, []);
-  useEffect(() => { setManual(false); }, [index, active, scrubbingZoom, inAmbience, inRotateScene, phase]);
-  useEffect(() => {
-    if (!active) setVideo1Ended(false);
-  }, [active]);
+  useEffect(() => { setManual(false); }, [index, active, inBreathFlow, inAmbience, inRotateScene, phase]);
 
   const still = reduced && !manual;
-  const fallback = scrubbingZoom
-    ? (reduced || zoomRatio > 0.95 ? config.zoomMedia.end : config.zoomMedia.poster)
+  const fallback = inBreathFlow
+    ? (reduced || breathRatio > 0.95 ? config.media[1].end : config.media[1].poster)
     : inRotateScene
       ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
       : inAmbience
         ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-        : config.media[holdSoundStill || phase === 'finale' ? 3 : index][holdScreen5End || holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'];
-  const showZoom = scrubbingZoom && !zoomError && !(reduced && still);
+        : holdUtpFrame
+          ? config.media[2].poster
+          : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
+            holdSoundStill || (phase === 'finale' && video4Ended) || (phase === 'orbit' && !holdUtpFrame && progress > 0.95)
+              ? 'end'
+              : 'poster'
+          ];
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
   const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
-  const showSound = (phase === 'finale' || holdSoundStill) && soundFade > 0.01 && !scrubbingZoom && !inRotateScene;
-  const showFeature = !scrubbingZoom && !inAmbience && !inRotateScene && phase !== 'finale';
+  const showSound = (phase === 'finale' || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene;
+  const showBreathOrUtp = (inBreathFlow || holdingUtp || phase === 'orbit') && !inAmbience && !inRotateScene;
 
   return <div
     className={`media-stage${inRotateScene ? ' media-stage--rotate' : ''}`}
     style={{ '--media-crossfade': `${config.playback.crossfadeMs}ms` } as CSSProperties}
-    data-media-index={scrubbingZoom ? 'zoom' : inRotateScene ? 'rotate' : inAmbience ? 'ambience' : (phase === 'finale' || holdSoundStill ? 4 : index + 1)}
+    data-media-index={inRotateScene ? 'rotate' : inAmbience ? 'ambience' : (phase === 'finale' || holdSoundStill ? 4 : index + 1)}
     data-mode={
-      scrubbingZoom ? 'scroll-zoom'
+      inBreathFlow ? 'scroll-breath'
         : inRotateScene ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
           : ambiencePlayingPhase ? (playingAmbience ? 'play-ambience' : 'still-ambience')
             : phase === 'finale' ? (playingFinale ? 'play' : 'still')
-              : scrubbing ? 'scroll'
-                : playing ? 'play'
+              : holdUtpFrame ? 'still-utp'
+                : scrubbing ? 'scroll'
                   : 'still'
     }
     data-testid="tv-drive"
-    data-zoom-ratio={scrubbingZoom ? zoomRatio.toFixed(3) : undefined}
+    data-breath-ratio={inBreathFlow ? breathRatio.toFixed(3) : undefined}
     data-rotate-ratio={inRotateScene ? rotateRatio.toFixed(3) : undefined}
     data-rotate-ready={inRotateScene ? (rotateReady ? '1' : '0') : undefined}
   >
     <img className="media-fallback" src={fallback} alt="Телевизор Sber TV" />
-    <video
-      ref={zoomRef}
-      data-testid="video-zoom"
-      src={config.zoomMedia.src}
-      poster={config.zoomMedia.poster}
-      muted
-      playsInline
-      preload="auto"
-      aria-hidden="true"
-      className={showZoom && zoomReady && !still ? 'visible' : ''}
-      onLoadedData={() => setZoomReady(true)}
-      onCanPlay={() => setZoomReady(true)}
-      onSeeked={() => setZoomReady(true)}
-      onError={() => setZoomError(true)}
-    />
     <video
       ref={ambienceRef}
       data-testid="video-ambience"
@@ -415,8 +342,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       playsInline
       preload="auto"
       aria-hidden="true"
-      /* Keep opaque for entire rotate/obsolete scrub — do not gate on rotateReady
-         (readyState flicker during seek was flashing the underlayer). */
       className={showRotate && !still ? 'visible' : ''}
       onLoadedData={() => setRotateReady(true)}
       onCanPlay={() => setRotateReady(true)}
@@ -425,12 +350,12 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     />
     {config.media.map((media, i) => <video key={media.src} ref={el => { videos.current[i] = el; }}
       data-testid={`video-${i + 1}`} src={media.src} poster={media.poster} muted playsInline
-      preload={i === 0 || i === 3 ? 'auto' : 'metadata'}
-      loop={i === 0 ? config.playback.loopVideo1 : false}
+      preload={i === 1 || i === 2 || i === 3 ? 'auto' : 'metadata'}
+      loop={false}
       aria-hidden="true"
       style={i === 3 && showSound ? { opacity: soundFade } : undefined}
       className={
-        ((showFeature && display === i) || (showSound && i === 3 && display === 3))
+        ((showBreathOrUtp && display === i) || (showSound && i === 3 && display === 3))
         && !still && !errors[i] ? 'visible' : ''
       }
       onLoadedData={() => ready(i)} onCanPlay={() => ready(i)}
@@ -438,34 +363,17 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       onSeeked={() => { ready(i); setErrors(old => ({ ...old })); }}
       onEnded={() => {
         if (i === 3) {
-          // Full file finished — only now mark ended (no preemptive seek).
           videos.current[3]?.pause();
           setVideo4Ended(true);
           setDisplay(3);
-          return;
         }
-        if (i === 1) {
-          // Screen 4 (video-2): park on last frame after feature play-through.
-          const el = videos.current[1];
-          if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
-          el?.pause();
-          setFeatureVideoEnded(true);
-          setDisplay(1);
-          return;
-        }
-        if (i !== 0) return;
-        const el = videos.current[0];
-        if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
-        el?.pause();
-        setVideo1Ended(true);
-        setDisplay(0);
       }}
       onError={() => setErrors(old => ({ ...old, [i]: true }))} />)}
-    {(still || (scrubbingZoom ? zoomError : inRotateScene ? rotateError : inAmbience ? ambienceError : errors[phase === 'finale' || holdSoundStill ? 3 : index])) && (
+    {(still || (inRotateScene ? rotateError : inAmbience ? ambienceError : errors[phase === 'finale' || holdSoundStill ? 3 : index])) && (
       <img className="media-still" src={fallback} alt="Телевизор Sber TV" />
     )}
-    {!scrubbingZoom && !inAmbience && !inRotateScene && phase !== 'finale' && errors[index] && <div role="alert" className="media-message">Не удалось загрузить видео. Показан статичный кадр.<button onClick={() => { setErrors(old => ({ ...old, [index]: false })); videos.current[index]?.load(); }}>Повторить</button></div>}
-    {active && ((showFeature && !scrubbing) || (phase === 'finale' && !playingFinale) || (ambiencePlayingPhase && !playingAmbience)) && (reduced || autoplayBlocked) && (
+    {!inAmbience && !inRotateScene && phase !== 'finale' && errors[index] && <div role="alert" className="media-message">Не удалось загрузить видео. Показан статичный кадр.<button onClick={() => { setErrors(old => ({ ...old, [index]: false })); videos.current[index]?.load(); }}>Повторить</button></div>}
+    {active && ((phase === 'finale' && !playingFinale) || (ambiencePlayingPhase && !playingAmbience)) && (reduced || autoplayBlocked) && (
       <button className="manual-play" aria-pressed={manual}
         onClick={() => {
           if (phase === 'finale') {
@@ -482,13 +390,6 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
             setAmbienceEnded(false);
             ambiencePlayArmed.current = true;
             if (el) { el.currentTime = 0; el.play().then(() => setAutoplayBlocked(false)).catch(() => setAutoplayBlocked(true)); }
-            return;
-          }
-          const el = videos.current[index];
-          if (manual) { el?.pause(); setManual(false); }
-          else {
-            setManual(true);
-            el?.play().then(() => { setAutoplayBlocked(false); ready(index); }).catch(() => setAutoplayBlocked(true));
           }
         }}>{manual ? 'Пауза' : 'Воспроизвести видео'}<span aria-hidden="true">{manual ? 'Ⅱ' : '▷'}</span></button>
     )}
