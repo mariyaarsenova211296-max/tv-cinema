@@ -307,7 +307,7 @@ export default function App() {
           {design.neverObsolete && design.neverObsolete.utps.length > 0 && (
             <div
               className={`obsolete-utps${obsoleteUtpOpacity > 0.35 ? ' is-in' : ''}`}
-              data-node-id="54:856"
+              data-node-id="60:946"
               data-testid="obsolete-utps"
               style={{ opacity: obsoleteUtpOpacity }}
               inert={obsoleteUtpOpacity < 0.4 || undefined}

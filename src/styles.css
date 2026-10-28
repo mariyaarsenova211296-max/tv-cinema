@@ -849,7 +849,7 @@ button, a, input { touch-action: manipulation; }
   transform: translateY(0);
 }
 
-/* Figma 60:946 (was 54:856) — 4 UTPs under lifted plate */
+/* Figma 60:946 (replaces 54:856) — 4×200 cols, gap 40, row 920 */
 .obsolete-utps {
   position: absolute;
   left: 50%;
@@ -859,7 +859,7 @@ button, a, input { touch-action: manipulation; }
   align-items: flex-start;
   justify-content: center;
   gap: 40px;
-  width: min(1160px, calc(100% - 48px));
+  width: min(920px, calc(100% - 48px));
   z-index: 8;
   pointer-events: none;
   transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1), transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
@@ -875,7 +875,7 @@ button, a, input { touch-action: manipulation; }
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
-  width: 260px;
+  width: 200px;
   flex: none;
 }
 .obsolete-utp img {
@@ -896,6 +896,7 @@ button, a, input { touch-action: manipulation; }
 }
 .obsolete-utp p {
   margin: 0;
+  width: 100%;
   font-family: "SB Sans Display", sans-serif;
   font-size: 18px;
   font-weight: 400;
@@ -1027,7 +1028,7 @@ button, a, input { touch-action: manipulation; }
   .feature-block h2 { font-size: 20px; letter-spacing: -0.6px; }
   .feature-block p { font-size: 16px; letter-spacing: -0.48px; }
   .obsolete-copy { left: 24px; top: 72px; width: min(320px, calc(100vw - 48px)); }
-  .obsolete-utps { gap: 20px; width: min(calc(100% - 32px), 960px); }
+  .obsolete-utps { gap: 20px; width: min(calc(100% - 32px), 920px); }
   .obsolete-utp { width: min(200px, 22vw); gap: 12px; }
   .obsolete-utp img { width: 48px; height: 48px; }
   .obsolete-utp h3 { font-size: 18px; letter-spacing: -0.54px; }
