@@ -2,10 +2,11 @@ import { asset } from './base';
 
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
-  // Title is a static section; sticky stage opens on full-size video (brief hold), then scroll-linked scrub.
-  distances: { reveal: 0.35, zoom: 0.25, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
-  reveal: { from: 0, to: 0, scale: 1 },
-  zoom: { from: 1, to: 1 },
+  // After the static title, sticky reveal→zoom drives the TV toward the viewer, then feature plays video 1.
+  distances: { reveal: 0.45, zoom: 0.85, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
+  // Reveal: fade TV in at startScale. Zoom: scroll-bound scale startScale→1 (drive toward camera).
+  reveal: { from: 0, to: 0.7, scale: 0.52 },
+  zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
   // Video 1 (cat-walk) plays once at 1.5×; later clips are scroll-scrubbed (finale plays).
   playback: { loopVideo1: false, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },

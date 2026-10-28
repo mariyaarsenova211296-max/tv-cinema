@@ -74,15 +74,20 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-intro.png'))
     record('six scenes; black intro; Figma menu/CTA/cards present')
 
-    # Screen 3 title is a static section; sticky stage opens on full-opacity video.
+    # Screen 3 title is static; sticky reveal→zoom drives the TV toward the viewer before feature video.
     assert page.locator('#scene-3.reveal-section .reveal-title').count() == 1
-    scroll(page, 0.15, 'reveal')
-    assert float(page.locator('.visual-frame').evaluate('(el)=>getComputedStyle(el).opacity')) == 1
-    scroll(page, 0.45, 'zoom')
+    scroll(page, 0.2, 'reveal')
+    early = float(page.locator('[data-testid=tv-drive]').evaluate(
+        "(el)=>{ const m=getComputedStyle(el).transform.match(/matrix\\(([^)]+)\\)/); return m?parseFloat(m[1].split(',')[0]):1; }"))
+    assert early < 0.7
+    scroll(page, 0.9, 'zoom')
+    mid = float(page.locator('[data-testid=tv-drive]').evaluate(
+        "(el)=>{ const m=getComputedStyle(el).transform.match(/matrix\\(([^)]+)\\)/); return m?parseFloat(m[1].split(',')[0]):1; }"))
+    assert mid > early
     page.screenshot(path=str(OUT/'desktop-reveal.png'))
-    record('static title section; full-size video stage (no scroll-driven fade)')
+    record('static title; scroll-driven TV drive-in (reveal→zoom scale)')
 
-    scroll(page, 1.2, 'feature')
+    scroll(page, 1.6, 'feature')
     page.wait_for_function('!document.querySelector("video").paused')
     t=video(page,1).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(650)
@@ -91,20 +96,20 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-video1.png'))
     record('video 1 advances without scrolling; exactly one player active')
 
-    scroll(page, 2.65, 'retreat')
+    scroll(page, 3.35, 'retreat')
     seeked(page,2,.3)
     assert video(page,1).evaluate('(v)=>v.paused')
     assert video(page,2).evaluate('(v)=>v.paused')
     t=video(page,2).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(400)
     assert abs(video(page,2).evaluate('(v)=>v.currentTime')-t)<.03
-    scroll(page, 3.9, 'retreat')
+    scroll(page, 4.6, 'retreat')
     seeked(page,2,.8)
-    scroll(page, 2.4, 'retreat')
+    scroll(page, 3.1, 'retreat')
     seeked(page,2,.2)
     record('video 2 seeks forward/backward and holds at rest')
 
-    scroll(page,4.9,'comparison')
+    scroll(page,5.4,'comparison')
     seeked(page,2,1)
     control=page.get_by_role('slider')
     assert control.input_value()=='50'
@@ -120,15 +125,16 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'desktop-comparison.png'))
     record('comparison interface: 50% initial, keyboard accessible, dual-image plane present')
 
-    scroll(page,6.65,'orbit')
+    scroll(page,7.35,'orbit')
+    page.wait_for_function('document.querySelector("[data-testid=video-3]")?.readyState >= 2')
     seeked(page,3,(.3-.16)/.84)
-    scroll(page,7.9,'orbit')
+    scroll(page,8.6,'orbit')
     seeked(page,3,(.8-.16)/.84)
-    scroll(page,6.4,'orbit')
+    scroll(page,7.1,'orbit')
     seeked(page,3,(.2-.16)/.84)
     record('video 3 seeks in both directions')
 
-    scroll(page,8.8,'finale')
+    scroll(page,9.5,'finale')
     page.wait_for_function('!document.querySelector("[data-testid=video-4]").paused')
     t=video(page,4).evaluate('(v)=>v.currentTime')
     page.wait_for_timeout(550)
@@ -138,7 +144,7 @@ with sync_playwright() as p:
     record('video 4 plays independently after orbit')
 
     # Fast direction reversals: allow only the final requested seek to settle.
-    for d,ph in [(2.5,'retreat'),(8.7,'finale'),(6.7,'orbit'),(4.9,'comparison'),(1.2,'feature'),(3.15,'retreat')]:
+    for d,ph in [(3.35,'retreat'),(9.5,'finale'),(7.35,'orbit'),(5.4,'comparison'),(1.6,'feature'),(3.85,'retreat')]:
         scroll(page,d,ph)
     seeked(page,2,.5)
     assert page.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
@@ -152,7 +158,7 @@ with sync_playwright() as p:
     page.route('**/design.json', lambda route: route.fulfill(json=design_fixture()))
     page.reload()
     page.wait_for_selector('.cta')
-    scroll(page,4.9,'comparison')
+    scroll(page,5.4,'comparison')
     seeked(page,2,1)
     control=page.get_by_role('slider')
     pinned=page.evaluate('scrollY')
@@ -189,7 +195,7 @@ with sync_playwright() as p:
     phone.on('pageerror', lambda err: errors.append(str(err)))
     phone.route('**/design.json',lambda route:route.fulfill(json=design_fixture()))
     phone.goto(BASE)
-    scroll(phone,4.9,'comparison')
+    scroll(phone,5.4,'comparison')
     seeked(phone,2,1)
     assert phone.evaluate('document.documentElement.scrollWidth<=innerWidth')
     screen_box=phone.locator('.comparison-screen').bounding_box()
@@ -203,11 +209,11 @@ with sync_playwright() as p:
     reduced=browser.new_context(viewport={'width':1440,'height':900},reduced_motion='reduce')
     r=reduced.new_page()
     r.goto(BASE)
-    scroll(r,1.2,'feature')
+    scroll(r,1.6,'feature')
     assert r.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     r.get_by_role('button',name='Воспроизвести видео').click()
     r.wait_for_function('!document.querySelector("video").paused')
-    scroll(r,2.8,'retreat')
+    scroll(r,3.35,'retreat')
     assert r.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     record('reduced motion: static states, manual play, no scroll scrubbing')
 
@@ -217,10 +223,10 @@ with sync_playwright() as p:
     delayed.route('**/media/video-2.mp4',lambda route:hold.append(route))
     h=delayed.new_page()
     h.goto(BASE,wait_until='domcontentloaded')
-    scroll(h,1.2,'feature')
+    scroll(h,1.6,'feature')
     h.wait_for_function('!document.querySelector("video").paused')
     h.wait_for_function('document.querySelector("video").classList.contains("visible")')
-    scroll(h,2.65,'retreat')
+    scroll(h,3.35,'retreat')
     assert video(h,1).evaluate('(v)=>v.paused && v.classList.contains("visible")')
     assert video(h,2).evaluate('(v)=>!v.classList.contains("visible")')
     for route in hold:
@@ -242,7 +248,7 @@ with sync_playwright() as p:
     }''')
     a=blocked.new_page()
     a.goto(BASE)
-    scroll(a,1.2,'feature')
+    scroll(a,1.6,'feature')
     a.get_by_role('button',name='Воспроизвести видео').wait_for()
     assert video(a,1).evaluate('(v)=>v.paused')
     a.evaluate('window.__blockAutoplay=false')
@@ -255,7 +261,7 @@ with sync_playwright() as p:
     broken.route('**/media/video-3.mp4',lambda route:route.abort())
     e=broken.new_page()
     e.goto(BASE)
-    scroll(e,6.65,'orbit')
+    scroll(e,7.35,'orbit')
     e.get_by_role('alert').wait_for()
     assert e.locator('.media-still').is_visible()
     broken.unroute('**/media/video-3.mp4')

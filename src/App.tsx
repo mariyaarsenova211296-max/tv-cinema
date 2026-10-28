@@ -89,7 +89,19 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, reduced]);
 
-  // Title is a static section; sticky stage opens on the full-size TV (no scroll-driven reveal).
+  // After «Задержите дыхание»: scroll-bound TV drive-in (reveal fade + zoom scale), then feature video.
+  const driveScale = reduced
+    ? 1
+    : phase === 'reveal'
+      ? config.reveal.scale
+      : phase === 'zoom'
+        ? config.zoom.from + smooth(progress) * (config.zoom.to - config.zoom.from)
+        : 1;
+  const revealOpacity = reduced
+    ? 1
+    : phase === 'reveal'
+      ? smooth((progress - config.reveal.from) / Math.max(0.001, config.reveal.to - config.reveal.from))
+      : 1;
   const comparisonOpacity = phase === 'comparison' ? smooth(progress / config.text.enterEnd) : phase === 'orbit' ? 1 - smooth(progress / config.text.leaveEnd) : 0;
   const comparisonActive = phase === 'comparison' && comparisonOpacity > 0.5 && inView;
   const finaleOpacity = phase === 'finale' ? smooth((progress - 0.12) / 0.4) : 0;
@@ -163,7 +175,15 @@ export default function App() {
         {anchors.map(a => <div className="scene-anchor" id={`scene-${a.id}`} key={a.id} style={{ top: `${phaseOffset(a.phase) / (totalDistance + 1) * 100}%` }} />)}
         <div className="stage-sticky" data-phase={phase} data-progress={progress.toFixed(3)}>
           <div className="visual-position">
-            <div className="visual-frame" ref={frame}>
+            <div
+              className="visual-frame"
+              ref={frame}
+              data-testid="tv-drive"
+              style={{
+                transform: `scale(${driveScale})`,
+                opacity: revealOpacity,
+              }}
+            >
               <MediaStage phase={phase} progress={progress} active={inView} reduced={reduced} />
               <div className="comparison-layer" style={{ opacity: comparisonOpacity, visibility: comparisonOpacity > 0 ? 'visible' : 'hidden' }}>
                 <Comparison design={design} width={size.width} height={size.height} interactive={comparisonActive} />

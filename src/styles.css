@@ -181,13 +181,14 @@ button, a, input { touch-action: manipulation; }
   justify-content: center;
 }
 .visual-frame {
-  /* Full sticky stage — videos cover the plane (no letterbox black bars) */
+  /* Full sticky stage — videos cover the plane (no letterbox black bars).
+   * Inline transform scale() drives the TV toward the viewer on reveal→zoom. */
   width: 100%;
   height: 100%;
   flex: none;
   position: relative;
   transform-origin: center center;
-  will-change: opacity;
+  will-change: transform, opacity;
 }
 .media-stage, .comparison-layer { position: absolute; inset: 0; overflow: hidden; }
 .media-stage video, .media-fallback, .media-still {
