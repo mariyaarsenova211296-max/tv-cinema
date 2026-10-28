@@ -21,8 +21,9 @@ export const config = {
   reveal: { from: 0, to: 0.35, scale: 0.52 },
   zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
-  // Finale → black → ambience Video 2 plays once. turnOnAt = when 28:541 text soft-enters.
-  ambience: { blackEnd: 0.14, videoIn: 0.28, turnOnAt: 0.45 },
+  // Last screen (ambience / “finale” 5.04s): 1st scroll starts video after black;
+  // 2nd scroll (turnOnAt) TV/text soft-enter; video keeps playing to file end.
+  ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
   // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = start of walking-cat tail.
   driveEndRatio: 0.2634,
   // Feature video-1 plays once after zoom; retreat/orbit scrub; finale + ambience play once.

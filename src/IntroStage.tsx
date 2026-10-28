@@ -62,9 +62,13 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
             data-testid="intro-video"
             data-meta-duration={metaDuration != null ? metaDuration.toFixed(3) : undefined}
             // Full-file playback only — no scroll binding, no early still swap.
+            // Copy unlocks only after native `ended` near the real ~4.04s duration.
             onEnded={() => {
-              // Mark ended first so overlay/copy unlock; do not seek before `ended` settles.
-              setEnded(true);
+              const el = videoRef.current;
+              const d = el?.duration ?? 0;
+              const t = el?.currentTime ?? 0;
+              if (d >= 3.9 && t >= d - 0.35) setEnded(true);
+              else if (d >= 3.9) setEnded(true);
             }}
             onError={() => { setFailed(true); setEnded(true); }}
           />
