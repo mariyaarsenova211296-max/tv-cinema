@@ -189,8 +189,8 @@ button, a, input { touch-action: manipulation; }
 }
 .intro-copy__title {
   left: 50%;
-  /* screens12: clearly under TV stand / above viewer head (56% still kissed the stand) */
-  top: 63%;
+  /* STV-33: raise from 63% — sit in the gap between stand (~45%) and head (~70%) */
+  top: 57%;
   /* size vs media box, not viewport — keeps scale correct when stage is padded */
   font-size: clamp(28px, 6.4cqw, 92px);
   font-weight: 500;
@@ -205,7 +205,7 @@ button, a, input { touch-action: manipulation; }
 }
 .intro-copy__left-top {
   left: 11%;
-  top: 60%;
+  top: 54%;
   font-size: clamp(12px, 2.35cqw, 34px);
   font-weight: 400;
   line-height: 0.85;
@@ -214,7 +214,7 @@ button, a, input { touch-action: manipulation; }
 }
 .intro-copy__left-bottom {
   left: 10%;
-  top: 65%;
+  top: 59%;
   font-size: clamp(12px, 2.35cqw, 34px);
   font-weight: 400;
   line-height: 0.85;
@@ -223,7 +223,7 @@ button, a, input { touch-action: manipulation; }
 }
 .intro-copy__right {
   left: 89%;
-  top: 64%;
+  top: 58%;
   font-size: clamp(12px, 2.35cqw, 34px);
   font-weight: 400;
   line-height: 0.85;
