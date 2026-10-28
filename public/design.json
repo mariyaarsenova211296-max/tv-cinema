@@ -96,6 +96,11 @@
   },
   "comparisonFeatures": [
     {
+      "icon": "assets/comparison/icon-mini.svg",
+      "title": "Mini LED",
+      "body": "Классическая технология экрана.\nГлубокий чёрный цвет и яркая\nконтрастная картинка"
+    },
+    {
       "icon": "assets/comparison/icon-rgb.svg",
       "title": "RGB-miniled",
       "body": "Топовая технология экрана. Высокая детализация и насыщенный чёрный цвет\nбез серых пятен"

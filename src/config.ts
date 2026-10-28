@@ -2,16 +2,16 @@ import { asset } from './base';
 
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
-  // STV-41: after breath-hold, full video-2 (72:1038) is scroll-scrubbed through
-  // approach → cat/TV → retreat (no stray zoom.mp4). Then sequential single UTPs
-  // on video-3 start frame (81:2086 / 81:2087→81:2180), then orbit scrubs video-3.
+  // STV-41/42: after breath-hold, full video-2 (72:1038) scrub approach→retreat.
+  // Frozen horse+cat still (video-3 hold): Mini LED → RGB → DLG, then orbit scrub.
   distances: {
     reveal: 0.45,
     zoom: 1.1,
     feature: 1.6,
     retreat: 2.2,
-    comparison: 1.2, // RGB-miniled UTP (81:2087)
-    utpDlg: 1.2, // DLG 288 гц UTP (81:2180)
+    utpMini: 1.6, // Mini LED UTP on freeze still
+    comparison: 1.6, // RGB-miniled UTP (81:2087)
+    utpDlg: 1.6, // DLG 288 гц UTP (81:2180)
     orbit: 2.5, // camera pull-away scrub of video-3
     // Long enough that typical scroll doesn't outrun video-4 (~4s) before `ended`.
     finale: 3.5,
@@ -73,7 +73,7 @@ export function breathVideoProgress(phase: Phase, progress: number): number {
     if (phase === p) return clamp((offset + smooth(progress) * config.distances[p]) / total);
     offset += config.distances[p];
   }
-  if (phase === 'comparison' || phase === 'utpDlg' || phase === 'orbit' || phase === 'finale' || phase === 'ambience' || phase === 'rotate' || phase === 'obsolete') {
+  if (phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg' || phase === 'orbit' || phase === 'finale' || phase === 'ambience' || phase === 'rotate' || phase === 'obsolete') {
     return 1;
   }
   return 0;

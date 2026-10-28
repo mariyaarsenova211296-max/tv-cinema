@@ -24,7 +24,8 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const [video4Ended, setVideo4Ended] = useState(false);
 
   const inBreathFlow = phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat';
-  const holdingUtp = phase === 'comparison' || phase === 'utpDlg';
+  // STV-42: freeze horse+cat still across Mini → RGB → DLG (no scrub/scale during UTPs).
+  const holdingUtp = phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg';
   const fadingUtp = phase === 'orbit' && progress <= config.text.leaveEnd;
   const inAmbience = phase === 'ambience';
   const scrubbingRotate = phase === 'rotate';

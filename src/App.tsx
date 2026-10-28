@@ -22,11 +22,12 @@ const emptyDesign: Design = {
 /* scene-3 is the static title section outside the sticky experience */
 const anchors = [
   { id: 4, phase: 'feature' as const },
-  { id: 5, phase: 'comparison' as const },
-  { id: 6, phase: 'utpDlg' as const },
-  { id: 7, phase: 'finale' as const },
-  { id: 8, phase: 'ambience' as const },
-  { id: 9, phase: 'rotate' as const },
+  { id: 5, phase: 'utpMini' as const },
+  { id: 6, phase: 'comparison' as const },
+  { id: 7, phase: 'utpDlg' as const },
+  { id: 8, phase: 'finale' as const },
+  { id: 9, phase: 'ambience' as const },
+  { id: 10, phase: 'rotate' as const },
 ];
 
 function resolveDesign(raw: Design): Design {
@@ -133,17 +134,24 @@ export default function App() {
       : 1;
   const featureSliderOpacity = phase === 'feature' ? 1 : 0;
   const featureSliderActive = phase === 'feature' && inView;
-  // Figma 81:2086 — one UTP at a time on video-3 hold (RGB → DLG), then orbit scrub.
-  const activeUtpIndex = phase === 'comparison' ? 0 : (phase === 'utpDlg' || phase === 'orbit') ? 1 : -1;
+  // STV-42: frozen horse+cat still — Mini LED → RGB → DLG with fade swaps.
+  const utpPhases = phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg';
+  const activeUtpIndex = phase === 'utpMini' ? 0
+    : phase === 'comparison' ? 1
+      : (phase === 'utpDlg' || phase === 'orbit') ? 2
+        : -1;
   const utpOpacity = (() => {
-    if (phase === 'comparison' || phase === 'utpDlg') {
+    if (utpPhases) {
       if (progress < config.text.enterEnd) return smooth(progress / config.text.enterEnd);
+      if (progress > 1 - config.text.leaveEnd) {
+        return 1 - smooth((progress - (1 - config.text.leaveEnd)) / config.text.leaveEnd);
+      }
       return 1;
     }
     if (phase === 'orbit') return 1 - smooth(progress / config.text.leaveEnd);
     return 0;
   })();
-  const utpActive = (phase === 'comparison' || phase === 'utpDlg') && utpOpacity > 0.5 && inView;
+  const utpActive = utpPhases && utpOpacity > 0.5 && inView;
   const activeUtp = activeUtpIndex >= 0 && utpOpacity > 0.01 ? design.comparisonFeatures[activeUtpIndex] : null;
   // Keep finale copy readable through most of the phase; soft leave near the end only.
   const finaleOpacity = phase === 'finale'
@@ -266,7 +274,7 @@ export default function App() {
             <div
               className="comparison-features comparison-features--single"
               data-testid="comparison-features"
-              data-node-id={activeUtpIndex === 0 ? '81:2087' : '81:2180'}
+              data-node-id={activeUtpIndex === 0 ? 'utp-mini' : activeUtpIndex === 1 ? '81:2087' : '81:2180'}
               style={{ opacity: utpOpacity }}
               inert={!utpActive || undefined}
             >
@@ -346,7 +354,7 @@ export default function App() {
       </div>
     )}
 
-    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'comparison' || phase === 'utpDlg' ? 5 : phase === 'orbit' ? 5 : phase === 'finale' ? 6 : phase === 'ambience' ? 7 : 8}`}</span>
+    <span className="sr-only" aria-live="polite">{inView && `Сцена ${phase === 'reveal' || phase === 'zoom' || phase === 'feature' || phase === 'retreat' ? 4 : phase === 'utpMini' || phase === 'comparison' || phase === 'utpDlg' || phase === 'orbit' ? 5 : phase === 'finale' ? 6 : phase === 'ambience' ? 7 : 8}`}</span>
     <div className="timeline-status" hidden data-distance={clamp(distance, -1, totalDistance)} />
   </>;
 }
