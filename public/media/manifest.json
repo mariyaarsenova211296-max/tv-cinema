@@ -44,5 +44,21 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "d7f3ca0203b192e4eb958eed000838e470396f676ef8330ddd8b7d88233a328d"
+  },
+  {
+    "role": "intro",
+    "figma_node": "17:529/17:467",
+    "path": "media/intro.mp4",
+    "duration": 3.0,
+    "note": "Play-once screen-1; composed from 17:467 assets (MCP 17:529 export was wrong TV-base macro)"
+  },
+  {
+    "role": "zoom",
+    "figma_node": "12:464",
+    "path": "media/zoom.mp4",
+    "duration": 2.041667,
+    "width": 1920,
+    "height": 1080,
+    "note": "Scroll-scrubbed TV enlarge before feature"
   }
 ]

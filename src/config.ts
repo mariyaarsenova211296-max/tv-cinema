@@ -2,16 +2,23 @@ import { asset } from './base';
 
 export const config = {
   // Scroll distances are viewport heights, independent of video durations.
-  // After the static title, sticky reveal→zoom scrubs the Figma 17:466 appear+drive head of video 1, then feature plays the walking-cat tail.
+  // After the static title, sticky reveal→zoom scrubs Figma 12:464 TV enlarge (zoom.mp4),
+  // then feature plays the walking-cat tail of combined video-1 from driveEndRatio.
   distances: { reveal: 0.45, zoom: 0.85, feature: 1.3, retreat: 2.5, comparison: 1.5, orbit: 2.5, finale: 1.5 },
-  // Reveal fade-in window (opacity only — drive-in lives inside video 1 now).
-  reveal: { from: 0, to: 0.7, scale: 0.52 },
+  // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).
+  reveal: { from: 0, to: 0.35, scale: 0.52 },
   zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
-  // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = end of appear/drive head.
+  // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = start of walking-cat tail.
   driveEndRatio: 0.2634,
-  // Video 1 plays once at 1.5× after the drive head; later clips are scroll-scrubbed (finale plays).
+  // Video 1 plays once at 1.5× after zoom; later clips are scroll-scrubbed (finale plays).
   playback: { loopVideo1: false, loopVideo4: true, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
+  /** Figma 12:464 — scroll-scrubbed TV enlarge before feature. */
+  zoomMedia: {
+    src: asset('media/zoom.mp4'),
+    poster: asset('media/zoom-start.jpg'),
+    end: asset('media/zoom-end.jpg'),
+  },
   media: [1, 2, 3, 4].map(n => ({
     src: asset(`media/video-${n}.mp4`),
     poster: asset(`media/video-${n}-start.jpg`),
@@ -19,12 +26,15 @@ export const config = {
   })),
 } as const;
 
-/** 0–1 progress through the appear+drive head of video 1 across reveal→zoom. */
-export function driveHeadProgress(phase: Phase, progress: number): number {
+/** 0–1 progress through Figma 12:464 zoom.mp4 across reveal→zoom. */
+export function zoomProgress(phase: Phase, progress: number): number {
   if (phase === 'reveal') return smooth(progress) * 0.4;
   if (phase === 'zoom') return 0.4 + smooth(progress) * 0.6;
   return 1;
 }
+
+/** @deprecated Use zoomProgress — kept for any leftover imports. */
+export const driveHeadProgress = zoomProgress;
 
 export type Phase = keyof typeof config.distances;
 export const phases = Object.keys(config.distances) as Phase[];

@@ -7,6 +7,7 @@ import { Comparison } from './Comparison';
 import { config, phaseOffset, resolvePhase, smooth, totalDistance, clamp } from './config';
 import type { Design } from './config';
 import { FeatureSlider } from './FeatureSlider';
+import { IntroStage } from './IntroStage';
 import { MediaStage } from './MediaStage';
 import { useDesignScale } from './useDesignScale';
 import { useMotionPreference } from './useMotionPreference';
@@ -110,7 +111,7 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  // After «Задержите дыхание»: scrub Figma 17:466 appear+drive head of combined video-1, then play walking-cat tail.
+  // After «Задержите дыхание»: soft fade + scroll-scrub Figma 12:464 TV enlarge, then play walking-cat tail.
   const mediaOpacity = reduced
     ? 1
     : phase === 'reveal'
@@ -158,7 +159,7 @@ export default function App() {
     </header>
 
     <main>
-      <section id="scene-1" className="intro" aria-label="Экран 1" data-node-id="1:1106" />
+      <IntroStage reduced={reduced} />
 
       <section id="scene-2" className="cards-section" aria-label="Экран 2" data-node-id="1:1156">
         {design.cardsTitle && <h2 className="cards-title">{design.cardsTitle}</h2>}

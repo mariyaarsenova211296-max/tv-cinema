@@ -65,31 +65,42 @@ with sync_playwright() as p:
     page.on('pageerror', lambda err: errors.append(str(err)))
     page.on('console', lambda msg: errors.append(msg.text) if msg.type=='error' else None)
     page.goto(BASE)
-    page.wait_for_function('document.querySelectorAll("video").length===4')
+    # intro + zoom + feature videos 1–4
+    page.wait_for_function('document.querySelectorAll("video").length>=5')
     assert page.locator('[id^="scene-"]').count() == 6
     assert page.locator('.intro').evaluate('(el)=>getComputedStyle(el).backgroundColor') == 'rgb(0, 0, 0)'
+    assert page.locator('[data-testid=video-zoom]').count() == 1
     page.wait_for_selector('.cta')
     assert page.locator('.card img').count() == 6
     assert page.locator('.site-header .nav-pill').count() >= 2
     page.screenshot(path=str(OUT/'desktop-intro.png'))
     record('six scenes; black intro; Figma menu/CTA/cards present')
 
-    # Screen 3 title is static; sticky reveal→zoom scrubs Figma 17:466 appear+drive head of video 1.
+    # Screen 3 title is static; sticky reveal→zoom scrubs Figma 12:464 TV enlarge (zoom.mp4).
     assert page.locator('#scene-3.reveal-section .reveal-title').count() == 1
+    zoom = page.locator('[data-testid=video-zoom]')
     scroll(page, 0.2, 'reveal')
-    early = float(video(page, 1).evaluate('(v)=>v.currentTime'))
+    early = float(zoom.evaluate('(v)=>v.currentTime'))
     scroll(page, 0.9, 'zoom')
-    mid = float(video(page, 1).evaluate('(v)=>v.currentTime'))
+    mid = float(zoom.evaluate('(v)=>v.currentTime'))
     assert mid > early
+    assert zoom.evaluate('(v)=>v.classList.contains("visible")')
+    assert not video(page, 1).evaluate('(v)=>v.classList.contains("visible")')
     page.screenshot(path=str(OUT/'desktop-reveal.png'))
-    record('static title; scroll-driven appear+drive scrub on combined video 1')
+    record('static title; scroll-driven Figma 12:464 zoom scrub before feature')
 
     scroll(page, 1.6, 'feature')
-    page.wait_for_function('!document.querySelector("video").paused')
+    page.wait_for_function('document.querySelector("[data-testid=video-1]")?.classList.contains("visible")')
+    page.wait_for_function('!document.querySelector("[data-testid=video-1]").paused')
     t=video(page,1).evaluate('(v)=>v.currentTime')
+    # Feature starts at walking-cat tail (after driveEndRatio), not at t≈0.
+    assert t > 1.5
     page.wait_for_timeout(650)
     assert video(page,1).evaluate('(v)=>v.currentTime') > t+.3
-    assert page.locator('video').evaluate_all('(vs)=>vs.filter(v=>!v.paused).length')==1
+    playing = page.locator('[data-testid^=video-]').evaluate_all(
+        '(vs)=>vs.filter(v => !v.paused && v.getAttribute("data-testid") !== "video-zoom").length'
+    )
+    assert playing == 1
     # Screen 4: comparison chrome over playing video
     assert page.locator('[data-testid=feature-slider]').is_visible()
     assert 'Miniled' in page.locator('.feature-slider__label--mini').inner_text()
@@ -209,11 +220,11 @@ with sync_playwright() as p:
     r=reduced.new_page()
     r.goto(BASE)
     scroll(r,1.6,'feature')
-    assert r.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
+    assert r.locator('[data-testid^=video-]').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     r.get_by_role('button',name='Воспроизвести видео').click()
-    r.wait_for_function('!document.querySelector("video").paused')
+    r.wait_for_function('!document.querySelector("[data-testid=video-1]").paused')
     scroll(r,3.35,'retreat')
-    assert r.locator('video').evaluate_all('(vs)=>vs.every(v=>v.paused)')
+    assert r.locator('[data-testid^=video-]').evaluate_all('(vs)=>vs.every(v=>v.paused)')
     record('reduced motion: static states, manual play, no scroll scrubbing')
 
     # Hold the incoming request: the previous decoded frame must remain visible.
@@ -223,8 +234,8 @@ with sync_playwright() as p:
     h=delayed.new_page()
     h.goto(BASE,wait_until='domcontentloaded')
     scroll(h,1.6,'feature')
-    h.wait_for_function('!document.querySelector("video").paused')
-    h.wait_for_function('document.querySelector("video").classList.contains("visible")')
+    h.wait_for_function('!document.querySelector("[data-testid=video-1]").paused')
+    h.wait_for_function('document.querySelector("[data-testid=video-1]").classList.contains("visible")')
     scroll(h,3.35,'retreat')
     assert video(h,1).evaluate('(v)=>v.paused && v.classList.contains("visible")')
     assert video(h,2).evaluate('(v)=>!v.classList.contains("visible")')
@@ -252,7 +263,7 @@ with sync_playwright() as p:
     assert video(a,1).evaluate('(v)=>v.paused')
     a.evaluate('window.__blockAutoplay=false')
     a.get_by_role('button',name='Воспроизвести видео').click()
-    a.wait_for_function('!document.querySelector("video").paused')
+    a.wait_for_function('!document.querySelector("[data-testid=video-1]").paused')
     record('autoplay rejection exposes working manual playback')
 
     # Network/media failure fallback and recovery (expected browser resource error).
