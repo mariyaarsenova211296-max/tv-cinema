@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { config, clamp, zoomProgress, ambienceVideoProgress, smooth } from './config';
+import { config, clamp, zoomProgress, smooth } from './config';
 import type { Phase } from './config';
 
 export function MediaStage({ phase, progress, active, reduced }: { phase: Phase; progress: number; active: boolean; reduced: boolean }) {
@@ -8,11 +8,14 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const zoomRef = useRef<HTMLVideoElement | null>(null);
   const ambienceRef = useRef<HTMLVideoElement | null>(null);
   const desired = useRef({ index: 0, timeSec: 0, scrubbing: false });
-  const playPending = useRef(new Set<number>());
+  const playPending = useRef(new Set<number | 'ambience'>());
   const featureSeekDone = useRef(false);
+  const finalePlayArmed = useRef(false);
+  const ambiencePlayArmed = useRef(false);
   const [display, setDisplay] = useState(-1);
   const [zoomReady, setZoomReady] = useState(false);
   const [ambienceReady, setAmbienceReady] = useState(false);
+  const [ambienceEnded, setAmbienceEnded] = useState(false);
   const [errors, setErrors] = useState<Record<number, boolean>>({});
   const [zoomError, setZoomError] = useState(false);
   const [ambienceError, setAmbienceError] = useState(false);
@@ -20,42 +23,51 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
   const [manual, setManual] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
   const [video1Ended, setVideo1Ended] = useState(false);
+  const [video4Ended, setVideo4Ended] = useState(false);
 
   const fadingComparison = phase === 'orbit' && progress <= config.text.leaveEnd;
   const scrubbingZoom = phase === 'reveal' || phase === 'zoom';
-  const scrubbingAmbience = phase === 'ambience';
-  const holdFinaleEnd = phase === 'finale' || (phase === 'ambience' && progress < config.ambience.blackEnd);
-  const index = scrubbingZoom || scrubbingAmbience
+  const inAmbience = phase === 'ambience';
+  const ambienceBlack = inAmbience && progress < config.ambience.blackEnd;
+  const ambiencePlayingPhase = inAmbience && progress >= config.ambience.blackEnd;
+  // Hold faded spatial-sound still only during the black beat into ambience.
+  const holdSoundStill = ambienceBlack;
+  const index = scrubbingZoom
     ? 0
-    : phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1
-      : phase === 'orbit' ? 2
-        : phase === 'finale' ? 3
-          : 0;
+    : holdSoundStill ? 3
+      : phase === 'retreat' || phase === 'comparison' || fadingComparison ? 1
+        : phase === 'orbit' ? 2
+          : phase === 'finale' ? 3
+            : inAmbience ? 0
+              : 0;
   const holdVideo2End = phase === 'comparison' || fadingComparison;
-  const scrubbing = scrubbingZoom || scrubbingAmbience || phase === 'retreat' || phase === 'orbit' || phase === 'comparison' || holdFinaleEnd;
+  const scrubbing = scrubbingZoom || phase === 'retreat' || phase === 'orbit' || phase === 'comparison';
   const zoomRatio = zoomProgress(phase, progress);
-  const ambienceRatio = ambienceVideoProgress(progress);
 
   // Spatial-sound (video-4) fades to black at end of finale / start of ambience.
   const soundFade =
     phase === 'finale'
       ? (progress > 0.72 ? 1 - smooth((progress - 0.72) / 0.28) : 1)
-      : phase === 'ambience' && progress < config.ambience.blackEnd
+      : ambienceBlack
         ? 1 - smooth(progress / config.ambience.blackEnd)
         : 0;
   const ambienceFade =
-    phase === 'ambience'
-      ? (progress <= config.ambience.blackEnd
-        ? 0
-        : smooth((progress - config.ambience.blackEnd) / Math.max(0.001, config.ambience.videoIn - config.ambience.blackEnd)))
+    ambiencePlayingPhase
+      ? smooth((progress - config.ambience.blackEnd) / Math.max(0.001, config.ambience.videoIn - config.ambience.blackEnd))
       : 0;
 
+  const playingFinale = Boolean(
+    active && visible && phase === 'finale' && !video4Ended && (!reduced || manual),
+  );
+  const playingAmbience = Boolean(
+    active && visible && ambiencePlayingPhase && !ambienceEnded && !ambienceError && (!reduced || manual),
+  );
   const playing = Boolean(
-    active && visible && !scrubbing && !scrubbingZoom && !scrubbingAmbience && !holdFinaleEnd
+    active && visible && !scrubbing && !scrubbingZoom && !inAmbience && phase !== 'finale'
     && !(index === 0 && video1Ended)
     && (!reduced || manual),
   );
-  desired.current = { index, timeSec: 0, scrubbing: scrubbing && !holdVideo2End && !scrubbingZoom && !scrubbingAmbience && !holdFinaleEnd };
+  desired.current = { index, timeSec: 0, scrubbing: scrubbing && !holdVideo2End && !scrubbingZoom };
 
   function ready(i: number) {
     const el = videos.current[i];
@@ -68,14 +80,25 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     if (phase !== 'feature') featureSeekDone.current = false;
   }, [phase]);
 
+  useEffect(() => {
+    if (phase !== 'finale') {
+      finalePlayArmed.current = false;
+      setVideo4Ended(false);
+    }
+  }, [phase]);
+
+  useEffect(() => {
+    if (!inAmbience) {
+      ambiencePlayArmed.current = false;
+      setAmbienceEnded(false);
+    }
+  }, [inAmbience]);
+
   // Scroll-scrub Figma 12:464 zoom.mp4 during reveal→zoom.
   useEffect(() => {
     const el = zoomRef.current;
     if (!el || !scrubbingZoom) return;
-    if (el.preload !== 'auto') {
-      el.preload = 'auto';
-      el.load();
-    }
+    if (el.preload !== 'auto') el.preload = 'auto';
     el.pause();
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
     if (reduced) {
@@ -90,45 +113,95 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     setZoomReady(el.readyState >= 2);
   });
 
-  // Scroll-scrub Figma 28:540 ambience after black beat.
+  // Ambience (Figma 34:547 Video 2): on scroll enter after black, play start→end once (not scrubbed).
   useEffect(() => {
     const el = ambienceRef.current;
-    if (!el || !scrubbingAmbience) return;
-    if (el.preload !== 'auto') {
-      el.preload = 'auto';
-      el.load();
-    }
-    el.pause();
-    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    if (reduced || progress <= config.ambience.blackEnd) {
-      el.currentTime = 0;
-      setAmbienceReady(true);
+    if (!el || !ambiencePlayingPhase) {
+      if (!inAmbience) el?.pause();
       return;
     }
-    const target = clamp(ambienceRatio * el.duration, 0, Math.max(0, el.duration - 1 / 24));
-    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
-      el.currentTime = target;
+    if (el.preload !== 'auto') el.preload = 'auto';
+    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+    setAmbienceReady(true);
+
+    if (reduced) {
+      el.pause();
+      el.currentTime = Math.max(0, el.duration - 1 / 24);
+      setAmbienceEnded(true);
+      return;
     }
-    setAmbienceReady(el.readyState >= 2);
+
+    if (!ambiencePlayArmed.current) {
+      el.pause();
+      el.currentTime = 0;
+      ambiencePlayArmed.current = true;
+      setAmbienceEnded(false);
+    }
+
+    if (ambienceEnded) {
+      el.pause();
+      el.currentTime = Math.max(0, el.duration - 1 / 24);
+      return;
+    }
+
+    if (!active || document.hidden || !playingAmbience) {
+      el.pause();
+      return;
+    }
+    if (!el.paused || playPending.current.has('ambience')) return;
+    playPending.current.add('ambience');
+    el.play().then(() => setAutoplayBlocked(false)).catch(err => {
+      if (err.name !== 'AbortError') setAutoplayBlocked(true);
+    }).finally(() => playPending.current.delete('ambience'));
+  });
+
+  // Finale (spatial sound): play video-4 from start once, then hold end.
+  useEffect(() => {
+    if (phase !== 'finale') return;
+    const el = videos.current[3];
+    if (!el) return;
+    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+
+    if (!finalePlayArmed.current) {
+      el.pause();
+      el.currentTime = reduced ? Math.max(0, el.duration - 1 / 24) : 0;
+      finalePlayArmed.current = true;
+      setDisplay(3);
+      if (reduced) setVideo4Ended(true);
+    }
+
+    if (video4Ended || reduced) {
+      el.pause();
+      el.currentTime = Math.max(0, el.duration - 1 / 24);
+      setDisplay(3);
+      return;
+    }
+
+    if (!active || document.hidden || !playingFinale) {
+      el.pause();
+      return;
+    }
+    if (!el.paused || playPending.current.has(3)) return;
+    playPending.current.add(3);
+    el.play().then(() => setAutoplayBlocked(false)).catch(err => {
+      if (err.name !== 'AbortError') setAutoplayBlocked(true);
+    }).finally(() => playPending.current.delete(3));
   });
 
   useEffect(() => {
     if (!active || document.hidden) {
       videos.current.forEach(el => el?.pause());
       zoomRef.current?.pause();
-      ambienceRef.current?.pause();
+      if (!ambiencePlayingPhase) ambienceRef.current?.pause();
       return;
     }
-    if (scrubbingZoom || scrubbingAmbience) {
-      videos.current.forEach(el => el?.pause());
+    if (scrubbingZoom || phase === 'finale' || inAmbience) {
+      if (scrubbingZoom || inAmbience) videos.current.forEach((el, i) => { if (!(holdSoundStill && i === 3)) el?.pause(); });
       return;
     }
     videos.current.forEach((el, i) => {
       if (!el) return;
-      if ((Math.abs(i - index) <= 1 || i === 3) && el.preload !== 'auto') {
-        el.preload = 'auto';
-        // Avoid el.load() — aborts in-flight buffers.
-      }
+      if ((Math.abs(i - index) <= 1 || i === 3) && el.preload !== 'auto') el.preload = 'auto';
       el.playbackRate = i === 0 ? config.playback.video1Rate : 1;
       if (i !== index || !playing) el.pause();
     });
@@ -137,7 +210,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
 
     let target = el.currentTime;
-    if (holdVideo2End || holdFinaleEnd) {
+    if (holdVideo2End) {
       target = Math.max(0, el.duration - 1 / 24);
     } else if (phase === 'feature' && index === 0 && !featureSeekDone.current) {
       target = config.driveEndRatio * el.duration;
@@ -149,13 +222,13 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       target = clamp(normalized * el.duration, 0, Math.max(0, el.duration - 1 / 24));
     }
 
-    const needsSeek = holdVideo2End || holdFinaleEnd
+    const needsSeek = holdVideo2End
       || ((phase === 'retreat' || phase === 'orbit') && !reduced)
       || (phase === 'feature' && index === 0 && Math.abs(el.currentTime - target) > 0.2 && el.currentTime < config.driveEndRatio * el.duration);
     if (needsSeek && !el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
       el.currentTime = target;
     }
-    if (holdVideo2End || holdFinaleEnd) {
+    if (holdVideo2End) {
       el.pause();
       setDisplay(index);
     }
@@ -166,6 +239,16 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       }).finally(() => playPending.current.delete(index));
     }
     ready(index);
+  });
+
+  // Keep faded sound still parked on end during black beat.
+  useEffect(() => {
+    if (!holdSoundStill) return;
+    const el = videos.current[3];
+    if (!el || !Number.isFinite(el.duration)) return;
+    el.pause();
+    el.currentTime = Math.max(0, el.duration - 1 / 24);
+    setDisplay(3);
   });
 
   useEffect(() => {
@@ -185,50 +268,36 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       ambienceRef.current?.pause();
     };
   }, []);
-  useEffect(() => { setManual(false); }, [index, active, scrubbingZoom, scrubbingAmbience]);
+  useEffect(() => { setManual(false); }, [index, active, scrubbingZoom, inAmbience, phase]);
   useEffect(() => {
     if (!active) setVideo1Ended(false);
   }, [active]);
 
-  const finaleArmed = useRef(false);
-  useEffect(() => {
-    if (phase !== 'finale' && !(phase === 'ambience' && progress < config.ambience.blackEnd)) {
-      finaleArmed.current = false;
-      return;
-    }
-    if (finaleArmed.current) return;
-    const el = videos.current[3];
-    if (!el) return;
-    const arm = () => {
-      if (!Number.isFinite(el.duration)) return;
-      el.pause();
-      el.currentTime = Math.max(0, el.duration - 1 / 24);
-      finaleArmed.current = true;
-      setDisplay(3);
-    };
-    if (el.readyState >= 2) arm();
-    else el.addEventListener('loadeddata', arm, { once: true });
-  }, [phase, progress]);
-
   const still = reduced && !manual;
   const fallback = scrubbingZoom
     ? (reduced || zoomRatio > 0.95 ? config.zoomMedia.end : config.zoomMedia.poster)
-    : scrubbingAmbience
-      ? (ambienceRatio > 0.7 ? config.ambienceMedia.end : config.ambienceMedia.poster)
-      : config.media[holdFinaleEnd ? 3 : index][holdVideo2End || holdFinaleEnd ? 'end' : 'poster'];
+    : inAmbience
+      ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
+      : config.media[holdSoundStill || phase === 'finale' ? 3 : index][holdVideo2End || holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'];
   const showZoom = scrubbingZoom && !zoomError && !(reduced && still);
-  const showAmbience = scrubbingAmbience && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
-  const showSoundHold = (phase === 'finale' || (phase === 'ambience' && soundFade > 0.01)) && !scrubbingZoom;
-  const showFeature = !scrubbingZoom && !scrubbingAmbience && !holdFinaleEnd;
+  const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
+  const showSound = (phase === 'finale' || holdSoundStill) && soundFade > 0.01 && !scrubbingZoom;
+  const showFeature = !scrubbingZoom && !inAmbience && phase !== 'finale';
 
   return <div
     className="media-stage"
     style={{ '--media-crossfade': `${config.playback.crossfadeMs}ms` } as CSSProperties}
-    data-media-index={scrubbingZoom ? 'zoom' : scrubbingAmbience ? 'ambience' : (holdFinaleEnd ? 4 : index + 1)}
-    data-mode={scrubbingZoom ? 'scroll-zoom' : scrubbingAmbience ? 'scroll-ambience' : scrubbing ? 'scroll' : playing ? 'play' : 'still'}
+    data-media-index={scrubbingZoom ? 'zoom' : inAmbience ? 'ambience' : (phase === 'finale' || holdSoundStill ? 4 : index + 1)}
+    data-mode={
+      scrubbingZoom ? 'scroll-zoom'
+        : ambiencePlayingPhase ? (playingAmbience ? 'play-ambience' : 'still-ambience')
+          : phase === 'finale' ? (playingFinale ? 'play' : 'still')
+            : scrubbing ? 'scroll'
+              : playing ? 'play'
+                : 'still'
+    }
     data-testid="tv-drive"
     data-zoom-ratio={scrubbingZoom ? zoomRatio.toFixed(3) : undefined}
-    data-ambience-ratio={scrubbingAmbience ? ambienceRatio.toFixed(3) : undefined}
   >
     <img className="media-fallback" src={fallback} alt="Телевизор Sber TV" />
     <video
@@ -259,7 +328,13 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       className={showAmbience && ambienceReady && !still ? 'visible' : ''}
       onLoadedData={() => setAmbienceReady(true)}
       onCanPlay={() => setAmbienceReady(true)}
-      onSeeked={() => setAmbienceReady(true)}
+      onEnded={() => {
+        const el = ambienceRef.current;
+        if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
+        el?.pause();
+        setAmbienceEnded(true);
+        setAmbienceReady(true);
+      }}
       onError={() => setAmbienceError(true)}
     />
     {config.media.map((media, i) => <video key={media.src} ref={el => { videos.current[i] = el; }}
@@ -267,9 +342,9 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
       preload={i === 0 || i === 3 ? 'auto' : 'metadata'}
       loop={i === 0 ? config.playback.loopVideo1 : false}
       aria-hidden="true"
-      style={i === 3 && showSoundHold ? { opacity: soundFade } : undefined}
+      style={i === 3 && showSound ? { opacity: soundFade } : undefined}
       className={
-        ((showFeature && display === i) || (showSoundHold && i === 3 && display === 3))
+        ((showFeature && display === i) || (showSound && i === 3 && display === 3))
         && !still && !errors[i] ? 'visible' : ''
       }
       onLoadedData={() => ready(i)} onCanPlay={() => ready(i)}
@@ -280,6 +355,7 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
           const el = videos.current[3];
           if (el && Number.isFinite(el.duration)) el.currentTime = Math.max(0, el.duration - 1 / 24);
           el?.pause();
+          setVideo4Ended(true);
           setDisplay(3);
           return;
         }
@@ -291,18 +367,36 @@ export function MediaStage({ phase, progress, active, reduced }: { phase: Phase;
         setDisplay(0);
       }}
       onError={() => setErrors(old => ({ ...old, [i]: true }))} />)}
-    {(still || (scrubbingZoom ? zoomError : scrubbingAmbience ? ambienceError : errors[holdFinaleEnd ? 3 : index])) && (
+    {(still || (scrubbingZoom ? zoomError : inAmbience ? ambienceError : errors[phase === 'finale' || holdSoundStill ? 3 : index])) && (
       <img className="media-still" src={fallback} alt="Телевизор Sber TV" />
     )}
-    {!scrubbingZoom && !scrubbingAmbience && errors[index] && <div role="alert" className="media-message">Не удалось загрузить видео. Показан статичный кадр.<button onClick={() => { setErrors(old => ({ ...old, [index]: false })); videos.current[index]?.load(); }}>Повторить</button></div>}
-    {active && showFeature && !scrubbing && (reduced || autoplayBlocked) && <button className="manual-play" aria-pressed={manual}
-      onClick={() => {
-        const el = videos.current[index];
-        if (manual) { el?.pause(); setManual(false); }
-        else {
-          setManual(true);
-          el?.play().then(() => { setAutoplayBlocked(false); ready(index); }).catch(() => setAutoplayBlocked(true));
-        }
-      }}>{manual ? 'Пауза' : 'Воспроизвести видео'}<span aria-hidden="true">{manual ? 'Ⅱ' : '▷'}</span></button>}
+    {!scrubbingZoom && !inAmbience && phase !== 'finale' && errors[index] && <div role="alert" className="media-message">Не удалось загрузить видео. Показан статичный кадр.<button onClick={() => { setErrors(old => ({ ...old, [index]: false })); videos.current[index]?.load(); }}>Повторить</button></div>}
+    {active && ((showFeature && !scrubbing) || (phase === 'finale' && !playingFinale) || (ambiencePlayingPhase && !playingAmbience)) && (reduced || autoplayBlocked) && (
+      <button className="manual-play" aria-pressed={manual}
+        onClick={() => {
+          if (phase === 'finale') {
+            const el = videos.current[3];
+            setManual(true);
+            setVideo4Ended(false);
+            finalePlayArmed.current = true;
+            if (el) { el.currentTime = 0; el.play().then(() => setAutoplayBlocked(false)).catch(() => setAutoplayBlocked(true)); }
+            return;
+          }
+          if (ambiencePlayingPhase) {
+            const el = ambienceRef.current;
+            setManual(true);
+            setAmbienceEnded(false);
+            ambiencePlayArmed.current = true;
+            if (el) { el.currentTime = 0; el.play().then(() => setAutoplayBlocked(false)).catch(() => setAutoplayBlocked(true)); }
+            return;
+          }
+          const el = videos.current[index];
+          if (manual) { el?.pause(); setManual(false); }
+          else {
+            setManual(true);
+            el?.play().then(() => { setAutoplayBlocked(false); ready(index); }).catch(() => setAutoplayBlocked(true));
+          }
+        }}>{manual ? 'Пауза' : 'Воспроизвести видео'}<span aria-hidden="true">{manual ? 'Ⅱ' : '▷'}</span></button>
+    )}
   </div>;
 }

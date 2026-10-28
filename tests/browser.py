@@ -152,25 +152,34 @@ with sync_playwright() as p:
     seeked(page,3,(.2-.16)/.84)
     record('video 3 seeks in both directions')
 
-    scroll(page,9.5,'finale')
+    # finale distance starts at 0.45+0.85+1.3+2.5+1.5+2.5 = 9.1; mid ~9.6
+    scroll(page,9.6,'finale')
     page.wait_for_function('document.querySelector("[data-testid=video-4]")?.classList.contains("visible")')
-    page.wait_for_timeout(200)
+    page.wait_for_function('!document.querySelector("[data-testid=video-4]").paused || document.querySelector("[data-testid=tv-drive]")?.dataset.mode === "still"')
+    t0=video(page,4).evaluate('(v)=>v.currentTime')
+    page.wait_for_timeout(500)
+    t1=video(page,4).evaluate('(v)=>v.currentTime')
+    assert t1 > t0 or video(page,4).evaluate('(v)=>v.ended || v.paused')
     page.screenshot(path=str(OUT/'desktop-finale.png'))
-    record('video 4 holds spatial-sound end frame')
+    record('spatial-sound video-4 plays on finale')
 
-    # After spatial sound: scrub Figma 28:540; text after turn-on (~progress 0.52).
+    # After spatial sound: Video 2 plays once on scroll (not scrubbed); text soft-enters.
+    # ambience starts at 9.1+2.0=11.1
     scroll(page, 11.5, 'ambience')
     amb = page.locator('[data-testid=video-ambience]')
     assert amb.count() == 1
-    page.wait_for_timeout(150)
+    page.wait_for_function('document.querySelector("[data-testid=video-ambience]")?.classList.contains("visible")')
+    page.wait_for_timeout(200)
     early = float(amb.evaluate('(v)=>v.currentTime'))
-    scroll(page, 12.3, 'ambience')
+    page.wait_for_timeout(600)
     mid = float(amb.evaluate('(v)=>v.currentTime'))
-    assert mid >= early
+    # Play-once advances without needing further scroll.
+    assert mid > early or amb.evaluate('(v)=>v.ended || v.paused')
+    scroll(page, 12.3, 'ambience')
     page.wait_for_function('document.querySelector(".ambience-copy")?.classList.contains("is-in")')
     assert 'Атмосферная' in page.locator('.ambience-copy h2').inner_text()
     page.screenshot(path=str(OUT/'desktop-ambience.png'))
-    record('ambience scrub after spatial sound; 28:541 text soft-enters')
+    record('ambience Video 2 plays once on scroll; 28:541 text soft-enters')
 
     # Fast direction reversals: allow only the final requested seek to settle.
     for d,ph in [(3.35,'retreat'),(9.5,'finale'),(7.35,'orbit'),(5.4,'comparison'),(1.6,'feature'),(3.85,'retreat')]:

@@ -4,7 +4,7 @@ export const config = {
   // Scroll distances are viewport heights, independent of video durations.
   // After the static title, sticky reveal→zoom scrubs Figma 12:464 TV enlarge (zoom.mp4),
   // then feature plays the walking-cat tail of combined video-1 from driveEndRatio.
-  // After spatial-sound finale: fade to black → scrub Figma 28:540 ambience → text 28:541.
+  // After spatial-sound finale: fade to black → play Figma 34:547 Video 2 once → text 28:541.
   distances: {
     reveal: 0.45,
     zoom: 0.85,
@@ -12,18 +12,18 @@ export const config = {
     retreat: 2.5,
     comparison: 1.5,
     orbit: 2.5,
-    finale: 1.6,
+    finale: 2.0,
     ambience: 2.2,
   },
   // Soft opacity fade-in for the zoom layer at the start of reveal (scale lives in zoom.mp4).
   reveal: { from: 0, to: 0.35, scale: 0.52 },
   zoom: { from: 0.52, to: 1 },
   text: { enterEnd: 0.2, leaveEnd: 0.16 },
-  // Finale → black → ambience video. turnOnAt = scroll progress when backlight is lit + text enters.
-  ambience: { blackEnd: 0.14, videoIn: 0.28, turnOnAt: 0.52 },
+  // Finale → black → ambience Video 2 plays once. turnOnAt = when 28:541 text soft-enters.
+  ambience: { blackEnd: 0.14, videoIn: 0.28, turnOnAt: 0.45 },
   // Combined video-1 (Figma 17:466 appear+drive + walking cat). driveEndRatio = start of walking-cat tail.
   driveEndRatio: 0.2634,
-  // Video 1 plays once at 1.5× after zoom; later clips are scroll-scrubbed (finale holds; ambience scrubs).
+  // Feature video-1 plays once after zoom; retreat/orbit scrub; finale + ambience play once.
   playback: { loopVideo1: false, loopVideo4: false, crossfadeMs: 280, seekTolerance: 0.035, video1Rate: 1.5 },
   /** Figma 12:464 — scroll-scrubbed TV enlarge before feature. */
   zoomMedia: {
@@ -31,7 +31,7 @@ export const config = {
     poster: asset('media/zoom-start.jpg'),
     end: asset('media/zoom-end.jpg'),
   },
-  /** Figma 28:540 — atmospheric backlight TV turn-on after spatial sound. */
+  /** Figma 34:547 Video 2 (28:538) — play once on scroll after spatial sound. */
   ambienceMedia: {
     src: asset('media/ambience.mp4'),
     poster: asset('media/ambience-start.jpg'),
@@ -49,17 +49,6 @@ export function zoomProgress(phase: Phase, progress: number): number {
   if (phase === 'reveal') return smooth(progress) * 0.4;
   if (phase === 'zoom') return 0.4 + smooth(progress) * 0.6;
   return 1;
-}
-
-/** 0–1 scrub through ambience.mp4 after the black beat. */
-export function ambienceVideoProgress(progress: number): number {
-  const { blackEnd, turnOnAt } = config.ambience;
-  if (progress <= blackEnd) return 0;
-  // Scrub most of the clip by turnOnAt, then ease to end.
-  if (progress <= turnOnAt) {
-    return smooth((progress - blackEnd) / Math.max(0.001, turnOnAt - blackEnd)) * 0.72;
-  }
-  return 0.72 + smooth((progress - turnOnAt) / Math.max(0.001, 1 - turnOnAt)) * 0.28;
 }
 
 /** @deprecated Use zoomProgress — kept for any leftover imports. */

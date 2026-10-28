@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { asset } from './base';
 
 /**
- * Screen 1 — Figma 17:529 video play-once from t=0 (never scroll-bound)
+ * Screen 1 — Figma 34:547 Video 1 (17:527) play-once from t=0 (never scroll-scrubbed)
  * + 17:467 text overlay on end frame with soft Shopify-like entrance.
  */
 export function IntroStage({ reduced }: { reduced: boolean }) {
