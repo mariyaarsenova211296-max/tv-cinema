@@ -83,7 +83,10 @@ export function MediaStage({
 
   const approachSec = inApproach ? approachScrubSec(progress) : timebase.approachEndSec;
   const outroSec = inOutro
-    ? outroScrubSec(progress, breathDuration)
+    ? outroScrubSec(
+        (phase === 'comparison' || phase === 'utpDlg') ? 1 : progress,
+        breathDuration,
+      )
     : timebase.holdSec;
 
   const soundFade =
@@ -307,7 +310,11 @@ export function MediaStage({
     }
 
     if (inOutro) {
-      seekPaused(el, outroSec);
+      // During RGB/DLG UTP phases after retreat, freeze at clip end (progress forced to 1).
+      const sec = (phase === 'comparison' || phase === 'utpDlg')
+        ? outroScrubSec(1, breathDuration)
+        : outroSec;
+      seekPaused(el, sec);
       setBreathReady(el.readyState >= 2);
       return;
     }

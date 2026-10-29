@@ -125,9 +125,12 @@ export const autoplayLockStart = phaseOffset('autoplay');
 export function resolveBreathState(phase: Phase, autoplayDone: boolean): BreathState | null {
   if (phase === 'approach') return 'SCROLL_APPROACH';
   if (phase === 'autoplay' || !autoplayDone) return 'AUTO_PLAY';
-  // Video-driven retreat (SCROLL_OUTRO) covers retreat distance.
-  if (phase === 'retreat') return 'SCROLL_OUTRO';
-  if (phase === 'waitClose' || phase === 'comparison' || phase === 'utpDlg') return 'HOLD_RIDER';
+  // waitClose = freeze @7 before retreat; retreat + UTPs = video-driven outro
+  // (UTPs hold the post-retreat end frame — do not jump back to t=7).
+  if (phase === 'waitClose') return 'HOLD_RIDER';
+  if (phase === 'retreat' || phase === 'comparison' || phase === 'utpDlg') {
+    return 'SCROLL_OUTRO';
+  }
   return null;
 }
 
