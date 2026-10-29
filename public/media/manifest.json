@@ -60,9 +60,12 @@
   },
   {
     "role": "rotate",
+    "figma_frame": "121:4113",
+    "figma_video_fill": "121:4112",
+    "video_hash": "c5bb42fed47b1daba7058bbeab097c4a75dceb1a",
     "path": "media/rotate.mp4",
     "mode": "SCRUB",
-    "duration": 4.033333,
-    "note": "Never-obsolete scrub. No STV-58 Figma remapping — retained."
+    "duration": 5.041667,
+    "note": "STV-62: screen 7→8 transition from Figma 121:4113. Full VIDEO via helper timeline 5s; scroll-scrubbed in rotate phase."
   }
 ]

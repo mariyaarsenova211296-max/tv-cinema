@@ -24,7 +24,7 @@ type Props = {
 /**
  * Single-clip breath (TZ): SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end.
  * Then SCRUB 5→6 transition once (capped at sound handoff) · sound PLAY ·
- * ambience PLAY · rotate SCRUB.
+ * ambience PLAY · rotate SCRUB (screen 7→8 / Figma 121:4113).
  */
 export function MediaStage({
   phase,

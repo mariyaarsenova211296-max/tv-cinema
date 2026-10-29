@@ -38,7 +38,7 @@ export const config = {
     toSound: 2.2, // screen 5→6 SCRUB (112:2885)
     finale: 3.5, // sound PLAY (112:2886)
     ambience: 4.5, // ambience PLAY (112:2887)
-    rotate: 3.2, // never-obsolete scrub (no new Figma map in STV-58)
+    rotate: 3.2, // screen 7→8 SCRUB (Figma 121:4113)
     obsolete: 2.2,
   },
   reveal: { from: 0, to: 0.28 },
@@ -108,11 +108,18 @@ export const config = {
     videoFill: '100:2499',
     mode: 'PLAY' as const,
   },
+  /**
+   * Screen 7→8 transition / never-obsolete — Figma 121:4113 / VIDEO 121:4112 (SCRUB).
+   * Full VIDEO fill (~5.04s) via helper timeline export; scroll-scrubbed in rotate phase.
+   */
   rotateMedia: {
     src: asset('media/rotate.mp4'),
     poster: asset('media/rotate-start.jpg'),
     end: asset('media/rotate-end.jpg'),
-    note: 'Kept — no STV-58 Figma remapping for never-obsolete scrub',
+    figma: '121:4113',
+    videoFill: '121:4112',
+    videoHash: 'c5bb42fed47b1daba7058bbeab097c4a75dceb1a',
+    mode: 'SCRUB' as const,
   },
   /** Screen 9 remote — removed in STV-59 (last blocks cut from /alt/). */
   remoteMedia: {

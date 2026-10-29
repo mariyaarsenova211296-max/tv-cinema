@@ -1,11 +1,13 @@
 {
-  "id": "stv61-alt-cat-sound-cards",
+  "id": "stv62-alt-7to8-video",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
+  "figma_7to8": "121:4113",
+  "figma_7to8_video_fill": "121:4112",
   "figma_cards": "117:3487",
   "figma_section": "72:1037",
-  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 once (0→4.0s handoff) / PLAY sound / PLAY ambience",
+  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 once (0→4.0s handoff) / PLAY sound / PLAY ambience / SCRUB 7→8 (121:4113)",
   "base": "/tv-cinema/alt/",
   "removed": ["remote-section", "remote-detail", "remote-s9.mp4"],
-  "note": "STV-61: cap cat→sound transition scrub at sound handoff; refresh block-2 cards from Figma 117:3487."
+  "note": "STV-62: replace ambience→never-obsolete (screen 7→8) rotate.mp4 from Figma 121:4113; keep scroll SCRUB binding. STV-61 cat→sound cap + cards retained."
 }
