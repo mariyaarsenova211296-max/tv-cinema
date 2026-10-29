@@ -1,8 +1,9 @@
 {
-  "id": "stv57-v2-greenfield",
+  "id": "stv58-alt-figma-videos",
   "product": "tv-cinema-v2",
-  "figma": "102:14253",
-  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 / HOLD @7 / SCRUB 7→end",
+  "figma_file": "emJiewWvxtniMYCtgHFDN7",
+  "figma_section": "72:1037",
+  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 / HOLD @7 / SCRUB 7→end / SCRUB 5→6 / PLAY sound / PLAY ambience",
   "base": "/tv-cinema/alt/",
-  "note": "Greenfield replace of old alt-gesture (GestureMedia) with single-clip breath rebuild."
+  "note": "STV-58: replace alt media with full-length Figma VIDEO exports from Section 3 frames."
 }

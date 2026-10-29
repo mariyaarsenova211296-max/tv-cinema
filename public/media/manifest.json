@@ -1,55 +1,69 @@
 [
   {
-    "role": "v1-hero",
-    "figma_node": "102:19080",
-    "path": "media/v1-hero.mp4",
+    "role": "hero-s3",
+    "figma_frame": "112:2889",
+    "figma_video_fill": "102:19080",
+    "video_hash": "f72cd5545bcb34c0547b012c0f6936fd13a60bec",
+    "path": "media/hero-s3.mp4",
     "mode": "PLAY",
-    "duration": 4.041667,
-    "note": "Interim H.264 from prior intro export. Figma VIDEO fill exports PNG-only via MCP; true binary from 102:19080 still needed."
+    "duration": 4.033333,
+    "note": "Screen 3 hero. Full-length MCP export_video via helper timeline 4s."
   },
   {
-    "role": "breath-story",
-    "figma_nodes": ["72:1038"],
-    "path": "media/breath-story.mp4",
+    "role": "breath-s3to5",
+    "figma_frame": "112:2884",
+    "figma_video_fill": "72:1038",
+    "video_hash": "82106e6e62aace9ab4a65f3bf5c6c3ed8f7d1ba1",
+    "path": "media/breath-s3to5.mp4",
     "mode": "SCRUB 0→1 / PLAY 1→7 / SCRUB 7→end",
-    "duration": 7.75,
-    "note": "MISSING_TRUE_CLIP: interim copy of video-1. Need continuous MP4 0→1 approach, 1→7 mars→dino→boat→lizard→rider+sit, 7→end retreat. 72:1038 source file also kept as v2-breath-source.mp4 (5.04s, too short for 1–7)."
+    "duration": 10.033333,
+    "note": "Screens 3→4, 4, 4→5, and 5 — same continuous clip. Helper timeline 10s."
   },
   {
-    "role": "v2-breath-source",
-    "figma_node": "72:1038",
-    "path": "media/v2-breath-source.mp4",
-    "duration": 5.041667,
-    "note": "Node source retained; duration < 7s so not used as breath master."
-  },
-  {
-    "role": "v3-to-sound",
-    "figma_node": "72:1039",
-    "path": "media/v3-to-sound.mp4",
+    "role": "transition-s5to6",
+    "figma_frame": "112:2885",
+    "figma_video_fill": "72:1039",
+    "video_hash": "ca8c72128be1edee4046a2319bed1b9c71828191",
+    "path": "media/transition-s5to6.mp4",
     "mode": "SCRUB",
-    "duration": 5.041667,
-    "note": "Retained for reference; breath path uses single breath-story clip."
+    "duration": 6.033333,
+    "note": "Screen 5→6 transition after UTPs, before sound PLAY."
   },
   {
-    "role": "v4-sound",
-    "figma_node": "102:19079",
-    "path": "media/v4-sound.mp4",
+    "role": "sound-s6",
+    "figma_frame": "112:2886",
+    "figma_video_fill": "102:19079",
+    "video_hash": "f0c94f23a8463ef7243aa4aeb8be2d4a404df732",
+    "path": "media/sound-s6.mp4",
     "mode": "PLAY",
-    "duration": 4.064
+    "duration": 5.033333,
+    "note": "Screen 6 spatial sound. Discovered adjacent sibling of mapped nodes."
   },
   {
-    "role": "v5-ambience",
-    "figma_node": "100:2499",
-    "path": "media/v5-ambience.mp4",
+    "role": "ambience-s7",
+    "figma_frame": "112:2887",
+    "figma_video_fill": "100:2499",
+    "video_hash": "a4db086788828c5b837939e5f8096108e3099dff",
+    "path": "media/ambience-s7.mp4",
     "mode": "PLAY",
-    "duration": 5.041667
+    "duration": 5.033333,
+    "note": "Screen 7 ambience."
   },
   {
-    "role": "remote",
-    "figma_node": "102:19081",
-    "path": null,
+    "role": "remote-s9",
+    "figma_frame": "112:2888",
+    "figma_video_fill": "102:19081",
+    "video_hash": "5f60b1b711bd3874b8a4aebb542e052aa276d587",
+    "path": "media/remote-s9.mp4",
     "mode": "PLAY",
-    "missing": true,
-    "note": "Figma VIDEO fill — MCP download_assets/export_video return PNG only / not a timeline root. Need real MP4 binary for remote animation."
+    "duration": 4.033333,
+    "note": "Screen 9 remote — previously missing MP4; now wired into remote hero."
+  },
+  {
+    "role": "rotate",
+    "path": "media/rotate.mp4",
+    "mode": "SCRUB",
+    "duration": 4.033333,
+    "note": "Never-obsolete scrub. No STV-58 Figma remapping — retained."
   }
 ]

@@ -43,6 +43,7 @@ const anchors = [
   { id: 4, phase: 'approach' as const },
   { id: 5, phase: 'comparison' as const },
   { id: 6, phase: 'utpDlg' as const },
+  { id: '5to6', phase: 'toSound' as const },
   { id: 7, phase: 'finale' as const },
   { id: 8, phase: 'ambience' as const },
   { id: 9, phase: 'rotate' as const },
@@ -490,14 +491,29 @@ export default function App() {
               <div className="remote-panel">
                 <h2 className="remote-title">{design.remote.title}</h2>
                 <div className="remote-hero" aria-hidden="true">
-                  <img
-                    src={asset('assets/remote/hero.jpg')}
-                    alt=""
-                    className="remote-hero__img"
-                    onError={e => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                  {config.remoteMedia.src ? (
+                    <video
+                      className="remote-hero__img"
+                      src={config.remoteMedia.src}
+                      poster={config.remoteMedia.poster}
+                      muted
+                      playsInline
+                      autoPlay
+                      loop
+                      preload="metadata"
+                      data-testid="video-remote"
+                      data-figma={config.remoteMedia.figma}
+                    />
+                  ) : (
+                    <img
+                      src={asset('assets/remote/hero.jpg')}
+                      alt=""
+                      className="remote-hero__img"
+                      onError={e => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
                 </div>
                 <div className="remote-features">
                   {design.remote.features.map(f => (
@@ -576,11 +592,15 @@ export default function App() {
               ? 4
               : phase === 'comparison' || phase === 'utpDlg'
                 ? 5
-                : phase === 'finale'
-                  ? 6
-                  : phase === 'ambience'
-                    ? 7
-                    : 8
+                : phase === 'toSound'
+                  ? '5→6'
+                  : phase === 'finale'
+                    ? 6
+                    : phase === 'ambience'
+                      ? 7
+                      : phase === 'rotate' || phase === 'obsolete'
+                        ? 8
+                        : 9
           }`}
       </span>
       <div

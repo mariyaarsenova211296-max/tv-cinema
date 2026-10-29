@@ -1149,8 +1149,13 @@ button, a, input { touch-action: manipulation; }
 .remote-hero__img {
   width: min(900px, 70%);
   height: auto;
+  max-height: 78%;
   object-fit: contain;
   pointer-events: none;
+}
+.remote-hero video.remote-hero__img {
+  display: block;
+  background: transparent;
 }
 .remote-features {
   position: absolute;

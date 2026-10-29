@@ -23,7 +23,7 @@ type Props = {
 
 /**
  * Single-clip breath (TZ): SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end.
- * Plus sound PLAY (v4) and ambience PLAY (v5). No multi-source breath swap.
+ * Then SCRUB 5→6 transition · sound PLAY · ambience PLAY · rotate SCRUB.
  */
 export function MediaStage({
   phase,
@@ -35,6 +35,7 @@ export function MediaStage({
   onAutoplayDone,
 }: Props) {
   const breathRef = useRef<HTMLVideoElement | null>(null);
+  const toSoundRef = useRef<HTMLVideoElement | null>(null);
   const soundRef = useRef<HTMLVideoElement | null>(null);
   const ambienceRef = useRef<HTMLVideoElement | null>(null);
   const rotateRef = useRef<HTMLVideoElement | null>(null);
@@ -58,6 +59,8 @@ export function MediaStage({
   const [ambienceError, setAmbienceError] = useState(false);
   const [, setRotateReady] = useState(false);
   const [rotateError, setRotateError] = useState(false);
+  const [, setToSoundReady] = useState(false);
+  const [toSoundError, setToSoundError] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [manual, setManual] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
@@ -72,6 +75,7 @@ export function MediaStage({
   const inHold = breathState === 'HOLD_RIDER';
   const inOutro = breathState === 'SCROLL_OUTRO';
   const inBreathFlow = breathState !== null;
+  const inToSound = phase === 'toSound';
   const inAmbience = phase === 'ambience';
   const scrubbingRotate = phase === 'rotate';
   const holdingRotateEnd = phase === 'obsolete';
@@ -80,6 +84,7 @@ export function MediaStage({
   const ambiencePlayingPhase = inAmbience && progress >= config.ambience.blackEnd;
   const holdSoundStill = ambienceBlack;
   const inFinale = phase === 'finale';
+  const toSoundRatio = inToSound ? smooth(progress) : 0;
 
   const approachSec = inApproach ? approachScrubSec(progress) : timebase.approachEndSec;
   const outroSec = inOutro
@@ -166,6 +171,28 @@ export function MediaStage({
     }
     wasAutoplay.current = inAutoplay;
   }, [inAutoplay]);
+
+  // Screen 5→6 transition SCRUB
+  useEffect(() => {
+    const el = toSoundRef.current;
+    if (!el || !inToSound) return;
+    if (el.preload !== 'auto') el.preload = 'auto';
+    el.pause();
+    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+    const last = Math.max(0, el.duration - 1 / 24);
+    if (reduced || toSoundRatio >= 0.999) {
+      if (!el.seeking && Math.abs(el.currentTime - last) > config.playback.seekTolerance) {
+        el.currentTime = last;
+      }
+      setToSoundReady(true);
+      return;
+    }
+    const target = clamp(toSoundRatio * el.duration, 0, last);
+    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
+      el.currentTime = target;
+    }
+    setToSoundReady(el.readyState >= 2);
+  });
 
   // Rotate scrub
   useEffect(() => {
@@ -278,7 +305,7 @@ export function MediaStage({
 
   // Single-clip breath controller
   useEffect(() => {
-    if (inRotateScene || inFinale || inAmbience) {
+    if (inRotateScene || inFinale || inAmbience || inToSound) {
       breathRef.current?.pause();
       return;
     }
@@ -409,8 +436,9 @@ export function MediaStage({
   }, [phase, active]);
 
   const still = reduced && !manual;
-  const showBreath = inBreathFlow && !inAmbience && !inRotateScene && !inFinale;
-  const showSound = (inFinale || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene;
+  const showBreath = inBreathFlow && !inAmbience && !inRotateScene && !inFinale && !inToSound;
+  const showToSound = inToSound && !toSoundError && !(reduced && still);
+  const showSound = (inFinale || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene && !inToSound;
   const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
 
@@ -420,13 +448,15 @@ export function MediaStage({
       : config.breathMedia.end)
     : inAutoplay || inHold || inOutro
       ? config.breathMedia.end
-      : inRotateScene
-        ? (reduced || rotateRatio > 0.95 || holdingRotateEnd
-          ? config.rotateMedia.end
-          : config.rotateMedia.poster)
-        : inAmbience
-          ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-          : (soundEnded || holdSoundStill ? config.soundMedia.end : config.soundMedia.poster);
+      : inToSound
+        ? (toSoundRatio > 0.95 ? config.toSoundMedia.end : config.toSoundMedia.poster)
+        : inRotateScene
+          ? (reduced || rotateRatio > 0.95 || holdingRotateEnd
+            ? config.rotateMedia.end
+            : config.rotateMedia.poster)
+          : inAmbience
+            ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
+            : (soundEnded || holdSoundStill ? config.soundMedia.end : config.soundMedia.poster);
 
   const showVideoPlane = !still && showBreath && breathReady && !breathError;
 
@@ -454,7 +484,9 @@ export function MediaStage({
             ? 'ambience'
             : inFinale || holdSoundStill
               ? 'sound'
-              : 'breath'
+              : inToSound
+                ? 'to-sound'
+                : 'breath'
       }
       data-breath-state={inBreathFlow ? breathState : undefined}
       data-mode={
@@ -466,13 +498,15 @@ export function MediaStage({
               ? 'hold-rider'
               : inOutro
                 ? 'scroll-outro'
-                : inRotateScene
-                  ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
-                  : ambiencePlayingPhase
-                    ? (playingAmbience ? 'play-ambience' : 'still-ambience')
-                    : inFinale
-                      ? (playingSound ? 'play' : 'still')
-                      : 'still'
+                : inToSound
+                  ? 'scroll-to-sound'
+                  : inRotateScene
+                    ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
+                    : ambiencePlayingPhase
+                      ? (playingAmbience ? 'play-ambience' : 'still-ambience')
+                      : inFinale
+                        ? (playingSound ? 'play' : 'still')
+                        : 'still'
       }
       data-testid="tv-drive"
       data-breath-ended={inHold || inOutro ? '1' : '0'}
@@ -490,7 +524,7 @@ export function MediaStage({
         className="media-fallback"
         src={fallback}
         alt="Телевизор Sber TV"
-        style={{ opacity: showVideoPlane || showRotate || showAmbience || showSound ? 0 : 1 }}
+        style={{ opacity: showVideoPlane || showRotate || showAmbience || showSound || showToSound ? 0 : 1 }}
         aria-hidden="true"
       />
 
@@ -519,6 +553,22 @@ export function MediaStage({
           }
         }}
         onError={() => setBreathError(true)}
+      />
+
+      <video
+        ref={toSoundRef}
+        data-testid="video-to-sound"
+        src={config.toSoundMedia.src}
+        poster={config.toSoundMedia.poster}
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        className={showToSound && !still ? 'visible' : ''}
+        onLoadedData={() => setToSoundReady(true)}
+        onCanPlay={() => setToSoundReady(true)}
+        onSeeked={() => setToSoundReady(true)}
+        onError={() => setToSoundError(true)}
       />
 
       <video

@@ -1,12 +1,13 @@
 import { asset } from './base';
 
 /**
- * STV-53 / TZ breath scheme (single continuous clip):
+ * STV-58 / TZ breath scheme (single continuous clip from Figma 112:2884):
  *   SCROLL_APPROACH  — scroll SCRUB  0 → 1.0s
  *   AUTO_PLAY        — time PLAY     1.0 → 7.0s @1×
  *   HOLD_RIDER       — freeze        @7.0s
  *   SCROLL_OUTRO     — scroll SCRUB  7 → end  (video-driven retreat)
  *   then 2 UTPs (RGB → DLG) on the hold/outro still
+ *   then SCRUB 5→6 transition (112:2885) → sound PLAY → ambience PLAY
  *
  * Scale rail stays 1 — retreat is video-driven, not CSS.
  */
@@ -14,8 +15,8 @@ export const timebase = {
   fps: 24,
   approachEndSec: 1.0,
   holdSec: 7.0,
-  /** Known duration of interim breath-story (video-1 stand-in). */
-  breathSec: 7.75,
+  /** Full-length Figma export of 112:2884 / VIDEO 72:1038. */
+  breathSec: 10.033,
 } as const;
 
 export type BreathState =
@@ -32,9 +33,10 @@ export const config = {
     retreat: 2.0, // maps to SCROLL_OUTRO video scrub
     comparison: 1.6, // RGB UTP
     utpDlg: 1.6, // DLG UTP
-    finale: 3.5, // v4 sound PLAY
-    ambience: 4.5, // v5 ambience PLAY
-    rotate: 3.2, // never-obsolete scrub
+    toSound: 2.2, // screen 5→6 SCRUB (112:2885)
+    finale: 3.5, // sound PLAY (112:2886)
+    ambience: 4.5, // ambience PLAY (112:2887)
+    rotate: 3.2, // never-obsolete scrub (no new Figma map in STV-58)
     obsolete: 2.2,
   },
   reveal: { from: 0, to: 0.28 },
@@ -49,61 +51,69 @@ export const config = {
     seekTolerance: 0.035,
     breathRate: 1,
   },
-  /** Figma 102:19080 — hero (SCRUB/PLAY). */
+  /** Screen 3 — Figma 112:2889 / VIDEO 102:19080 (PLAY). */
   heroMedia: {
-    src: asset('media/v1-hero.mp4'),
-    poster: asset('media/v1-hero-start.jpg'),
-    end: asset('media/v1-hero-end.jpg'),
-    figma: '102:19080',
+    src: asset('media/hero-s3.mp4'),
+    poster: asset('media/hero-s3-start.jpg'),
+    end: asset('media/hero-s3-end.jpg'),
+    figma: '112:2889',
+    videoFill: '102:19080',
     mode: 'PLAY' as const,
   },
   /**
-   * Breath master — TZ 0–1 SCRUB / 1–7 PLAY / post-7 SCRUB.
-   * Interim: copy of video-1 (7.75s). True continuous export for 72:1038
-   * spanning to rider@7 still missing (MCP returns PNG only for VIDEO fills).
+   * Breath master — screens 3→4 / 4 / 4→5 / 5.
+   * SCRUB 0→1 / PLAY 1→7 / SCRUB 7→end. Figma 112:2884 / VIDEO 72:1038.
    */
   breathMedia: {
-    src: asset('media/breath-story.mp4'),
-    poster: asset('media/breath-story-start.jpg'),
-    end: asset('media/breath-story-end.jpg'),
-    figmaApproach: '72:1038',
+    src: asset('media/breath-s3to5.mp4'),
+    poster: asset('media/breath-s3to5-start.jpg'),
+    end: asset('media/breath-s3to5-end.jpg'),
+    figma: '112:2884',
+    videoFill: '72:1038',
     mode: 'SCRUB+PLAY' as const,
   },
-  /** Figma 72:1039 — to-sound / outro source retained for reference. */
+  /** Screen 5→6 transition — Figma 112:2885 / VIDEO 72:1039 (SCRUB). */
   toSoundMedia: {
-    src: asset('media/v3-to-sound.mp4'),
-    poster: asset('media/v3-to-sound-start.jpg'),
-    end: asset('media/v3-to-sound-end.jpg'),
-    figma: '72:1039',
+    src: asset('media/transition-s5to6.mp4'),
+    poster: asset('media/transition-s5to6-start.jpg'),
+    end: asset('media/transition-s5to6-end.jpg'),
+    figma: '112:2885',
+    videoFill: '72:1039',
     mode: 'SCRUB' as const,
   },
-  /** Figma 102:19079 — spatial sound (PLAY). */
+  /** Screen 6 sound — Figma 112:2886 / VIDEO 102:19079 (PLAY). */
   soundMedia: {
-    src: asset('media/v4-sound.mp4'),
-    poster: asset('media/v4-sound-start.jpg'),
-    end: asset('media/v4-sound-end.jpg'),
-    figma: '102:19079',
+    src: asset('media/sound-s6.mp4'),
+    poster: asset('media/sound-s6-start.jpg'),
+    end: asset('media/sound-s6-end.jpg'),
+    figma: '112:2886',
+    videoFill: '102:19079',
     mode: 'PLAY' as const,
   },
-  /** Figma 100:2499 — ambience (PLAY). */
+  /** Screen 7 ambience — Figma 112:2887 / VIDEO 100:2499 (PLAY). */
   ambienceMedia: {
-    src: asset('media/v5-ambience.mp4'),
-    poster: asset('media/v5-ambience-start.jpg'),
-    end: asset('media/v5-ambience-end.jpg'),
-    figma: '100:2499',
+    src: asset('media/ambience-s7.mp4'),
+    poster: asset('media/ambience-s7-start.jpg'),
+    end: asset('media/ambience-s7-end.jpg'),
+    figma: '112:2887',
+    videoFill: '100:2499',
     mode: 'PLAY' as const,
   },
   rotateMedia: {
     src: asset('media/rotate.mp4'),
     poster: asset('media/rotate-start.jpg'),
     end: asset('media/rotate-end.jpg'),
+    note: 'Kept — no STV-58 Figma remapping for never-obsolete scrub',
   },
-  /** Figma 102:19081 — remote VIDEO fill; no MP4 available via MCP. */
+  /** Screen 9 remote — Figma 112:2888 / VIDEO 102:19081 (PLAY). */
   remoteMedia: {
-    src: null as string | null,
-    figma: '102:19081',
+    src: asset('media/remote-s9.mp4'),
+    poster: asset('media/remote-s9-start.jpg'),
+    end: asset('media/remote-s9-end.jpg'),
+    figma: '112:2888',
+    videoFill: '102:19081',
     mode: 'PLAY' as const,
-    missing: true,
+    missing: false,
   },
   rotate: { titleIn: 0.06, titleEnd: 0.22, bodyIn: 0.14, bodyEnd: 0.34 },
   obsolete: { liftPx: 210, utpIn: 0.12, utpEnd: 0.42 },
