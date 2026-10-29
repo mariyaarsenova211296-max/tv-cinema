@@ -11,7 +11,7 @@
     "output_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
     "figma_node": "17:466",
     "drive_end_sec": 2.041667,
-    "note": "STV-49: not used in four-state breath (no fake v1 stitch). Need breath-boat-lizard-horse-sit.mp4 for continuous AUTO_PLAY to rider+sit"
+    "note": "STV-50: AUTO_PLAY from autoplayStartSec=4.0 (boat) through sitSec=7.0; then content-swap to video-3@0.083 rider hold"
   },
   {
     "video": 2,
@@ -23,7 +23,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-49: SCROLL_APPROACH 0→1.75s; AUTO_PLAY continues same clip 1.75→end (no mid jump); HOLD freezes shown frame. Rider+sit needs breath-boat-lizard-horse-sit.mp4"
+    "note": "STV-50: SCROLL_APPROACH scrub 0→1.75s only. AUTO_PLAY does not use this clip (boatman end is NOT the hold)"
   },
   {
     "video": 3,
@@ -35,7 +35,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-49: SCROLL_OUTRO scrubs 0→full end (2.5s cap removed). HOLD_RIDER on continuous story file when present (=video-3-utp @0.08)"
+    "note": "STV-50: HOLD_RIDER freeze @ riderHoldSec=0.083 (=video-3-utp). CSS retreat only — do NOT scrub (cat runs ~0.5s)"
   },
   {
     "video": 4,

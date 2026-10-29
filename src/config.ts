@@ -1,29 +1,28 @@
 import { asset } from './base';
 
 /**
- * STV-49 — four explicit breath control states (user TZ).
+ * STV-50 — HOLD_RIDER = seated cat + rider (not boatman).
  *
- * SCROLL_APPROACH → AUTO_PLAY → HOLD_RIDER → SCROLL_OUTRO
+ * SCROLL_APPROACH → AUTO_PLAY (boat→lizard→sit) → content-swap rider →
+ * HOLD_RIDER freeze → NEW scroll CSS-scale retreat on THAT still
+ * (never scrub video-3 during retreat — cat stands/runs by ~0.5s).
  *
- * Continuous boat→lizard→horse/rider+seated-cat is MISSING in repo/Figma.
- * Exact file needed: `public/media/breath-boat-lizard-horse-sit.mp4`
- * (see docs/stv49-four-state.md). Until it lands, AUTO_PLAY continues the
- * same video-2 source from approachEnd→end (no mid-clip jump / no fake
- * video-1→video-3 stitch). HOLD freezes that shown frame; SCROLL_OUTRO
- * scrubs video-3 0→end as its own control source.
+ * Continuous boat→lizard→horse file still missing; AUTO_PLAY uses video-1
+ * then swaps screen content to video-3@riderHoldSec (geometry differs).
  */
 export const timebase = {
   fps: 24,
   video1Sec: 7.75,
   video2Sec: 5.041667,
   video3Sec: 5.041667,
-  /** SCROLL_APPROACH ends here — then AUTO_PLAY continues same clip. */
+  /** SCROLL_APPROACH end on video-2 (scrub only; no CSS zoom). */
   approachEndSec: 1.75,
-  /**
-   * Ideal HOLD_RIDER frame on video-3 once continuous story file exists
-   * (= video-3-utp.jpg / Figma 81:2086). Not used as a mid-autoplay seek.
-   */
-  riderHoldSec: 0.08,
+  /** AUTO_PLAY start on video-1 — boat beat. */
+  autoplayStartSec: 4.0,
+  /** First fully seated cat on video-1 (lizard on TV) — then swap to rider. */
+  sitSec: 7.0,
+  /** HOLD_RIDER on video-3 — seated cat + horse/rider (= video-3-utp.jpg). */
+  riderHoldSec: 0.083,
 } as const;
 
 /** Explicit TZ control states — one media source + one driver each. */
@@ -34,15 +33,15 @@ export type BreathState =
   | 'SCROLL_OUTRO';
 
 export const config = {
-  // STV-49 four-state breath + post-breath screens.
+  // STV-50: approach scrub → autoplay boat→sit → HOLD rider still → CSS retreat.
   distances: {
     approach: 1.8, // SCROLL_APPROACH — scrub video-2 0→approachEndSec
     autoplay: 0.2, // AUTO_PLAY lock; mid-scroll discarded
-    waitClose: 0.35, // HOLD_RIDER — freeze shown frame
-    retreat: 2.0, // HOLD_RIDER — scale-only pull-back (no scrub)
-    comparison: 1.6, // HOLD_RIDER — RGB UTP
-    utpDlg: 1.6, // HOLD_RIDER — DLG UTP
-    orbit: 2.8, // SCROLL_OUTRO — scrub video-3 0→end (full)
+    waitClose: 0.35, // HOLD_RIDER — freeze video-3@riderHoldSec
+    retreat: 2.0, // HOLD_RIDER — CSS scale-only (NO video-3 scrub)
+    comparison: 1.6, // HOLD_RIDER — RGB UTP on rider still
+    utpDlg: 1.6, // HOLD_RIDER — DLG UTP on rider still
+    orbit: 2.8, // SCROLL_OUTRO — keep rider still (no scrub; cat would run)
     finale: 3.5,
     ambience: 4.5,
     rotate: 3.2,
@@ -53,10 +52,8 @@ export const config = {
   ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
   driveEndRatio: 0.2634,
   timebase,
-  /** @deprecated alias — rider hold on video-3 when continuous file lands. */
   utpHoldRatio: timebase.riderHoldSec / timebase.video3Sec,
-  // No dual scale+scrub: approach/autoplay/hold-play stay at 1; retreat scale-only;
-  // SCROLL_OUTRO keeps constant utp (scrub only).
+  // No dual CSS+recorded zoom: approach = scrub only (scale 1); retreat = scale only.
   breathScale: { play: 1, close: 1, utp: 0.88, sound: 0.88 },
   cropScale: 1,
   playback: {
@@ -165,9 +162,12 @@ export function approachScrubSec(progress: number): number {
   return timebase.approachEndSec * smooth(progress);
 }
 
-/** SCROLL_OUTRO scrub: 0 → full video-3 (no 2.5s cap). */
-export function outroScrubSec(progress: number): number {
-  return timebase.video3Sec * smooth(progress);
+/**
+ * STV-50: SCROLL_OUTRO does not scrub video-3 (would stand/run the cat).
+ * Kept for API compat — always returns rider hold.
+ */
+export function outroScrubSec(_progress: number): number {
+  return timebase.riderHoldSec;
 }
 
 /** @deprecated — use outroScrubSec */
