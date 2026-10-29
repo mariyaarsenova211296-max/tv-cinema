@@ -1,0 +1,187 @@
+{
+  "logo": {
+    "src": "assets/icons/logo.svg",
+    "alt": "Сбер"
+  },
+  "menu": [
+    {
+      "label": "Телевизоры",
+      "href": "#scene-1",
+      "primary": true
+    },
+    {
+      "label": "Серия 8000",
+      "href": "#scene-1",
+      "active": true
+    },
+    {
+      "label": "Серия 7000",
+      "href": "#scene-2"
+    },
+    {
+      "label": "Умные телевизоры",
+      "href": "#scene-2"
+    },
+    {
+      "label": "Салют ТВ",
+      "href": "#scene-4"
+    }
+  ],
+  "utilities": [
+    {
+      "label": "Поиск",
+      "icon": "assets/icons/search.svg",
+      "href": "#"
+    },
+    {
+      "label": "Корзина",
+      "icon": "assets/icons/bag.svg",
+      "href": "#"
+    },
+    {
+      "label": "Профиль",
+      "icon": "assets/icons/profile.svg",
+      "href": "#"
+    }
+  ],
+  "cta": {
+    "label": "Купить",
+    "price": "200 000 ₽",
+    "href": "#buy",
+    "thumb": "assets/cta/tv-thumb.png"
+  },
+  "cardsTitle": "Здесь есть\nчем насладиться",
+  "cards": [
+    {
+      "src": "assets/cards/card-1-rgb.png",
+      "alt": "Технология RGB-miniLED — высокая детализация и насыщенный чёрный цвет",
+      "aspectRatio": "764 / 700",
+      "width": 764
+    },
+    {
+      "src": "assets/cards/card-2-144.png",
+      "alt": "144 кадра в секунду — с DLG скорость обновления вдвое больше: 288 Гц",
+      "aspectRatio": "555 / 700",
+      "width": 555
+    },
+    {
+      "src": "assets/cards/card-3-sound.png",
+      "alt": "Мощный звук до 75 Вт — Dolby Atmos, эффект полного погружения",
+      "aspectRatio": "900 / 700",
+      "width": 900
+    },
+    {
+      "src": "assets/cards/card-4-glow.png",
+      "alt": "Атмосферная подсветка — реагирует на взаимодействие с кинотеатром, несколько режимов",
+      "aspectRatio": "607 / 700",
+      "width": 607
+    },
+    {
+      "src": "assets/cards/card-5-thin.png",
+      "alt": "Тонкий корпус — прилегает практически вплотную к стене",
+      "aspectRatio": "901 / 700",
+      "width": 901
+    },
+    {
+      "src": "assets/cards/card-6-ai.png",
+      "alt": "Полезный ИИ-помощник для выбора фильмов и домашних дел",
+      "aspectRatio": "901 / 700",
+      "width": 901
+    }
+  ],
+  "revealTitle": "Задержите\nдыхание",
+  "comparisonLabels": {
+    "mini": "Miniled",
+    "rgb": "RGB-miniled"
+  },
+  "comparisonFeatures": [
+    {
+      "icon": "assets/comparison/icon-rgb.svg",
+      "title": "RGB-miniled",
+      "body": "Топовая технология экрана. Высокая детализация и насыщенный чёрный цвет\nбез серых пятен"
+    },
+    {
+      "icon": "assets/comparison/icon-dlg.svg",
+      "title": "DLG 288 гц",
+      "body": "Картинка адаптируется под динамичный контент. Увеличенная скорость обновления экрана"
+    }
+  ],
+  "finale": {
+    "eyebrow": "Dolby Atmos 2.1.2",
+    "title": "Пространственный звук до 75 Вт",
+    "body": "Четыре динамика и сабвуфер — чёткие диалоги, объёмное звучание"
+  },
+  "comparison": {
+    "mini": "assets/comparison/mini-led.jpg",
+    "rgb": "assets/comparison/rgb-mini-led.jpg",
+    "corners": [
+      [
+        0.09,
+        0.025
+      ],
+      [
+        0.91,
+        0.025
+      ],
+      [
+        0.905,
+        0.555
+      ],
+      [
+        0.095,
+        0.555
+      ]
+    ]
+  },
+  "ambience": {
+    "title": "Атмосферная\nподсветка",
+    "body": "Создает ощущение настоящего кинотеатра\nу вас в доме"
+  },
+  "neverObsolete": {
+    "title": "Кинотеатр, который не устареет",
+    "body": "Платформа постоянно обновляется, а технологии будут актуальны ещё долго",
+    "utps": [
+      {
+        "icon": "assets/obsolete/icon-cpu.svg",
+        "title": "Современный\nпроцессор",
+        "body": "ИИ-помощник обрабатывает запросы и голосовые команды ещё быстрее"
+      },
+      {
+        "icon": "assets/obsolete/icon-ram.svg",
+        "title": "4 ГБ",
+        "body": "Увеличенная оперативная память, чтобы всё летало"
+      },
+      {
+        "icon": "assets/obsolete/icon-storage.svg",
+        "title": "64 ГБ",
+        "body": "Хранилище\nдля приложений\nи файлов"
+      },
+      {
+        "icon": "assets/obsolete/icon-os.svg",
+        "title": "ОС Салют ТВ",
+        "body": "Единый поиск по главным онлайн-площадкам и все преимущества Смарт-ТВ"
+      }
+    ]
+  },
+  "remote": {
+    "title": "Продвинутый пульт",
+    "features": [
+      {
+        "title": "Свайпайте\nконтент",
+        "body": "Тачпад, как\nна телефоне\nУдобно смотреть контент"
+      },
+      {
+        "title": "Блокировка\nкнопок",
+        "body": "На случай, когда пульт попадёт в руки к самым маленьким"
+      },
+      {
+        "title": "Зарядка\nчерез Type-C",
+        "body": "Отслуживший аккумулятор можно заменить на новый"
+      }
+    ],
+    "touchTitle": "Приятно прикасаться",
+    "touchBody": "Лёгкий металлический корпус и минимум кнопок",
+    "findTitle": "Если пульт потерялся",
+    "findBody": "Просто нажмите на кнопку, встроенную в корпус кинотеатра, и контроллер подаст сигнал"
+  }
+}

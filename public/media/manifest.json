@@ -1,0 +1,55 @@
+[
+  {
+    "role": "v1-hero",
+    "figma_node": "102:19080",
+    "path": "media/v1-hero.mp4",
+    "mode": "PLAY",
+    "duration": 4.041667,
+    "note": "Interim H.264 from prior intro export. Figma VIDEO fill exports PNG-only via MCP; true binary from 102:19080 still needed."
+  },
+  {
+    "role": "breath-story",
+    "figma_nodes": ["72:1038"],
+    "path": "media/breath-story.mp4",
+    "mode": "SCRUB 0→1 / PLAY 1→7 / SCRUB 7→end",
+    "duration": 7.75,
+    "note": "MISSING_TRUE_CLIP: interim copy of video-1. Need continuous MP4 0→1 approach, 1→7 mars→dino→boat→lizard→rider+sit, 7→end retreat. 72:1038 source file also kept as v2-breath-source.mp4 (5.04s, too short for 1–7)."
+  },
+  {
+    "role": "v2-breath-source",
+    "figma_node": "72:1038",
+    "path": "media/v2-breath-source.mp4",
+    "duration": 5.041667,
+    "note": "Node source retained; duration < 7s so not used as breath master."
+  },
+  {
+    "role": "v3-to-sound",
+    "figma_node": "72:1039",
+    "path": "media/v3-to-sound.mp4",
+    "mode": "SCRUB",
+    "duration": 5.041667,
+    "note": "Retained for reference; breath path uses single breath-story clip."
+  },
+  {
+    "role": "v4-sound",
+    "figma_node": "102:19079",
+    "path": "media/v4-sound.mp4",
+    "mode": "PLAY",
+    "duration": 4.064
+  },
+  {
+    "role": "v5-ambience",
+    "figma_node": "100:2499",
+    "path": "media/v5-ambience.mp4",
+    "mode": "PLAY",
+    "duration": 5.041667
+  },
+  {
+    "role": "remote",
+    "figma_node": "102:19081",
+    "path": null,
+    "mode": "PLAY",
+    "missing": true,
+    "note": "Figma VIDEO fill — MCP download_assets/export_video return PNG only / not a timeline root. Need real MP4 binary for remote animation."
+  }
+]
