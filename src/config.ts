@@ -1,10 +1,11 @@
 import { asset } from './base';
 
 /**
- * STV-47 media timebases (seconds @ 24fps).
- * Continuous breath stays on video-2 (no hard jump to video-3@0.08).
- * Horse+sitting-cat middle frames are MISSING — need a full continuous export
- * spanning Figma 72:1038→72:1039 (see stv47-continuous-horse.md).
+ * STV-48 media timebases (seconds @ 24fps).
+ * Desired arc: boat → lizard → horse/rider + cat fully seated.
+ * video-1 has boat→lizard→sit(lizard); video-3 opens horse+sit — NOT true-sequential
+ * across lizard→horse (MAE≈68). Missing full continuous file (see stv48-full-cat-sit.md).
+ * Interim: approach on video-2; autoplay video-1 from boat; freeze only on video-3 hold.
  */
 export const timebase = {
   fps: 24,
@@ -13,22 +14,21 @@ export const timebase = {
   video3Sec: 5.041667,
   /** Scroll approach ends here — camera settle / final close-up; then autoplay. */
   approachEndSec: 1.75,
-  /**
-   * Orbit scrub start on video-3 (cat-exit only). Not used as a post-autoplay
-   * hard-cut hold — freeze is the last shown video-2 frame until continuous source.
-   */
+  /** video-1 boat beat — autoplay starts here (do not stop on video-2 boat end). */
+  boatStartSec: 4.0,
+  /** Horse + fully seated cat freeze (= video-3-utp.jpg / Figma 81:2086). */
   utpHoldSec: 0.08,
   /** Scroll cat-exit / camera pull ends before horse-return tail (~4.25s). */
   catExitEndSec: 2.5,
 } as const;
 
 export const config = {
-  // STV-47: scroll approach → continuous autoplay → freeze shown frame →
-  // NEW scroll retreat → RGB→DLG. No hard jump to video-3@0.08.
+  // STV-48: approach → autoplay boat→lizard (video-1) → freeze horse+sit (video-3) →
+  // NEW scroll retreat → RGB→DLG. notifyBreathDone only on seated horse hold.
   distances: {
     approach: 1.8, // scroll-scrub video-2 0→approachEndSec
     autoplay: 0.2, // locked while clip plays; scroll discarded
-    waitClose: 0.35, // freeze shown frame until new scroll
+    waitClose: 0.35, // freeze horse+sit until new scroll
     retreat: 2.0, // scale-only pull-back to UTP framing, then stop
     comparison: 1.6, // RGB-miniled (72:1864 / 72:1975)
     utpDlg: 1.6, // DLG 288 гц (81:1994 / 72:1938)
@@ -43,12 +43,11 @@ export const config = {
   ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
   driveEndRatio: 0.2634,
   timebase,
-  /** Hold ratio on video-3 (orbit start only). */
+  /** Hold ratio on video-3 (utpHoldSec / video3Sec). */
   utpHoldRatio: timebase.utpHoldSec / timebase.video3Sec,
-  // Approach lives in the video — no CSS close boost (cover×1.12×1.2 overscaled).
-  // Retreat pulls the frozen frame back for UTP space below.
+  // Keep STV-47 scale fix: no cover×1.12×1.2 overscale.
   breathScale: { play: 1, close: 1, utp: 0.88, sound: 1 },
-  /** Letterbox crop multiply — 1 during breath (cover alone fills; was 1.12 overscale). */
+  /** Letterbox crop multiply — 1 during breath. */
   cropScale: 1,
   // Breath transitions hard-cut (no dual-frame crossfade ghosts).
   playback: {
@@ -94,9 +93,9 @@ export const smooth = (p: number) => { const n = clamp(p); return n * n * (3 - 2
 export const autoplayLockStart = phaseOffset('autoplay');
 
 /**
- * STV-47 story resolver:
- * - approach scroll-mapped (video scrub)
- * - past approach → force autoplay remaining clip @ 1× until end freeze
+ * STV-48 story resolver:
+ * - approach scroll-mapped (video-2 scrub)
+ * - past approach → force autoplay until horse+sit freeze (notifyBreathDone)
  * - mid-play scroll discarded; NEW scroll only after unlock (retreat→UTP)
  */
 export function resolveBreathStory(

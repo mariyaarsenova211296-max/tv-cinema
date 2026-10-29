@@ -56,15 +56,16 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
   const holdSoundStill = ambienceBlack;
 
   const holdingCloseStill = holdingBreathStill || (inAutoplay && breathEnded);
-  // STV-47: freeze stays on video-2 (continuous). video-3 only for orbit cat-exit.
+  // STV-48: approach=video-2; autoplay=video-1 (boat→lizard); freeze/orbit=video-3.
   const index = inRotateScene
     ? 0
     : holdSoundStill ? 3
-      : inApproach || inAutoplay || holdingBreathStill ? 1
-        : scrubbingOrbit ? 2
-          : phase === 'finale' ? 3
-            : inAmbience ? 0
-              : 0;
+      : inApproach ? 1
+        : (inAutoplay && !breathEnded) ? 0
+          : holdingCloseStill || scrubbingOrbit ? 2
+            : phase === 'finale' ? 3
+              : inAmbience ? 0
+                : 0;
 
   const rotateRatio = scrubbingRotate ? smooth(progress) : holdingRotateEnd ? 1 : 0;
   const approachSec = inApproach ? approachScrubSec(progress) : timebase.approachEndSec;
@@ -100,16 +101,6 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     el.pause();
     if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
       el.currentTime = target;
-    }
-  }
-
-  /** Freeze last shown frame of a clip (continuous hold — no seek jump). */
-  function parkClipEnd(el: HTMLVideoElement) {
-    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    const last = Math.max(0, el.duration - 1 / 24);
-    el.pause();
-    if (!el.seeking && Math.abs(el.currentTime - last) > config.playback.seekTolerance) {
-      el.currentTime = last;
     }
   }
 
@@ -269,7 +260,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     }).finally(() => playPending.current.delete(3));
   });
 
-  // Breath: scroll approach → continuous autoplay → freeze shown frame → orbit.
+  // Breath: approach (v2) → autoplay boat→lizard (v1) → freeze horse+sit (v3) → orbit.
   useEffect(() => {
     if (inRotateScene || phase === 'finale' || inAmbience) {
       if (inRotateScene || inAmbience) {
@@ -283,7 +274,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       return;
     }
 
-    [1, 2].forEach(i => {
+    [0, 1, 2].forEach(i => {
       const el = videos.current[i];
       if (el && el.preload !== 'auto') el.preload = 'auto';
     });
@@ -297,9 +288,12 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       seekPaused(v2, sec);
       setDisplay(1);
       ready(1);
+      const v1 = videos.current[0];
       const v3 = videos.current[2];
+      if (v1) {
+        try { seekPaused(v1, timebase.boatStartSec); } catch { /* ignore */ }
+      }
       if (v3) {
-        if (v3.preload !== 'auto') v3.preload = 'auto';
         try { parkUtpHold(v3); } catch { /* ignore */ }
       }
       return;
@@ -307,6 +301,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
 
     // Orbit: scroll-scrub video-3 hold→catExitEnd (cat leaves; stop before horse-return).
     if (scrubbingOrbit) {
+      videos.current[0]?.pause();
       videos.current[1]?.pause();
       const v3 = videos.current[2];
       if (!v3 || errors[2]) return;
@@ -317,75 +312,80 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       return;
     }
 
-    // Hold still across wait / retreat / UTPs — freeze last shown video-2 frame (no v3 jump).
+    // Hold still across wait / retreat / UTPs — freeze horse+sit on video-3.
     if (holdingCloseStill) {
-      const v2 = videos.current[1];
-      videos.current[2]?.pause();
-      if (v2 && !errors[1]) {
-        parkClipEnd(v2);
-        setDisplay(1);
-        ready(1);
+      videos.current[0]?.pause();
+      videos.current[1]?.pause();
+      const v3 = videos.current[2];
+      if (v3 && !errors[2]) {
+        parkUtpHold(v3);
+        setDisplay(2);
+        ready(2);
       }
       return;
     }
 
-    // Autoplay remaining clip @ 1× from approachEnd — continuous to end; never seek to 0.
+    // Autoplay: video-1 from boat → lizard → seated(lizard); notifyBreathDone only after v3 horse hold.
+    const v1 = videos.current[0];
     const v2 = videos.current[1];
     const v3 = videos.current[2];
-    if (!v2 || errors[1]) return;
-    v2.playbackRate = config.playback.breathRate;
+    if (!v1 || errors[0]) return;
+    v1.playbackRate = config.playback.breathRate;
 
     if (reduced) {
-      parkClipEnd(v2);
-      setDisplay(1);
+      v1.pause();
+      v2?.pause();
+      if (v3) parkUtpHold(v3);
+      setDisplay(2);
       notifyBreathDone();
       return;
     }
 
     if (!active && !breathPlayArmed.current) {
-      // Stay parked at approach end until sticky is in view.
-      seekPaused(v2, timebase.approachEndSec);
+      // Stay on approach end until sticky is in view; boat leg pre-seeked.
+      if (v2) seekPaused(v2, timebase.approachEndSec);
+      seekPaused(v1, timebase.boatStartSec);
       setDisplay(1);
       return;
     }
 
     if (document.hidden && breathPlayArmed.current && !breathEnded) {
-      v2.pause();
+      v1.pause();
       return;
     }
 
     if (!breathPlayArmed.current) {
       if (!active) return;
-      // Resume from approach end only — do not restart the approach segment.
-      seekPaused(v2, timebase.approachEndSec);
+      // Do not continue video-2 (would stop on boat). Jump to video-1 boat beat.
+      v2?.pause();
+      seekPaused(v1, timebase.boatStartSec);
       breathPlayArmed.current = true;
-      setDisplay(1);
+      setDisplay(0);
       if (v3) {
-        if (v3.preload !== 'auto') v3.preload = 'auto';
         try { parkUtpHold(v3); } catch { /* ignore */ }
       }
     }
 
     if (document.hidden) {
-      v2.pause();
+      v1.pause();
       return;
     }
 
     if (!breathPlayArmed.current || breathEnded) return;
-    if (!v2.paused || playPending.current.has('breath')) return;
-    if (!Number.isFinite(v2.duration) || v2.duration <= 0) return;
+    if (!v1.paused || playPending.current.has('breath')) return;
+    if (!Number.isFinite(v1.duration) || v1.duration <= 0) return;
 
-    // Guard: never restart from t≈0 (would re-play approach).
-    if (v2.currentTime + 0.05 < timebase.approachEndSec) {
-      seekPaused(v2, timebase.approachEndSec);
+    // Guard: never restart video-1 from t≈0 (would re-play drive head).
+    if (v1.currentTime + 0.05 < timebase.boatStartSec) {
+      seekPaused(v1, timebase.boatStartSec);
     }
 
     playPending.current.add('breath');
-    v2.playbackRate = config.playback.breathRate;
-    v2.play().then(() => {
+    v1.playbackRate = config.playback.breathRate;
+    v1.play().then(() => {
       setAutoplayBlocked(false);
       setBreathPlaying(true);
-      setDisplay(1);
+      setDisplay(0);
     }).catch(err => {
       if (err.name !== 'AbortError') setAutoplayBlocked(true);
     }).finally(() => playPending.current.delete('breath'));
@@ -424,21 +424,23 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
 
   const still = reduced && !manual;
   const showVideoPlane = !still && display >= 0 && !errors[display];
-  const fallback = inApproach || (inAutoplay && !breathEnded)
-    ? (approachSec / Math.max(0.001, timebase.approachEndSec) > 0.85 || breathPlaying
+  const fallback = inApproach
+    ? (approachSec / Math.max(0.001, timebase.approachEndSec) > 0.85
       ? config.media[1].end
       : config.media[1].poster)
-    : holdingCloseStill
-      ? config.media[1].end
-      : scrubbingOrbit
-        ? (orbitSec >= timebase.catExitEndSec - 0.05 ? config.media[2].end : config.media[2].poster)
-        : inRotateScene
-          ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
-          : inAmbience
-            ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-            : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
-              holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'
-            ];
+    : (inAutoplay && !breathEnded)
+      ? (breathPlaying ? config.media[0].end : config.media[0].poster)
+      : holdingCloseStill
+        ? config.media[2].poster
+        : scrubbingOrbit
+          ? (orbitSec >= timebase.catExitEndSec - 0.05 ? config.media[2].end : config.media[2].poster)
+          : inRotateScene
+            ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
+            : inAmbience
+              ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
+              : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
+                holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'
+              ];
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
   const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
   const showSound = (phase === 'finale' || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene;
@@ -526,7 +528,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     />
     {config.media.map((media, i) => <video key={media.src} ref={el => { videos.current[i] = el; }}
       data-testid={`video-${i + 1}`} src={media.src} poster={media.poster} muted playsInline
-      preload={i === 1 || i === 2 || i === 3 ? 'auto' : 'metadata'}
+      preload={i === 0 || i === 1 || i === 2 || i === 3 ? 'auto' : 'metadata'}
       loop={false}
       aria-hidden="true"
       style={i === 3 && showSound ? { opacity: soundFade } : undefined}
@@ -538,14 +540,20 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       onLoadedMetadata={() => setErrors(old => ({ ...old }))}
       onSeeked={() => { ready(i); setErrors(old => ({ ...old })); }}
       onEnded={() => {
-        if (i === 1 && breathPlayArmed.current && !breathDoneNotified.current) {
-          // Continuous freeze on last shown video-2 frame — no hard jump to video-3.
-          const v2 = videos.current[1];
-          if (v2) parkClipEnd(v2);
-          setDisplay(1);
+        // STV-48: video-1 boat→lizard leg ends → freeze horse+sit on video-3; only then unlock.
+        if (i === 0 && breathPlayArmed.current && !breathDoneNotified.current) {
+          const v1 = videos.current[0];
+          const v3 = videos.current[2];
+          v1?.pause();
+          videos.current[1]?.pause();
+          if (v3) {
+            parkUtpHold(v3);
+            setDisplay(2);
+          }
           notifyBreathDone();
           return;
         }
+        // Never treat video-2 end (boat) as finale.
         if (i === 3) {
           videos.current[3]?.pause();
           setVideo4Ended(true);
@@ -561,13 +569,14 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       <button className="manual-play" aria-pressed={manual}
         onClick={() => {
           if (inAutoplay && !breathEnded) {
-            const el = videos.current[1];
+            const el = videos.current[0];
+            videos.current[1]?.pause();
             setManual(true);
             breathPlayArmed.current = true;
             if (el) {
               el.playbackRate = config.playback.breathRate;
-              el.currentTime = timebase.approachEndSec;
-              el.play().then(() => { setAutoplayBlocked(false); setBreathPlaying(true); }).catch(() => setAutoplayBlocked(true));
+              el.currentTime = timebase.boatStartSec;
+              el.play().then(() => { setAutoplayBlocked(false); setBreathPlaying(true); setDisplay(0); }).catch(() => setAutoplayBlocked(true));
             }
             return;
           }

@@ -11,7 +11,7 @@
     "output_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
     "figma_node": "17:466",
     "drive_end_sec": 2.041667,
-    "note": "STV-46: checked for ~7s seated finale — v1@~7s is dinosaur/lizard on TV, NOT horse+seated cat; not used in breath stitch"
+    "note": "STV-48: boat@~4s → lizard@~6s → sit(lizard)@~7–7.5s. Autoplay leg from boatStartSec=4.0. Lizard→horse NOT sequential — hard-cut to video-3@0.08 after end"
   },
   {
     "video": 2,
@@ -23,7 +23,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-47: scroll-scrub 0→1.75s; continuous autoplay 1.75s→end @1×; freeze last shown frame (NO hard-cut to video-3). Horse+sit middle MISSING — need full continuous 72:1038→72:1039 export"
+    "note": "STV-48: approach scrub only 0→1.75s. Do NOT autoplay to end (boat stop). Finale arc uses video-1 then video-3 hold"
   },
   {
     "video": 3,
@@ -35,7 +35,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-47: not used as post-autoplay hold (avoids hard jump). Orbit scrub 0.08→2.50s cat-exit only; stop before horse-return ~4.25s"
+    "note": "STV-48: freeze hold 0.08s (=video-3-utp / horse+fully seated cat) after video-1 leg; orbit 0.08→2.50s. Missing continuous boat→lizard→horse file"
   },
   {
     "video": 4,
