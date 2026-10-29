@@ -1,5 +1,21 @@
 [
   {
+    "role": "breath-story",
+    "path": "media/breath-story.mp4",
+    "status": "MISSING_TRUE_CLIP",
+    "interim_standin": "video-1.mp4 bytes (sha256 1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b)",
+    "duration": 7.75,
+    "width": 1280,
+    "height": 720,
+    "fps": "24/1",
+    "output_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
+    "figma_storyboard": "98:2456 Section 5",
+    "figma_kling_cuts": ["72:1038", "72:1039"],
+    "required_beats": "0→1 approach; 1→7 mars→dino→boat→lizard→rider+sit; hold@7 rider+sit; 7→end video outro",
+    "gap": "No continuous MP4 in repo or Figma. Section 5 is static storyboard. Kling fills export as PNG only. MAE(v1@7,v3@0.083)≈68 — do NOT stitch. Interim hold is lizard@7 not rider.",
+    "note": "STV-51: single-clip controller. Replace this file with true continuous storyboard export; do not fake video-1→video-3 jump."
+  },
+  {
     "video": 1,
     "original_filename": "figma-17-466-export+walking-cat-combined.mp4",
     "original_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
@@ -11,7 +27,7 @@
     "output_sha256": "1a394fe041d56ad7f27d4a04ace79afb380d1cb5e65f721bb33401f2eedc239b",
     "figma_node": "17:466",
     "drive_end_sec": 2.041667,
-    "note": "STV-50: AUTO_PLAY from autoplayStartSec=4.0 (boat) through sitSec=7.0; then content-swap to video-3@0.083 rider hold"
+    "note": "STV-51: no longer breath driver (was STV-50 autoplay). Bytes reused only as interim breath-story stand-in."
   },
   {
     "video": 2,
@@ -23,7 +39,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "65acfa6d89e314aed28f008e9796266739da96b82aca2215a83424c5b216ba71",
-    "note": "STV-50: SCROLL_APPROACH scrub 0→1.75s only. AUTO_PLAY does not use this clip (boatman end is NOT the hold)"
+    "note": "STV-51: unused on breath path (mars→dino→boat only; ends before sit/rider)"
   },
   {
     "video": 3,
@@ -35,7 +51,7 @@
     "height": 1080,
     "fps": "24/1",
     "output_sha256": "db964b984ed45aaccf5c016263dad168e592a50d6a2e3590cb92f97944420987",
-    "note": "STV-50: HOLD_RIDER freeze @ riderHoldSec=0.083 (=video-3-utp). CSS retreat only — do NOT scrub (cat runs ~0.5s)"
+    "note": "STV-51: unused on breath path (opens on rider+sit). NOT swapped in — forbidden fake jump."
   },
   {
     "video": 4,
