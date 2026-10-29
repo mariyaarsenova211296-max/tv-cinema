@@ -15,9 +15,9 @@
     "figma_video_fill": "72:1038",
     "video_hash": "82106e6e62aace9ab4a65f3bf5c6c3ed8f7d1ba1",
     "path": "media/breath-s3to5.mp4",
-    "mode": "SCRUB 0→1 / PLAY 1→7 / SCRUB 7→end",
+    "mode": "SCRUB 0→1 / PLAY 1→7 (scroll-clamped) / SCRUB 7→end",
     "duration": 10.033333,
-    "note": "Screens 3→4, 4, 4→5, and 5 — same continuous clip. Helper timeline 10s."
+    "note": "Screens 3→4, 4, 4→5, and 5 — same continuous clip. STV-59 clamps scroll during PLAY."
   },
   {
     "role": "transition-s5to6",
@@ -53,11 +53,9 @@
     "role": "remote-s9",
     "figma_frame": "112:2888",
     "figma_video_fill": "102:19081",
-    "video_hash": "5f60b1b711bd3874b8a4aebb542e052aa276d587",
-    "path": "media/remote-s9.mp4",
-    "mode": "PLAY",
-    "duration": 4.033333,
-    "note": "Screen 9 remote — previously missing MP4; now wired into remote hero."
+    "path": null,
+    "mode": "REMOVED",
+    "note": "STV-59: advanced-remote section + detail blocks deleted from /alt/."
   },
   {
     "role": "rotate",

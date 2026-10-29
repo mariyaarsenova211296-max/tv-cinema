@@ -1,9 +1,10 @@
 {
-  "id": "stv58-alt-figma-videos",
+  "id": "stv59-alt-scroll-fix",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
   "figma_section": "72:1037",
-  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 / HOLD @7 / SCRUB 7→end / SCRUB 5→6 / PLAY sound / PLAY ambience",
+  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 / PLAY sound / PLAY ambience",
   "base": "/tv-cinema/alt/",
-  "note": "STV-58: replace alt media with full-length Figma VIDEO exports from Section 3 frames."
+  "removed": ["remote-section", "remote-detail", "remote-s9.mp4"],
+  "note": "STV-59: fix alt scroll stutter/repeats; remove advanced-remote blocks."
 }

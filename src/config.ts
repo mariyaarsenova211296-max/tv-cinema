@@ -1,14 +1,14 @@
 import { asset } from './base';
 
 /**
- * STV-58 / TZ breath scheme (single continuous clip from Figma 112:2884):
+ * STV-58/59 / TZ breath scheme (single continuous clip from Figma 112:2884):
  *   SCROLL_APPROACH  — scroll SCRUB  0 → 1.0s
- *   AUTO_PLAY        — time PLAY     1.0 → 7.0s @1×
+ *   AUTO_PLAY        — time PLAY     1.0 → 7.0s @1× (scroll clamped at gate)
  *   HOLD_RIDER       — freeze        @7.0s
- *   SCROLL_OUTRO     — scroll SCRUB  7 → end  (video-driven retreat)
- *   then 2 UTPs (RGB → DLG) on the hold/outro still
+ *   SCROLL_OUTRO     — scroll SCRUB  7 → end  (video-driven retreat; UTPs hold end)
  *   then SCRUB 5→6 transition (112:2885) → sound PLAY → ambience PLAY
  *
+ * One <video> / one timeline for breath-s3to5 across screens 3→4 / 4 / 4→5 / 5.
  * Scale rail stays 1 — retreat is video-driven, not CSS.
  */
 export const timebase = {
@@ -105,15 +105,15 @@ export const config = {
     end: asset('media/rotate-end.jpg'),
     note: 'Kept — no STV-58 Figma remapping for never-obsolete scrub',
   },
-  /** Screen 9 remote — Figma 112:2888 / VIDEO 102:19081 (PLAY). */
+  /** Screen 9 remote — removed in STV-59 (last blocks cut from /alt/). */
   remoteMedia: {
-    src: asset('media/remote-s9.mp4'),
-    poster: asset('media/remote-s9-start.jpg'),
-    end: asset('media/remote-s9-end.jpg'),
+    src: '',
+    poster: '',
+    end: '',
     figma: '112:2888',
     videoFill: '102:19081',
     mode: 'PLAY' as const,
-    missing: false,
+    missing: true,
   },
   rotate: { titleIn: 0.06, titleEnd: 0.22, bodyIn: 0.14, bodyEnd: 0.34 },
   obsolete: { liftPx: 210, utpIn: 0.12, utpEnd: 0.42 },
@@ -134,7 +134,21 @@ export const autoplayLockStart = phaseOffset('autoplay');
 
 export function resolveBreathState(phase: Phase, autoplayDone: boolean): BreathState | null {
   if (phase === 'approach') return 'SCROLL_APPROACH';
-  if (phase === 'autoplay' || !autoplayDone) return 'AUTO_PLAY';
+  if (phase === 'autoplay') return 'AUTO_PLAY';
+  // Keep AUTO_PLAY only while the breath runway is waiting on the 1→7 playhead.
+  // Do not force AUTO_PLAY onto post-breath phases (toSound/finale/…) — that
+  // competed with their own SCRUB/PLAY controllers and caused freezes/repeats.
+  if (!autoplayDone) {
+    if (
+      phase === 'waitClose'
+      || phase === 'retreat'
+      || phase === 'comparison'
+      || phase === 'utpDlg'
+    ) {
+      return 'AUTO_PLAY';
+    }
+    return null;
+  }
   // waitClose = freeze @7 before retreat; retreat + UTPs = video-driven outro
   // (UTPs hold the post-retreat end frame — do not jump back to t=7).
   if (phase === 'waitClose') return 'HOLD_RIDER';
@@ -149,7 +163,8 @@ export function resolveBreathStory(
   autoplayDone: boolean,
   unlockDistance: number,
 ): { phase: Phase; progress: number } {
-  if (distance < autoplayLockStart) return resolvePhase(distance);
+  // Epsilon so sub-pixel scroll at the gate still enters AUTO_PLAY.
+  if (distance < autoplayLockStart - 0.0005) return resolvePhase(distance);
   if (!autoplayDone) return { phase: 'autoplay', progress: 0 };
   const post = Math.max(0, distance - unlockDistance);
   const waitStart = phaseOffset('waitClose');

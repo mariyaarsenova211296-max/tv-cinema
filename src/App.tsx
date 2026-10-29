@@ -80,6 +80,8 @@ export default function App() {
   const cardsTrack = useRef<HTMLDivElement>(null);
   const distanceRef = useRef(distance);
   distanceRef.current = distance;
+  const autoplayDoneRef = useRef(autoplayDone);
+  autoplayDoneRef.current = autoplayDone;
   const reduced = useMotionPreference();
   const { phase, progress } = resolveBreathStory(
     Math.max(0, distance),
@@ -109,7 +111,25 @@ export default function App() {
       const rect = stage.current.getBoundingClientRect();
       const viewport =
         stage.current.querySelector('.stage-sticky')?.clientHeight || innerHeight;
-      setDistance(-rect.top / viewport);
+      let next = -rect.top / viewport;
+      // STV-59: once approach completes, pin scroll at the autoplay gate while
+      // PLAY 1→7 runs. Pinning exactly at autoplayLockStart (not "just below")
+      // is required so resolveBreathStory enters AUTO_PLAY — a sub-pixel land
+      // under the gate left phase stuck on approach@1 and the playhead never
+      // armed. Without the upper clamp, scrolling during PLAY consumes the
+      // sticky runway and post-breath phases become unreachable (HOLD jam +
+      // scroll-back repeats the same clip).
+      if (!autoplayDoneRef.current && next >= autoplayLockStart - 0.002) {
+        if (next > autoplayLockStart) {
+          const stageTop = window.scrollY + rect.top;
+          const targetY = stageTop + autoplayLockStart * viewport;
+          if (Math.abs(window.scrollY - targetY) > 1) {
+            window.scrollTo(0, targetY);
+          }
+        }
+        next = autoplayLockStart;
+      }
+      setDistance(next);
       setInView(rect.top <= 1 && rect.bottom >= viewport - 1);
     };
     const schedule = () => {
@@ -157,27 +177,9 @@ export default function App() {
         ease: 'power3.out',
         scrollTrigger: { trigger: '.reveal-section', start: 'top 75%', once: true },
       });
-      // Remote markup mounts only after design.json resolves — gate so GSAP
-      // does not warn on missing targets during the first empty-design pass.
-      if (design.remote) {
-        gsap.from('.remote-section', {
-          opacity: 0,
-          y: 40,
-          duration: 1.2,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: '.remote-section', start: 'top 80%', once: true },
-        });
-        gsap.from('.remote-detail', {
-          opacity: 0,
-          y: 36,
-          duration: 1.1,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: '.remote-detail', start: 'top 82%', once: true },
-        });
-      }
     });
     return () => ctx.revert();
-  }, [design.cards, design.cta, design.remote, reduced]);
+  }, [design.cards, design.cta, reduced]);
 
   useEffect(() => {
     if (!autoplayDone) return;
@@ -188,7 +190,9 @@ export default function App() {
   }, [distance, autoplayDone]);
 
   const handleAutoplayDone = () => {
-    setUnlockDistance(Math.max(autoplayLockStart, distanceRef.current));
+    // Always unlock from the gate — scroll is clamped during PLAY, so using
+    // the live distance would only matter if the clamp failed.
+    setUnlockDistance(autoplayLockStart);
     setAutoplayDone(true);
   };
 
@@ -478,96 +482,6 @@ export default function App() {
             )}
           </div>
         </section>
-
-        {design.remote && (
-          <>
-            <section
-              id="scene-remote"
-              className="remote-section"
-              aria-label="Продвинутый пульт"
-              data-node-id="102:14898"
-              data-video-node="102:19081"
-            >
-              <div className="remote-panel">
-                <h2 className="remote-title">{design.remote.title}</h2>
-                <div className="remote-hero" aria-hidden="true">
-                  {config.remoteMedia.src ? (
-                    <video
-                      className="remote-hero__img"
-                      src={config.remoteMedia.src}
-                      poster={config.remoteMedia.poster}
-                      muted
-                      playsInline
-                      autoPlay
-                      loop
-                      preload="metadata"
-                      data-testid="video-remote"
-                      data-figma={config.remoteMedia.figma}
-                    />
-                  ) : (
-                    <img
-                      src={asset('assets/remote/hero.jpg')}
-                      alt=""
-                      className="remote-hero__img"
-                      onError={e => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  )}
-                </div>
-                <div className="remote-features">
-                  {design.remote.features.map(f => (
-                    <article className="remote-feature" key={f.title}>
-                      <img
-                        src={asset('assets/comparison/icon-dlg.svg')}
-                        alt=""
-                        width={64}
-                        height={64}
-                      />
-                      <h3>{f.title}</h3>
-                      <p>{f.body}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section
-              className="remote-detail"
-              aria-label="Детали пульта"
-              data-node-id="102:15016"
-            >
-              <div className="remote-detail__card remote-detail__card--touch">
-                <img
-                  src={asset('assets/remote/touch.jpg')}
-                  alt=""
-                  className="remote-detail__img"
-                  onError={e => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                <div className="remote-detail__copy">
-                  <h3>{design.remote.touchTitle}</h3>
-                  <p>{design.remote.touchBody}</p>
-                </div>
-              </div>
-              <div className="remote-detail__card remote-detail__card--find">
-                <img
-                  src={asset('assets/remote/find.jpg')}
-                  alt=""
-                  className="remote-detail__img"
-                  onError={e => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                <div className="remote-detail__copy">
-                  <h3>{design.remote.findTitle}</h3>
-                  <p>{design.remote.findBody}</p>
-                </div>
-              </div>
-            </section>
-          </>
-        )}
       </main>
 
       {design.cta && (

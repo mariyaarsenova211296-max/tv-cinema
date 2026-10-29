@@ -128,10 +128,13 @@ export function MediaStage({
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
     const last = Math.max(0, el.duration - 1 / 24);
     const target = clamp(sec, 0, last);
-    el.pause();
-    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
-      el.currentTime = target;
+    if (!el.paused) el.pause();
+    // Skip while a seek is in flight or we're already on-target — prevents
+    // seek thrashing that freezes sticky stages mid-scroll.
+    if (el.seeking || Math.abs(el.currentTime - target) <= config.playback.seekTolerance) {
+      return;
     }
+    el.currentTime = target;
   }
 
   function notifyBreathDone() {
@@ -144,6 +147,11 @@ export function MediaStage({
 
   function parkHold(el: HTMLVideoElement) {
     seekPaused(el, Math.min(timebase.holdSec, Math.max(0, el.duration - 1 / 24)));
+  }
+
+  function noteDuration(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    setBreathDuration(prev => (Math.abs(prev - seconds) > 0.001 ? seconds : prev));
   }
 
   useEffect(() => {
@@ -172,26 +180,18 @@ export function MediaStage({
     wasAutoplay.current = inAutoplay;
   }, [inAutoplay]);
 
-  // Screen 5→6 transition SCRUB
+  // Screen 5→6 transition SCRUB — single paused timeline, no PLAY competition
   useEffect(() => {
     const el = toSoundRef.current;
     if (!el || !inToSound) return;
     if (el.preload !== 'auto') el.preload = 'auto';
-    el.pause();
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
     const last = Math.max(0, el.duration - 1 / 24);
-    if (reduced || toSoundRatio >= 0.999) {
-      if (!el.seeking && Math.abs(el.currentTime - last) > config.playback.seekTolerance) {
-        el.currentTime = last;
-      }
-      setToSoundReady(true);
-      return;
-    }
-    const target = clamp(toSoundRatio * el.duration, 0, last);
-    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
-      el.currentTime = target;
-    }
-    setToSoundReady(el.readyState >= 2);
+    const target = reduced || toSoundRatio >= 0.999
+      ? last
+      : clamp(toSoundRatio * el.duration, 0, last);
+    seekPaused(el, target);
+    if (el.readyState >= 2) setToSoundReady(true);
   });
 
   // Rotate scrub
@@ -199,21 +199,13 @@ export function MediaStage({
     const el = rotateRef.current;
     if (!el || !inRotateScene) return;
     if (el.preload !== 'auto') el.preload = 'auto';
-    el.pause();
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
     const last = Math.max(0, el.duration - 1 / 24);
-    if (reduced || holdingRotateEnd || rotateRatio >= 0.999) {
-      if (!el.seeking && Math.abs(el.currentTime - last) > config.playback.seekTolerance) {
-        el.currentTime = last;
-      }
-      setRotateReady(true);
-      return;
-    }
-    const target = clamp(rotateRatio * el.duration, 0, last);
-    if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
-      el.currentTime = target;
-    }
-    setRotateReady(el.readyState >= 2);
+    const target = reduced || holdingRotateEnd || rotateRatio >= 0.999
+      ? last
+      : clamp(rotateRatio * el.duration, 0, last);
+    seekPaused(el, target);
+    if (el.readyState >= 2) setRotateReady(true);
   });
 
   // Ambience PLAY
@@ -303,13 +295,10 @@ export function MediaStage({
       .finally(() => playPending.current.delete('sound'));
   });
 
-  // Single-clip breath controller
+  // Single continuous breath-s3to5 controller (one timeline, no double-bind):
+  // SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end (UTPs hold end frame).
   useEffect(() => {
-    if (inRotateScene || inFinale || inAmbience || inToSound) {
-      breathRef.current?.pause();
-      return;
-    }
-    if (!inBreathFlow) {
+    if (inRotateScene || inFinale || inAmbience || inToSound || !inBreathFlow) {
       breathRef.current?.pause();
       return;
     }
@@ -320,33 +309,33 @@ export function MediaStage({
     el.playbackRate = config.playback.breathRate;
 
     if (Number.isFinite(el.duration) && el.duration > 0) {
-      setBreathDuration(el.duration);
+      noteDuration(el.duration);
     }
 
     if (inApproach) {
       const sec = reduced ? timebase.approachEndSec : approachSec;
       seekPaused(el, sec);
-      setBreathReady(el.readyState >= 2);
+      if (el.readyState >= 2) setBreathReady(true);
       return;
     }
 
     if (inHold) {
       parkHold(el);
-      setBreathReady(el.readyState >= 2);
+      if (el.readyState >= 2) setBreathReady(true);
       return;
     }
 
     if (inOutro) {
-      // During RGB/DLG UTP phases after retreat, freeze at clip end (progress forced to 1).
+      // One outro scrub across retreat; RGB/DLG hold the end frame (no re-scrub).
       const sec = (phase === 'comparison' || phase === 'utpDlg')
         ? outroScrubSec(1, breathDuration)
         : outroSec;
       seekPaused(el, sec);
-      setBreathReady(el.readyState >= 2);
+      if (el.readyState >= 2) setBreathReady(true);
       return;
     }
 
-    // AUTO_PLAY 1 → 7
+    // AUTO_PLAY 1 → 7 — time-driven only; never seek while playing.
     if (reduced) {
       parkHold(el);
       notifyBreathDone();
@@ -379,9 +368,6 @@ export function MediaStage({
     }
 
     if (!el.paused || playPending.current.has('breath')) return;
-    if (el.currentTime + 0.05 < timebase.approachEndSec) {
-      seekPaused(el, timebase.approachEndSec);
-    }
 
     playPending.current.add('breath');
     el.play()
@@ -562,7 +548,7 @@ export function MediaStage({
         poster={config.toSoundMedia.poster}
         muted
         playsInline
-        preload="auto"
+        preload={inToSound ? 'auto' : 'metadata'}
         aria-hidden="true"
         className={showToSound && !still ? 'visible' : ''}
         onLoadedData={() => setToSoundReady(true)}
@@ -578,7 +564,7 @@ export function MediaStage({
         poster={config.soundMedia.poster}
         muted
         playsInline
-        preload="auto"
+        preload={inFinale || holdSoundStill ? 'auto' : 'metadata'}
         aria-hidden="true"
         style={{ opacity: soundFade }}
         className={showSound && soundReady && !still && !soundError ? 'visible' : ''}
@@ -600,7 +586,7 @@ export function MediaStage({
         poster={config.ambienceMedia.poster}
         muted
         playsInline
-        preload="auto"
+        preload={inAmbience ? 'auto' : 'metadata'}
         aria-hidden="true"
         style={{ opacity: ambienceFade }}
         className={showAmbience && ambienceReady && !still ? 'visible' : ''}
@@ -623,7 +609,7 @@ export function MediaStage({
         poster={config.rotateMedia.poster}
         muted
         playsInline
-        preload="auto"
+        preload={inRotateScene ? 'auto' : 'metadata'}
         aria-hidden="true"
         className={showRotate && !still ? 'visible' : ''}
         onLoadedData={() => setRotateReady(true)}
