@@ -1,5 +1,5 @@
 {
-  "id": "stv63-alt-hero-video-text",
+  "id": "stv64-alt-last-block-video",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
   "figma_hero": "126:4173",
@@ -10,9 +10,8 @@
   "figma_cards": "117:3487",
   "figma_section": "72:1037",
   "hero": "PLAY full ~6.04s from 126:4173; copy from 126:4114 fades in at t=3s",
-  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 once (0→4.0s handoff) / PLAY sound / PLAY ambience / SCRUB 7→8 (121:4113)",
+  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 once (0→4.0s handoff) / PLAY sound / PLAY ambience / SCRUB 7→8 once (0→4.0s before loop)",
   "base": "/tv-cinema/alt/",
   "removed": ["remote-section", "remote-detail", "remote-s9.mp4"],
-  "pending": ["stv64-last-block-video-dedupe"],
-  "note": "STV-63: hero 6s PLAY from Figma 126:4173 + text fade at 3s from 126:4114. STV-62 rotate + STV-61 cat→sound cap + cards retained. Last-block dedupe still pending."
+  "note": "STV-64: cap rotate scrub at 4.0s — rotate.mp4 loops at ~4.05s (t≈4.05≡t=0). STV-63 hero 6s + text@3s retained."
 }

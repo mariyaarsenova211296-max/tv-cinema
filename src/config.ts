@@ -118,6 +118,7 @@ export const config = {
   /**
    * Screen 7→8 transition / never-obsolete — Figma 121:4113 / VIDEO 121:4112 (SCRUB).
    * Full VIDEO fill (~5.04s) via helper timeline export; scroll-scrubbed in rotate phase.
+   * STV-64: export loops at ~4.05s (t≈4.05 matches t=0). Scrub only 0→scrubEndSec.
    */
   rotateMedia: {
     src: asset('media/rotate.mp4'),
@@ -127,6 +128,8 @@ export const config = {
     videoFill: '121:4112',
     videoHash: 'c5bb42fed47b1daba7058bbeab097c4a75dceb1a',
     mode: 'SCRUB' as const,
+    /** Seconds — last unique frame before the baked loop restart. */
+    scrubEndSec: 4.0,
   },
   /** Screen 9 remote — removed in STV-59 (last blocks cut from /alt/). */
   remoteMedia: {

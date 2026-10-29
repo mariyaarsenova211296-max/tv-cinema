@@ -66,8 +66,9 @@
     "figma_video_fill": "121:4112",
     "video_hash": "c5bb42fed47b1daba7058bbeab097c4a75dceb1a",
     "path": "media/rotate.mp4",
-    "mode": "SCRUB",
+    "mode": "SCRUB 0→4.0s (before loop)",
     "duration": 5.041667,
-    "note": "STV-62: screen 7→8 transition from Figma 121:4113. Full VIDEO via helper timeline 5s; scroll-scrubbed in rotate phase."
+    "note": "STV-64: export loops at ~4.05s (t≈4.05≡t=0). Scrub only 0→4.0s; obsolete holds that end. STV-62 Figma 121:4113 source kept.",
+    "scrub_end_sec": 4.0
   }
 ]

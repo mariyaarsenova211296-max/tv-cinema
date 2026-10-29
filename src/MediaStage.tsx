@@ -24,7 +24,7 @@ type Props = {
 /**
  * Single-clip breath (TZ): SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end.
  * Then SCRUB 5→6 transition once (capped at sound handoff) · sound PLAY ·
- * ambience PLAY · rotate SCRUB (screen 7→8 / Figma 121:4113).
+ * ambience PLAY · rotate SCRUB 0→scrubEndSec (screen 7→8 / Figma 121:4113; STV-64).
  */
 export function MediaStage({
   phase,
@@ -198,16 +198,20 @@ export function MediaStage({
     if (el.readyState >= 2) setToSoundReady(true);
   });
 
-  // Rotate scrub
+  // Rotate scrub — STV-64: cap at scrubEndSec so the baked ~4.05s loop restart
+  // (t≈4.05 ≡ t=0) is never scrubbed; obsolete holds that handoff end frame.
   useEffect(() => {
     const el = rotateRef.current;
     if (!el || !inRotateScene) return;
     if (el.preload !== 'auto') el.preload = 'auto';
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    const last = Math.max(0, el.duration - 1 / 24);
+    const handoff = Math.min(
+      config.rotateMedia.scrubEndSec,
+      Math.max(0, el.duration - 1 / 24),
+    );
     const target = reduced || holdingRotateEnd || rotateRatio >= 0.999
-      ? last
-      : clamp(rotateRatio * el.duration, 0, last);
+      ? handoff
+      : clamp(rotateRatio * handoff, 0, handoff);
     seekPaused(el, target);
     if (el.readyState >= 2) setRotateReady(true);
   });
