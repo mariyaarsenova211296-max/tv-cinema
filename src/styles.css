@@ -315,10 +315,10 @@ button, a, input { touch-action: manipulation; }
   will-change: transform, opacity;
 }
 .media-stage, .comparison-layer { position: absolute; inset: 0; overflow: hidden; }
-/* STV-44: one breath scale rail + separate letterbox crop — no nested media-layer×video scales. */
+/* STV-47: breath cropScale=1 — cover alone fills; was cover×1.12×breath 1.2 overscale. */
 .media-stage {
   --breath-scale: 1;
-  --crop-scale: 1.12;
+  --crop-scale: 1;
 }
 
 /* Figma 12:429 — TV object scaled as a unit (contain, never cover-crop). */
@@ -347,8 +347,8 @@ button, a, input { touch-action: manipulation; }
   height: 100%;
   object-fit: cover; /* fill stage; crop letterbox */
   object-position: center center;
-  /* crop × breath on the same node — never also scale .media-layer */
-  transform: scale(calc(var(--crop-scale, 1.12) * var(--breath-scale, 1)));
+  /* crop × breath on the same node — breath keeps crop=1 to avoid overscale */
+  transform: scale(calc(var(--crop-scale, 1) * var(--breath-scale, 1)));
   transform-origin: center center;
   position: absolute;
   inset: 0;

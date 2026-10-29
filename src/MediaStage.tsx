@@ -56,11 +56,12 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
   const holdSoundStill = ambienceBlack;
 
   const holdingCloseStill = holdingBreathStill || (inAutoplay && breathEnded);
+  // STV-47: freeze stays on video-2 (continuous). video-3 only for orbit cat-exit.
   const index = inRotateScene
     ? 0
     : holdSoundStill ? 3
-      : inApproach || (inAutoplay && !breathEnded) ? 1
-        : holdingCloseStill || scrubbingOrbit ? 2
+      : inApproach || inAutoplay || holdingBreathStill ? 1
+        : scrubbingOrbit ? 2
           : phase === 'finale' ? 3
             : inAmbience ? 0
               : 0;
@@ -99,6 +100,16 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     el.pause();
     if (!el.seeking && Math.abs(el.currentTime - target) > config.playback.seekTolerance) {
       el.currentTime = target;
+    }
+  }
+
+  /** Freeze last shown frame of a clip (continuous hold — no seek jump). */
+  function parkClipEnd(el: HTMLVideoElement) {
+    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+    const last = Math.max(0, el.duration - 1 / 24);
+    el.pause();
+    if (!el.seeking && Math.abs(el.currentTime - last) > config.playback.seekTolerance) {
+      el.currentTime = last;
     }
   }
 
@@ -258,7 +269,7 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     }).finally(() => playPending.current.delete(3));
   });
 
-  // Breath: scroll approach → gated autoplay remaining @1× → seated freeze → orbit.
+  // Breath: scroll approach → continuous autoplay → freeze shown frame → orbit.
   useEffect(() => {
     if (inRotateScene || phase === 'finale' || inAmbience) {
       if (inRotateScene || inAmbience) {
@@ -306,28 +317,27 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       return;
     }
 
-    // Hold still across wait / retreat / UTPs.
+    // Hold still across wait / retreat / UTPs — freeze last shown video-2 frame (no v3 jump).
     if (holdingCloseStill) {
-      videos.current[1]?.pause();
-      const v3 = videos.current[2];
-      if (v3 && !errors[2]) {
-        parkUtpHold(v3);
-        setDisplay(2);
-        ready(2);
+      const v2 = videos.current[1];
+      videos.current[2]?.pause();
+      if (v2 && !errors[1]) {
+        parkClipEnd(v2);
+        setDisplay(1);
+        ready(1);
       }
       return;
     }
 
-    // Autoplay remaining clip @ 1× from approachEnd — never seek to 0 / re-play approach.
+    // Autoplay remaining clip @ 1× from approachEnd — continuous to end; never seek to 0.
     const v2 = videos.current[1];
     const v3 = videos.current[2];
     if (!v2 || errors[1]) return;
     v2.playbackRate = config.playback.breathRate;
 
     if (reduced) {
-      v2.pause();
-      if (v3) parkUtpHold(v3);
-      setDisplay(2);
+      parkClipEnd(v2);
+      setDisplay(1);
       notifyBreathDone();
       return;
     }
@@ -418,15 +428,17 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     ? (approachSec / Math.max(0.001, timebase.approachEndSec) > 0.85 || breathPlaying
       ? config.media[1].end
       : config.media[1].poster)
-    : holdingCloseStill || scrubbingOrbit
-      ? (scrubbingOrbit && orbitSec >= timebase.catExitEndSec - 0.05 ? config.media[2].end : config.media[2].poster)
-      : inRotateScene
-        ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
-        : inAmbience
-          ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-          : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
-            holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'
-          ];
+    : holdingCloseStill
+      ? config.media[1].end
+      : scrubbingOrbit
+        ? (orbitSec >= timebase.catExitEndSec - 0.05 ? config.media[2].end : config.media[2].poster)
+        : inRotateScene
+          ? (reduced || rotateRatio > 0.95 || holdingRotateEnd ? config.rotateMedia.end : config.rotateMedia.poster)
+          : inAmbience
+            ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
+            : config.media[holdSoundStill || phase === 'finale' ? 3 : index][
+              holdSoundStill || (phase === 'finale' && video4Ended) ? 'end' : 'poster'
+            ];
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
   const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
   const showSound = (phase === 'finale' || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene;
@@ -446,13 +458,13 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
     style={{
       '--media-crossfade': `${breathCrossfade}ms`,
       '--breath-scale': String(breathScale),
-      '--crop-scale': String(inRotateScene ? 1 : config.cropScale),
+      '--crop-scale': String(inRotateScene || inBreathFlow ? 1 : config.cropScale),
     } as CSSProperties}
     data-media-index={inRotateScene ? 'rotate' : inAmbience ? 'ambience' : (phase === 'finale' || holdSoundStill ? 4 : index + 1)}
     data-mode={
       inApproach ? 'scroll-approach'
         : inAutoplay && !breathEnded ? (playingBreath ? 'play-breath' : 'still-breath')
-          : holdingCloseStill ? 'still-utp'
+          : holdingCloseStill ? 'still-freeze'
             : scrubbingOrbit ? 'scroll-orbit'
               : inRotateScene ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
                 : ambiencePlayingPhase ? (playingAmbience ? 'play-ambience' : 'still-ambience')
@@ -527,14 +539,10 @@ export function MediaStage({ phase, progress, active, reduced, breathScale, onAu
       onSeeked={() => { ready(i); setErrors(old => ({ ...old })); }}
       onEnded={() => {
         if (i === 1 && breathPlayArmed.current && !breathDoneNotified.current) {
-          // Hard-cut stitch to horse+sitting-cat (no crossfade dual frame).
+          // Continuous freeze on last shown video-2 frame — no hard jump to video-3.
           const v2 = videos.current[1];
-          const v3 = videos.current[2];
-          v2?.pause();
-          if (v3) {
-            parkUtpHold(v3);
-            setDisplay(2);
-          }
+          if (v2) parkClipEnd(v2);
+          setDisplay(1);
           notifyBreathDone();
           return;
         }
