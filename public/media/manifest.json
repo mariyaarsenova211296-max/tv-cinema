@@ -1,13 +1,15 @@
 [
   {
     "role": "hero-s3",
-    "figma_frame": "112:2889",
-    "figma_video_fill": "102:19080",
-    "video_hash": "f72cd5545bcb34c0547b012c0f6936fd13a60bec",
+    "figma_frame": "126:4173",
+    "figma_video_fill": "126:4172",
+    "video_hash": "641fcee477bc7943832719bbb004989e86865076",
     "path": "media/hero-s3.mp4",
     "mode": "PLAY",
-    "duration": 4.033333,
-    "note": "Screen 3 hero. Full-length MCP export_video via helper timeline 4s."
+    "duration": 6.041667,
+    "note": "STV-63: Screen 1 hero. Full 6s MCP export_video via helper timeline 6s; copy fades at t=3s.",
+    "copy_figma": "126:4114",
+    "copy_at_sec": 3
   },
   {
     "role": "breath-s3to5",

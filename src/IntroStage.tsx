@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { config } from './config';
 
 /**
- * Hero — Figma 102:14254 / video 102:19080.
- * PLAY full clip; copy unlocks near end. Exact type from Figma:
+ * Hero — Figma 126:4173 VIDEO 126:4172 (PLAY full ~6.04s).
+ * Copy from Figma 126:4114 fades in at t=3s:
  *   «Первый» Regular 36 / «кинотеатр» Medium 100 / «с интеллектом» Regular 36
- *   tracking −5% / −1.8px side lines.
+ *   tracking −5px / −1.8px side lines.
  */
 export function IntroStage({ reduced }: { reduced: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -32,8 +32,8 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
 
     const onTime = () => {
       if (cancelled) return;
-      // Unlock copy in last ~0.3s or after 3.7s of ~4s hero.
-      if (el.currentTime >= 3.7) setShowCopy(true);
+      // STV-63: fade copy at t=3s of the 6s hero (Figma 126:4114).
+      if (el.currentTime >= 3) setShowCopy(true);
     };
 
     if (el.readyState >= 1) start();
@@ -54,8 +54,9 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
       id="scene-1"
       className="intro"
       aria-label="Экран 1"
-      data-node-id="102:14254"
-      data-video-node="102:19080"
+      data-node-id="126:4173"
+      data-video-node="126:4172"
+      data-copy-node="126:4114"
       data-mode="PLAY"
     >
       <div className="intro-stage">
@@ -89,7 +90,7 @@ export function IntroStage({ reduced }: { reduced: boolean }) {
           />
           <div
             className={`intro-copy${copyIn ? ' is-in' : ''}`}
-            data-node-id="102:14257"
+            data-node-id="126:4114"
             aria-hidden={!copyIn || undefined}
           >
             <p className="intro-copy__left">Первый</p>

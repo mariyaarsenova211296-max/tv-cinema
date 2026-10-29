@@ -150,9 +150,9 @@ button, a, input { touch-action: manipulation; }
 .intro-still.is-visible { opacity: 1; z-index: 1; }
 
 /*
- * Copy relative to the 16:9 media box (Figma 17:467 / 1440×810 ratios).
- * «кинотеатр» sits under the TV stand, above the viewer’s head.
- * No «серия 9000».
+ * Copy relative to the 16:9 media box (Figma 126:4114 / 1440×810).
+ * Centers: Первый ~8.6% · кинотеатр ~49.6% · с интеллектом ~88.8%.
+ * Vertical: title center ~68% · side lines top ~68.3–68.8%.
  */
 .intro-copy {
   position: absolute;
@@ -182,10 +182,10 @@ button, a, input { touch-action: manipulation; }
   opacity: 1;
   transform: translate(-50%, 0);
 }
-/* Figma 102:14257 — Medium 100 / leading 0.85 / tracking −5px */
+/* Figma 126:4117 — Medium 100 / leading 0.85 / tracking −5px */
 .intro-copy__title {
-  left: 50%;
-  top: 50%;
+  left: 49.55%;
+  top: 68%;
   font-size: clamp(36px, 6.94cqw, 100px);
   font-weight: 500;
   line-height: 0.85;
@@ -197,10 +197,10 @@ button, a, input { touch-action: manipulation; }
   opacity: 1;
   transform: translate(-50%, -50%);
 }
-/* Figma 102:14260 / 102:14259 — Regular 36, tracking −1.8px (−5%) */
+/* Figma 126:4119 / 126:4118 — Regular 36, tracking −1.8px (−5%) */
 .intro-copy__left {
-  left: 19.5%;
-  top: 54.5%;
+  left: 8.61%;
+  top: 68.27%;
   font-size: clamp(14px, 2.5cqw, 36px);
   font-weight: 400;
   line-height: 0.85;
@@ -208,8 +208,8 @@ button, a, input { touch-action: manipulation; }
   transition-delay: 0.18s;
 }
 .intro-copy__right {
-  left: 80.5%;
-  top: 55%;
+  left: 88.78%;
+  top: 68.77%;
   font-size: clamp(14px, 2.5cqw, 36px);
   font-weight: 400;
   line-height: 0.85;

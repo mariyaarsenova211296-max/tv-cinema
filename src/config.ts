@@ -53,13 +53,20 @@ export const config = {
     seekTolerance: 0.035,
     breathRate: 1,
   },
-  /** Screen 3 — Figma 112:2889 / VIDEO 102:19080 (PLAY). */
+  /**
+   * Screen 1 hero — Figma 126:4173 / VIDEO 126:4172 (PLAY full ~6.04s).
+   * Copy from 126:4114 fades in at t=3s (STV-63).
+   */
   heroMedia: {
     src: asset('media/hero-s3.mp4'),
     poster: asset('media/hero-s3-start.jpg'),
     end: asset('media/hero-s3-end.jpg'),
-    figma: '112:2889',
-    videoFill: '102:19080',
+    figma: '126:4173',
+    videoFill: '126:4172',
+    videoHash: '641fcee477bc7943832719bbb004989e86865076',
+    copyFigma: '126:4114',
+    copyAtSec: 3,
+    durationSec: 6.041667,
     mode: 'PLAY' as const,
   },
   /**
