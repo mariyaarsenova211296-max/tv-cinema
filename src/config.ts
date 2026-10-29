@@ -6,10 +6,12 @@ import { asset } from './base';
  *   AUTO_PLAY        — time PLAY     1.0 → 7.0s @1× (scroll clamped at gate)
  *   HOLD_RIDER       — freeze        @7.0s
  *   SCROLL_OUTRO     — scroll SCRUB  7 → end  (video-driven retreat; UTPs hold end)
- *   then SCRUB 5→6 transition (112:2885) → sound PLAY → ambience PLAY
+ *   then SCRUB 5→6 transition (112:2885) once → sound PLAY → ambience PLAY
  *
  * One <video> / one timeline for breath-s3to5 across screens 3→4 / 4 / 4→5 / 5.
  * Scale rail stays 1 — retreat is video-driven, not CSS.
+ * STV-61: toSound scrubs only 0→scrubEndSec (handoff into sound), so the
+ * cat→violin transition does not continue past the sound start and re-play.
  */
 export const timebase = {
   fps: 24,
@@ -72,7 +74,12 @@ export const config = {
     videoFill: '72:1038',
     mode: 'SCRUB+PLAY' as const,
   },
-  /** Screen 5→6 transition — Figma 112:2885 / VIDEO 72:1039 (SCRUB). */
+  /**
+   * Screen 5→6 transition — Figma 112:2885 / VIDEO 72:1039 (SCRUB).
+   * Full export is ~6.03s but content after ~4.0s leaves the sound handoff
+   * (violin) and re-enters earlier horse frames — that looked like a second
+   * transition before sound PLAY. Scrub only 0→scrubEndSec.
+   */
   toSoundMedia: {
     src: asset('media/transition-s5to6.mp4'),
     poster: asset('media/transition-s5to6-start.jpg'),
@@ -80,6 +87,8 @@ export const config = {
     figma: '112:2885',
     videoFill: '72:1039',
     mode: 'SCRUB' as const,
+    /** Seconds — last frame that matches sound-s6 start (violin handoff). */
+    scrubEndSec: 4.0,
   },
   /** Screen 6 sound — Figma 112:2886 / VIDEO 102:19079 (PLAY). */
   soundMedia: {

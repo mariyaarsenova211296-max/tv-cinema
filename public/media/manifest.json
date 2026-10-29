@@ -25,9 +25,10 @@
     "figma_video_fill": "72:1039",
     "video_hash": "ca8c72128be1edee4046a2319bed1b9c71828191",
     "path": "media/transition-s5to6.mp4",
-    "mode": "SCRUB",
+    "mode": "SCRUB 0→4.0s (sound handoff)",
     "duration": 6.033333,
-    "note": "Screen 5→6 transition after UTPs, before sound PLAY."
+    "scrub_end_sec": 4.0,
+    "note": "STV-61: scrub only to violin handoff (~4.0s). Past that the export re-enters horse frames and duplicated the cat→sound transition."
   },
   {
     "role": "sound-s6",

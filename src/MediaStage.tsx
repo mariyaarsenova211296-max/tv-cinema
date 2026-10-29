@@ -23,7 +23,8 @@ type Props = {
 
 /**
  * Single-clip breath (TZ): SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end.
- * Then SCRUB 5→6 transition · sound PLAY · ambience PLAY · rotate SCRUB.
+ * Then SCRUB 5→6 transition once (capped at sound handoff) · sound PLAY ·
+ * ambience PLAY · rotate SCRUB.
  */
 export function MediaStage({
   phase,
@@ -180,16 +181,19 @@ export function MediaStage({
     wasAutoplay.current = inAutoplay;
   }, [inAutoplay]);
 
-  // Screen 5→6 transition SCRUB — single paused timeline, no PLAY competition
+  // Screen 5→6 transition SCRUB — once, capped at sound handoff (STV-61).
   useEffect(() => {
     const el = toSoundRef.current;
     if (!el || !inToSound) return;
     if (el.preload !== 'auto') el.preload = 'auto';
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    const last = Math.max(0, el.duration - 1 / 24);
+    const handoff = Math.min(
+      config.toSoundMedia.scrubEndSec,
+      Math.max(0, el.duration - 1 / 24),
+    );
     const target = reduced || toSoundRatio >= 0.999
-      ? last
-      : clamp(toSoundRatio * el.duration, 0, last);
+      ? handoff
+      : clamp(toSoundRatio * handoff, 0, handoff);
     seekPaused(el, target);
     if (el.readyState >= 2) setToSoundReady(true);
   });

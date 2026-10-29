@@ -1,10 +1,11 @@
 {
-  "id": "stv59-alt-scroll-fix",
+  "id": "stv61-alt-cat-sound-cards",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
+  "figma_cards": "117:3487",
   "figma_section": "72:1037",
-  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 / PLAY sound / PLAY ambience",
+  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 once (0→4.0s handoff) / PLAY sound / PLAY ambience",
   "base": "/tv-cinema/alt/",
   "removed": ["remote-section", "remote-detail", "remote-s9.mp4"],
-  "note": "STV-59: fix alt scroll stutter/repeats; remove advanced-remote blocks."
+  "note": "STV-61: cap cat→sound transition scrub at sound handoff; refresh block-2 cards from Figma 117:3487."
 }
