@@ -156,23 +156,27 @@ export default function App() {
         ease: 'power3.out',
         scrollTrigger: { trigger: '.reveal-section', start: 'top 75%', once: true },
       });
-      gsap.from('.remote-section', {
-        opacity: 0,
-        y: 40,
-        duration: 1.2,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.remote-section', start: 'top 80%', once: true },
-      });
-      gsap.from('.remote-detail', {
-        opacity: 0,
-        y: 36,
-        duration: 1.1,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.remote-detail', start: 'top 82%', once: true },
-      });
+      // Remote markup mounts only after design.json resolves — gate so GSAP
+      // does not warn on missing targets during the first empty-design pass.
+      if (design.remote) {
+        gsap.from('.remote-section', {
+          opacity: 0,
+          y: 40,
+          duration: 1.2,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.remote-section', start: 'top 80%', once: true },
+        });
+        gsap.from('.remote-detail', {
+          opacity: 0,
+          y: 36,
+          duration: 1.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.remote-detail', start: 'top 82%', once: true },
+        });
+      }
     });
     return () => ctx.revert();
-  }, [design.cards, design.cta, reduced]);
+  }, [design.cards, design.cta, design.remote, reduced]);
 
   useEffect(() => {
     if (!autoplayDone) return;

@@ -1,0 +1,8 @@
+{
+  "id": "stv57-v2-greenfield",
+  "product": "tv-cinema-v2",
+  "figma": "102:14253",
+  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 / HOLD @7 / SCRUB 7→end",
+  "base": "/tv-cinema/alt/",
+  "note": "Greenfield replace of old alt-gesture (GestureMedia) with single-clip breath rebuild."
+}
