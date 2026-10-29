@@ -1,38 +1,48 @@
 import { asset } from './base';
 
 /**
- * STV-48 media timebases (seconds @ 24fps).
- * Desired arc: boat → lizard → horse/rider + cat fully seated.
- * video-1 has boat→lizard→sit(lizard); video-3 opens horse+sit — NOT true-sequential
- * across lizard→horse (MAE≈68). Missing full continuous file (see stv48-full-cat-sit.md).
- * Interim: approach on video-2; autoplay video-1 from boat; freeze only on video-3 hold.
+ * STV-49 — four explicit breath control states (user TZ).
+ *
+ * SCROLL_APPROACH → AUTO_PLAY → HOLD_RIDER → SCROLL_OUTRO
+ *
+ * Continuous boat→lizard→horse/rider+seated-cat is MISSING in repo/Figma.
+ * Exact file needed: `public/media/breath-boat-lizard-horse-sit.mp4`
+ * (see docs/stv49-four-state.md). Until it lands, AUTO_PLAY continues the
+ * same video-2 source from approachEnd→end (no mid-clip jump / no fake
+ * video-1→video-3 stitch). HOLD freezes that shown frame; SCROLL_OUTRO
+ * scrubs video-3 0→end as its own control source.
  */
 export const timebase = {
   fps: 24,
   video1Sec: 7.75,
   video2Sec: 5.041667,
   video3Sec: 5.041667,
-  /** Scroll approach ends here — camera settle / final close-up; then autoplay. */
+  /** SCROLL_APPROACH ends here — then AUTO_PLAY continues same clip. */
   approachEndSec: 1.75,
-  /** video-1 boat beat — autoplay starts here (do not stop on video-2 boat end). */
-  boatStartSec: 4.0,
-  /** Horse + fully seated cat freeze (= video-3-utp.jpg / Figma 81:2086). */
-  utpHoldSec: 0.08,
-  /** Scroll cat-exit / camera pull ends before horse-return tail (~4.25s). */
-  catExitEndSec: 2.5,
+  /**
+   * Ideal HOLD_RIDER frame on video-3 once continuous story file exists
+   * (= video-3-utp.jpg / Figma 81:2086). Not used as a mid-autoplay seek.
+   */
+  riderHoldSec: 0.08,
 } as const;
 
+/** Explicit TZ control states — one media source + one driver each. */
+export type BreathState =
+  | 'SCROLL_APPROACH'
+  | 'AUTO_PLAY'
+  | 'HOLD_RIDER'
+  | 'SCROLL_OUTRO';
+
 export const config = {
-  // STV-48: approach → autoplay boat→lizard (video-1) → freeze horse+sit (video-3) →
-  // NEW scroll retreat → RGB→DLG. notifyBreathDone only on seated horse hold.
+  // STV-49 four-state breath + post-breath screens.
   distances: {
-    approach: 1.8, // scroll-scrub video-2 0→approachEndSec
-    autoplay: 0.2, // locked while clip plays; scroll discarded
-    waitClose: 0.35, // freeze horse+sit until new scroll
-    retreat: 2.0, // scale-only pull-back to UTP framing, then stop
-    comparison: 1.6, // RGB-miniled (72:1864 / 72:1975)
-    utpDlg: 1.6, // DLG 288 гц (81:1994 / 72:1938)
-    orbit: 2.2, // scroll-driven cat exit (video-3 hold→catExitEnd)
+    approach: 1.8, // SCROLL_APPROACH — scrub video-2 0→approachEndSec
+    autoplay: 0.2, // AUTO_PLAY lock; mid-scroll discarded
+    waitClose: 0.35, // HOLD_RIDER — freeze shown frame
+    retreat: 2.0, // HOLD_RIDER — scale-only pull-back (no scrub)
+    comparison: 1.6, // HOLD_RIDER — RGB UTP
+    utpDlg: 1.6, // HOLD_RIDER — DLG UTP
+    orbit: 2.8, // SCROLL_OUTRO — scrub video-3 0→end (full)
     finale: 3.5,
     ambience: 4.5,
     rotate: 3.2,
@@ -43,20 +53,18 @@ export const config = {
   ambience: { blackEnd: 0.12, videoIn: 0.26, turnOnAt: 0.42 },
   driveEndRatio: 0.2634,
   timebase,
-  /** Hold ratio on video-3 (utpHoldSec / video3Sec). */
-  utpHoldRatio: timebase.utpHoldSec / timebase.video3Sec,
-  // Keep STV-47 scale fix: no cover×1.12×1.2 overscale.
-  breathScale: { play: 1, close: 1, utp: 0.88, sound: 1 },
-  /** Letterbox crop multiply — 1 during breath. */
+  /** @deprecated alias — rider hold on video-3 when continuous file lands. */
+  utpHoldRatio: timebase.riderHoldSec / timebase.video3Sec,
+  // No dual scale+scrub: approach/autoplay/hold-play stay at 1; retreat scale-only;
+  // SCROLL_OUTRO keeps constant utp (scrub only).
+  breathScale: { play: 1, close: 1, utp: 0.88, sound: 0.88 },
   cropScale: 1,
-  // Breath transitions hard-cut (no dual-frame crossfade ghosts).
   playback: {
     loopVideo1: false,
     loopVideo4: false,
     crossfadeMs: 280,
     breathCrossfadeMs: 0,
     seekTolerance: 0.035,
-    /** Normal-speed autoplay of remaining breath clip (no approach replay). */
     breathRate: 1,
   },
   zoomMedia: {
@@ -93,10 +101,28 @@ export const smooth = (p: number) => { const n = clamp(p); return n * n * (3 - 2
 export const autoplayLockStart = phaseOffset('autoplay');
 
 /**
- * STV-48 story resolver:
- * - approach scroll-mapped (video-2 scrub)
- * - past approach → force autoplay until horse+sit freeze (notifyBreathDone)
- * - mid-play scroll discarded; NEW scroll only after unlock (retreat→UTP)
+ * Map scroll phase → TZ breath state (breath segment only).
+ * HOLD_RIDER covers wait/retreat/UTPs (scale-only after freeze).
+ * Returns null outside the four-state breath block.
+ */
+export function resolveBreathState(phase: Phase, autoplayDone: boolean): BreathState | null {
+  if (phase === 'approach') return 'SCROLL_APPROACH';
+  if (phase === 'autoplay' || !autoplayDone) return 'AUTO_PLAY';
+  if (phase === 'orbit') return 'SCROLL_OUTRO';
+  if (
+    phase === 'waitClose'
+    || phase === 'retreat'
+    || phase === 'comparison'
+    || phase === 'utpDlg'
+  ) return 'HOLD_RIDER';
+  return null;
+}
+
+/**
+ * Story resolver:
+ * - SCROLL_APPROACH while distance < autoplay lock
+ * - force AUTO_PLAY until done (mid-scroll discarded)
+ * - then map from unlock baseline (NEW scroll → HOLD then SCROLL_OUTRO)
  */
 export function resolveBreathStory(
   distance: number,
@@ -122,26 +148,31 @@ export function resolvePhase(distance: number): { phase: Phase; progress: number
   return { phase: 'obsolete', progress: 1 };
 }
 
-/** Breath scale rail — hold 1 through approach/play/freeze; retreat for UTPs. */
+/** Scale rail — never combined with scrub on the same state. */
 export function breathMediaScale(phase: Phase, progress: number): number {
   const { play, close, utp, sound } = config.breathScale;
   if (phase === 'approach') return play + (close - play) * smooth(progress);
   if (phase === 'autoplay' || phase === 'waitClose') return close;
   if (phase === 'retreat') return close + (utp - close) * smooth(progress);
   if (phase === 'comparison' || phase === 'utpDlg') return utp;
-  if (phase === 'orbit') return utp + (sound - utp) * smooth(progress);
+  // SCROLL_OUTRO: scrub only — keep utp (sound == utp).
+  if (phase === 'orbit') return sound;
   return sound;
 }
 
-/** Scroll-scrub time (sec) during approach: 0 → approachEndSec. */
+/** SCROLL_APPROACH scrub: 0 → approachEndSec. */
 export function approachScrubSec(progress: number): number {
   return timebase.approachEndSec * smooth(progress);
 }
 
-/** Scroll-scrub time (sec) during orbit/cat-exit: hold → catExitEnd. */
+/** SCROLL_OUTRO scrub: 0 → full video-3 (no 2.5s cap). */
+export function outroScrubSec(progress: number): number {
+  return timebase.video3Sec * smooth(progress);
+}
+
+/** @deprecated — use outroScrubSec */
 export function orbitScrubSec(progress: number): number {
-  const { utpHoldSec, catExitEndSec } = timebase;
-  return utpHoldSec + (catExitEndSec - utpHoldSec) * smooth(progress);
+  return outroScrubSec(progress);
 }
 
 /** @deprecated */

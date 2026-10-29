@@ -9,6 +9,7 @@ import {
   breathMediaScale,
   config,
   phaseOffset,
+  resolveBreathState,
   resolveBreathStory,
   smooth,
   totalDistance,
@@ -77,6 +78,7 @@ export default function App() {
     autoplayDone,
     unlockDistance,
   );
+  const breathState = resolveBreathState(phase, autoplayDone);
   useDesignScale();
 
   useEffect(() => {
@@ -153,7 +155,7 @@ export default function App() {
   }, [distance, autoplayDone]);
 
   const handleAutoplayDone = () => {
-    // Freeze unlock: mid-play scroll discarded; NEW scroll only for retreat→UTP.
+    // HOLD_RIDER unlock: mid-AUTO_PLAY scroll discarded; NEW scroll → retreat/UTPs/outro.
     setUnlockDistance(Math.max(autoplayLockStart, distanceRef.current));
     setAutoplayDone(true);
   };
@@ -279,6 +281,7 @@ export default function App() {
         <div
           className="stage-sticky"
           data-phase={phase}
+          data-breath-state={breathState ?? undefined}
           data-progress={progress.toFixed(3)}
           data-autoplay={autoplayDone ? 'done' : phase === 'autoplay' ? 'play' : 'pending'}
         >
@@ -298,6 +301,7 @@ export default function App() {
                   active={inView}
                   reduced={reduced}
                   breathScale={mediaScale}
+                  autoplayDone={autoplayDone}
                   onAutoplayDone={handleAutoplayDone}
                 />
               </div>
