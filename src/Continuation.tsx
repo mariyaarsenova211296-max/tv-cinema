@@ -27,13 +27,6 @@ const REMOTE_FEATURES = [
   },
 ] as const;
 
-/** Visual chip order matching Figma 132:16709 (wrap: 2 then 1). */
-const AI_CHIPS = [
-  { label: 'Подсказывает и угадывает', border: 'soft' as const },
-  { label: 'Ловит на лету', border: 'solid' as const },
-  { label: 'Общается как с человеком', border: 'soft' as const },
-] as const;
-
 /**
  * Remote video (132:20755): one play per enter.
  * outside→enter play from 0 → ended hold last frame while in scene → leave unlocks next enter.
@@ -294,31 +287,30 @@ function TechBlock() {
       <div className={styles.techVLineA} aria-hidden />
       <div className={styles.techVLineB} aria-hidden />
 
-      <div className={styles.techRgb}>
-        <p className={styles.techCellLabel}>{'Технология экрана,\nкоторой можно гордиться'}</p>
-        <p className={styles.techCellValue}>{'RGB\nminiLED'}</p>
-      </div>
+      {/* RGB column — label + value absolute to section (Figma 132:17386 / 132:17388) */}
+      <p className={`${styles.techCellLabel} ${styles.techRgbLabel}`}>
+        {'Технология экрана,\nкоторой можно гордиться'}
+      </p>
+      <p className={`${styles.techCellValue} ${styles.techRgbValue}`}>{'RGB\nminiLED'}</p>
 
-      <div className={`${styles.techCell} ${styles.techCell1}`}>
-        <p className={styles.techCellLabel}>Высокое разрешение</p>
-        <p className={`${styles.techCellMeta} ${styles.techMetaUhd}`}>3840 х 2160</p>
-        <p className={`${styles.techCellValue} ${styles.techValUhd}`}>UHD</p>
-      </div>
-      <div className={`${styles.techCell} ${styles.techCell2}`}>
-        <p className={styles.techCellLabel}>{'Чтобы объединять домашние устройства\nв систему'}</p>
-        <p className={`${styles.techCellMeta} ${styles.techMetaZig}`}>умный дом</p>
-        <p className={`${styles.techCellValue} ${styles.techValZig}`}>Zigbee-хаб</p>
-      </div>
-      <div className={`${styles.techCell} ${styles.techCell3}`}>
-        <p className={styles.techCellLabel}>Прокачанный отклик</p>
-        <p className={`${styles.techCellMeta} ${styles.techMetaDlg}`}>нативно: 144 Гц</p>
-        <p className={`${styles.techCellValue} ${styles.techValDlg}`}>{'DLG:\n288 Гц'}</p>
-      </div>
-      <div className={`${styles.techCell} ${styles.techCell4}`}>
-        <p className={styles.techCellLabel}>Много памяти — много приложений</p>
-        <p className={`${styles.techCellMeta} ${styles.techMetaMem}`}>встроенная память</p>
-        <p className={`${styles.techCellValue} ${styles.techValMem}`}>64 ГБ</p>
-      </div>
+      {/* Bottom 4 cells — all tops relative to 1440×981 section, not nested % */}
+      <p className={`${styles.techCellLabel} ${styles.techLabelUhd}`}>Высокое разрешение</p>
+      <p className={`${styles.techCellMeta} ${styles.techMetaUhd}`}>3840 х 2160</p>
+      <p className={`${styles.techCellValue} ${styles.techValUhd}`}>UHD</p>
+
+      <p className={`${styles.techCellLabel} ${styles.techLabelZig}`}>
+        {'Чтобы объединять домашние устройства\nв систему'}
+      </p>
+      <p className={`${styles.techCellMeta} ${styles.techMetaZig}`}>умный дом</p>
+      <p className={`${styles.techCellValue} ${styles.techValZig}`}>Zigbee-хаб</p>
+
+      <p className={`${styles.techCellLabel} ${styles.techLabelDlg}`}>Прокачанный отклик</p>
+      <p className={`${styles.techCellMeta} ${styles.techMetaDlg}`}>нативно: 144 Гц</p>
+      <p className={`${styles.techCellValue} ${styles.techValDlg}`}>{'DLG:\n288 Гц'}</p>
+
+      <p className={`${styles.techCellLabel} ${styles.techLabelMem}`}>Много памяти — много приложений</p>
+      <p className={`${styles.techCellMeta} ${styles.techMetaMem}`}>встроенная память</p>
+      <p className={`${styles.techCellValue} ${styles.techValMem}`}>64 ГБ</p>
     </section>
   );
 }
@@ -350,16 +342,6 @@ export function Continuation() {
           height={801}
           decoding="async"
         />
-        <div className={styles.aiChips}>
-          {AI_CHIPS.map(chip => (
-            <p
-              className={`${styles.aiChip}${chip.border === 'solid' ? ` ${styles.aiChipSolid}` : ''}`}
-              key={chip.label}
-            >
-              {chip.label}
-            </p>
-          ))}
-        </div>
       </section>
 
       <section className={styles.plate} data-node-id="132:16710" aria-label="Экран, который впишется">
@@ -400,7 +382,7 @@ export function Continuation() {
       </section>
 
       <section
-        className={`${styles.copyBlock} ${styles.copyBlockTall}`}
+        className={styles.copyBlock}
         data-node-id="132:16873"
         aria-label="Больше возможностей"
       >
@@ -418,10 +400,13 @@ export function Continuation() {
           height={845}
           decoding="async"
         />
-        <h2 className={styles.smartTitle}>{'Дом, умный\nдом'}</h2>
-        <p className={styles.smartBody}>
-          {'Встроенный умный хаб\nс протоколом Zigbee.\nСоздавайте и запускайте сценарии автоматизации'}
-        </p>
+        {/* Figma 132:16882: x308 y207 w209 inside plate@34,45 → abs 342/252; gap 24 */}
+        <div className={styles.smartCopy}>
+          <h2 className={styles.smartTitle}>{'Дом, умный\nдом'}</h2>
+          <p className={styles.smartBody}>
+            {'Встроенный умный хаб\nс протоколом Zigbee.\nСоздавайте и запускайте сценарии автоматизации'}
+          </p>
+        </div>
       </section>
 
       <section className={styles.plate} data-node-id="132:16885" aria-label="Три колонки">
@@ -516,6 +501,7 @@ export function Continuation() {
               </div>
               <div>
                 <p className={styles.footerMetaValue}>+7 (495) 500-55-50</p>
+                <p className={styles.footerMetaLabel}>Бесплатно с мобильного на территории РФ</p>
               </div>
             </div>
             <div className={styles.footerSocial}>

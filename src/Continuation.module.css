@@ -135,7 +135,7 @@
   white-space: pre-line;
 }
 
-/* —— 2 / 7. Black copy screens 1440×890 —— */
+/* —— 2 / 7. Black copy screens —— */
 .copyBlock {
   position: relative;
   width: 100%;
@@ -146,8 +146,11 @@
   box-sizing: border-box;
 }
 
+/* 132:16706 — Figma 1440×1094; title y397; desc y560 */
 .copyBlockTall {
-  /* keep aspect locked to Figma 1440×890 */
+  height: calc(1094 / 1440 * 100vw);
+  max-height: 1094px;
+  min-height: min(1094px, calc(1094 / 1440 * 100vw));
 }
 
 .copyTitle {
@@ -163,11 +166,10 @@
   text-align: center;
 }
 
-/* title y389 in 1440×890 */
 .copyTitleAbs {
   position: absolute;
   left: 50%;
-  top: calc(389 / 890 * 100%);
+  top: calc(397 / 1094 * 100%);
   transform: translateX(-50%);
 }
 
@@ -190,11 +192,10 @@
   text-align: center;
 }
 
-/* desc y552 */
 .copyBodyAbs {
   position: absolute;
   left: 50%;
-  top: calc(552 / 890 * 100%);
+  top: calc(560 / 1094 * 100%);
   transform: translateX(-50%);
 }
 
@@ -211,39 +212,7 @@
   height: auto;
 }
 
-/* AI chips — exactly 3, HTML only over clean scene */
-.aiChips {
-  position: absolute;
-  left: 50%;
-  top: calc(532 / 801 * 100%);
-  transform: translateX(-50%);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  align-content: center;
-  width: min(658px, 90%);
-  z-index: 3;
-}
-
-.aiChip {
-  margin: 0;
-  padding: 18px 24px;
-  border-radius: 10000px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
-  color: var(--cont-white);
-  font-family: var(--cont-font);
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 18px;
-  letter-spacing: -0.54px;
-  white-space: nowrap;
-}
-
-.aiChipSolid {
-  border-color: #fff;
-}
+/* AI 132:16709 — clean scene only (no chips / no greeting overlay) */
 
 /* Screen fits overlays */
 .screenTitle {
@@ -407,35 +376,40 @@
   z-index: 2;
 }
 
-/* Smart home — HTML once; Figma copy at left calc(50%-273.5px) top 207 inside plate */
-.smartTitle {
+/* Smart home 132:16875 — copy frame 132:16882 at x308 y207 w209 inside plate@34,45 */
+.smartCopy {
   position: absolute;
-  left: calc((720 - 273.5) / 1440 * 100%);
-  top: calc((45 + 207) / 845 * 100%);
+  left: calc(342 / 1440 * 100%);
+  top: calc(252 / 845 * 100%);
   width: 209px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: flex-start;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.smartTitle {
   margin: 0;
+  width: auto;
   font-size: 26px;
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.78px;
   color: var(--cont-white);
   white-space: pre-line;
-  z-index: 2;
 }
 
 .smartBody {
-  position: absolute;
-  left: calc((720 - 273.5) / 1440 * 100%);
-  top: calc((45 + 207 + 50) / 845 * 100%);
-  width: 209px;
   margin: 0;
+  width: 209px;
   font-size: 18px;
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.54px;
   color: var(--cont-muted);
   white-space: pre-line;
-  z-index: 2;
   opacity: 0.8;
 }
 
@@ -636,29 +610,9 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
-.techRgb {
-  position: absolute;
-  left: calc(1048 / 1440 * 100%);
-  top: calc(169 / 981 * 100%);
-  width: 326px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.techCell {
-  position: absolute;
-  top: calc(425 / 981 * 100%);
-  width: calc(280 / 1440 * 100%);
-  min-height: calc(280 / 981 * 100%);
-}
-
-.techCell1 { left: calc(120 / 1440 * 100%); }
-.techCell2 { left: calc(445 / 1440 * 100%); }
-.techCell3 { left: calc(746 / 1440 * 100%); }
-.techCell4 { left: calc(1056 / 1440 * 100%); }
-
+/* All cell copy absolute to 1440×981 section (avoids nested-% overlap/clip) */
 .techCellLabel {
+  position: absolute;
   margin: 0;
   font-size: 18px;
   font-weight: 400;
@@ -671,7 +625,6 @@
 
 .techCellMeta {
   position: absolute;
-  left: 0;
   margin: 0;
   font-size: 18px;
   font-weight: 500;
@@ -682,7 +635,6 @@
 
 .techCellValue {
   position: absolute;
-  left: 0;
   margin: 0;
   font-size: 64px;
   font-weight: 500;
@@ -692,19 +644,89 @@
   color: var(--cont-white);
 }
 
-/* Per-column Figma y positions (relative to cell top 425) */
-.techMetaUhd { top: calc((647 - 425) / 981 * 100%); }
-.techValUhd { top: calc((673 - 425) / 981 * 100%); }
-.techMetaZig { top: calc((587 - 425) / 981 * 100%); }
-.techValZig { top: calc((613 - 425) / 981 * 100%); }
-.techMetaDlg { top: calc((587 - 425) / 981 * 100%); }
-.techValDlg { top: calc((613 - 425) / 981 * 100%); }
-.techMetaMem { top: calc((640 - 425) / 981 * 100%); }
-.techValMem { top: calc((667 - 425) / 981 * 100%); }
+.techRgbLabel {
+  left: calc(1048 / 1440 * 100%);
+  top: calc(169 / 981 * 100%);
+  width: 326px;
+}
 
-.techRgb .techCellValue {
-  position: static;
-  margin-top: 16px;
+.techRgbValue {
+  left: calc(1044 / 1440 * 100%);
+  top: calc(263 / 981 * 100%);
+  width: 239px;
+}
+
+.techLabelUhd {
+  left: calc(120 / 1440 * 100%);
+  top: calc(425 / 981 * 100%);
+  width: 326px;
+}
+
+.techMetaUhd {
+  left: calc(119 / 1440 * 100%);
+  top: calc(647 / 981 * 100%);
+  width: 149px;
+}
+
+.techValUhd {
+  left: calc(119 / 1440 * 100%);
+  top: calc(673 / 981 * 100%);
+  width: 268px;
+}
+
+.techLabelZig {
+  left: calc(445 / 1440 * 100%);
+  top: calc(425 / 981 * 100%);
+  width: 237px;
+}
+
+.techMetaZig {
+  left: calc(445 / 1440 * 100%);
+  top: calc(587 / 981 * 100%);
+  width: 149px;
+}
+
+.techValZig {
+  left: calc(445 / 1440 * 100%);
+  top: calc(613 / 981 * 100%);
+  width: 269px;
+}
+
+.techLabelDlg {
+  left: calc(746 / 1440 * 100%);
+  top: calc(425 / 981 * 100%);
+  width: 237px;
+}
+
+.techMetaDlg {
+  left: calc(753 / 1440 * 100%);
+  top: calc(587 / 981 * 100%);
+  width: 149px;
+}
+
+.techValDlg {
+  left: calc(746 / 1440 * 100%);
+  top: calc(613 / 981 * 100%);
+  width: 269px;
+}
+
+.techLabelMem {
+  left: calc(1056 / 1440 * 100%);
+  top: calc(425 / 981 * 100%);
+  width: 266px;
+}
+
+.techMetaMem {
+  left: calc(1052 / 1440 * 100%);
+  top: calc(640 / 981 * 100%);
+  width: 167px;
+}
+
+.techValMem {
+  left: calc(1048 / 1440 * 100%);
+  top: calc(667 / 981 * 100%);
+  width: auto;
+  white-space: nowrap;
 }
 
 /* Finale — soft top/bottom vignette into black */
@@ -770,8 +792,9 @@
   z-index: 2;
 }
 
-/* Footer 1440×536 */
+/* Footer 1440×536 — left cols w588 @32; right col w688 @720 */
 .footer {
+  position: relative;
   width: 100%;
   background: var(--cont-footer);
   color: var(--cont-ink);
@@ -784,14 +807,19 @@
 
 .footerGrid {
   display: grid;
-  grid-template-columns: 588fr 688fr;
-  gap: 32px;
+  grid-template-columns: 588px minmax(0, 1fr);
+  gap: 0;
+  column-gap: calc(720px - 32px - 588px);
+  width: 100%;
+  max-width: 1376px;
 }
 
 .footerCols {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
+  width: 588px;
+  max-width: 100%;
 }
 
 .footerRight {
@@ -799,6 +827,8 @@
   flex-direction: column;
   gap: 48px;
   align-items: flex-start;
+  width: 688px;
+  max-width: 100%;
 }
 
 .footerColTitle {
@@ -975,8 +1005,9 @@
   .techVLineMain,
   .techVLineA,
   .techVLineB,
-  .techRgb,
-  .techCell {
+  .techCellLabel,
+  .techCellMeta,
+  .techCellValue {
     position: static;
     width: auto;
     height: auto;
@@ -995,11 +1026,15 @@
     border-top: 1px solid rgba(255, 255, 255, 0.35);
   }
   .techSpecWrap { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
-  .techRgb { margin-bottom: 32px; }
-  .techCell { margin-bottom: 24px; }
-  .techCellValue { font-size: 40px; letter-spacing: -1.6px; margin-top: 8px; }
+  .techRgbLabel { margin-bottom: 16px; }
+  .techRgbValue { margin-bottom: 32px; }
+  .techCellLabel { margin-top: 24px; }
+  .techCellMeta { margin-top: 12px; }
+  .techCellValue { font-size: 40px; letter-spacing: -1.6px; margin-top: 8px; margin-bottom: 8px; }
   .footerGrid { grid-template-columns: 1fr; }
-  .aiChips { top: auto; bottom: 8%; }
-  .aiChip { padding: 12px 16px; font-size: 14px; }
+  .smartCopy {
+    left: 24px;
+    width: min(209px, 70%);
+  }
   .screenTitle { font-size: 28px; width: min(220px, 40%); }
 }

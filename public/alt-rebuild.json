@@ -1,5 +1,5 @@
 {
-  "id": "stv67-alt-continuation-polish",
+  "id": "stv68-alt-lower-figma-sync",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
   "figma_continuation": "132:15927",
@@ -7,6 +7,6 @@
   "figma_bracket_video": "132:20799",
   "figma_internet_cycle": ["132:29082", "132:28496", "132:30051", "132:29379"],
   "base": "/tv-cinema/alt/",
-  "continuation": "STV-67 polish: clean PNG exports + HTML text once; remote play-once; Union plaque; tech grid; footer social sizes",
-  "note": "STV-67: continuation from «Продвинутый пульт» through footer matched to Figma. Pre-remote blocks untouched. Scrub main tip stays b12f748."
+  "continuation": "STV-68: lower continuation sync — no AI chips/greeting, copy 1094, smart-home column, tech absolute grid, footer right col",
+  "note": "STV-68: from «Продвинутый пульт» through footer to Figma 132:15927. Pre-remote untouched. Videos/scale/crop/playback/scroll timing unchanged. Scrub main tip stays b12f748."
 }
