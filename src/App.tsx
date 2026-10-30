@@ -15,6 +15,7 @@ import {
   clamp,
 } from './config';
 import type { Design } from './config';
+import { Continuation } from './Continuation';
 import { IntroStage } from './IntroStage';
 import { MediaStage } from './MediaStage';
 import { useDesignScale } from './useDesignScale';
@@ -482,6 +483,9 @@ export default function App() {
             )}
           </div>
         </section>
+
+        {/* STV-66: Figma continuation AFTER obsolete / outside .experience sticky scroll */}
+        <Continuation />
       </main>
 
       {design.cta && (

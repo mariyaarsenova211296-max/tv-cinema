@@ -1,17 +1,12 @@
 {
-  "id": "stv64-alt-last-block-video",
+  "id": "stv66-alt-figma-continuation",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
-  "figma_hero": "126:4173",
-  "figma_hero_video_fill": "126:4172",
-  "figma_hero_copy": "126:4114",
-  "figma_7to8": "121:4113",
-  "figma_7to8_video_fill": "121:4112",
-  "figma_cards": "117:3487",
-  "figma_section": "72:1037",
-  "hero": "PLAY full ~6.04s from 126:4173; copy from 126:4114 fades in at t=3s",
-  "breath": "SCROLL_APPROACH 0→1 / PLAY 1→7 (scroll-clamped) / HOLD @7 / SCRUB 7→end / SCRUB 5→6 once (0→4.0s handoff) / PLAY sound / PLAY ambience / SCRUB 7→8 once (0→4.0s before loop)",
+  "figma_continuation": "132:15927",
+  "figma_remote_video": "132:20755",
+  "figma_bracket_video": "132:20799",
+  "figma_internet_cycle": ["132:29082", "132:28496", "132:30051", "132:29379"],
   "base": "/tv-cinema/alt/",
-  "removed": ["remote-section", "remote-detail", "remote-s9.mp4"],
-  "note": "STV-64: cap rotate scrub at 4.0s — rotate.mp4 loops at ~4.05s (t≈4.05≡t=0). STV-63 hero 6s + text@3s retained."
+  "continuation": "After obsolete / outside .experience sticky — 13 Figma blocks in document flow",
+  "note": "STV-66: Figma continuation after «Кинотеатр, который не устареет»; isolated CSS Modules; videos PLAY in-view; internet 2s cycle when visible. Scrub main tip stays b12f748."
 }
