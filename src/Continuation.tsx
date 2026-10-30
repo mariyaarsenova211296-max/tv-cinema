@@ -28,26 +28,52 @@ const REMOTE_FEATURES = [
 ] as const;
 
 /**
- * Remote video (132:20755): one play per enter.
- * outside→enter play from 0 → ended hold last frame while in scene → leave unlocks next enter.
- * Leave mid-play → stop; next enter restarts. No loop / scrub / localStorage.
- * Tiny observer flicker ignored via short debounce.
+ * Enter-visible play-once (remote 132:20755, bracket 132:20799).
+ * Visibility is relative to the iframe’s real 1440×860 viewport (default IO root).
+ * outside→enter: autoplay from 0 once → play at normal speed to real file end →
+ * hold last frame while still in block (scroll/observer must not restart) →
+ * leave unlocks next enter. No loop / currentTime↔scroll scrub / timer cutoffs /
+ * poster or src reset after end. Tiny observer flicker ignored via short debounce.
+ *
+ * Pass observeRef on a block/section when the media plane is taller than the
+ * viewport (bracket); otherwise the video element is observed (remote).
  */
-function useRemoteEnterPlay() {
-  const ref = useRef<HTMLVideoElement>(null);
+function useEnterPlayOnce() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const observeRef = useRef<HTMLElement | null>(null); // section or null → fall back to video
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el = videoRef.current;
+    const target = observeRef.current ?? el;
+    if (!el || !target) return;
+
+    el.loop = false;
+    el.muted = true;
 
     let inScene = false;
     let playedThisVisit = false;
     let debounce: number | null = null;
+    let readyHandler: (() => void) | null = null;
     const FLICKER_MS = 100;
 
-    const enter = () => {
-      if (playedThisVisit) return;
-      playedThisVisit = true;
+    const clearReady = () => {
+      if (!readyHandler) return;
+      el.removeEventListener('canplay', readyHandler);
+      el.removeEventListener('loadeddata', readyHandler);
+      readyHandler = null;
+    };
+
+    const onEnded = () => {
+      // Hold last frame — never reset currentTime / poster / src.
+      try {
+        el.pause();
+      } catch {
+        /* ignore */
+      }
+    };
+    el.addEventListener('ended', onEnded);
+
+    const kickFromStart = () => {
       try {
         el.pause();
         el.currentTime = 0;
@@ -58,7 +84,27 @@ function useRemoteEnterPlay() {
       if (p) p.catch(() => { /* autoplay policy */ });
     };
 
+    const enter = () => {
+      if (playedThisVisit) return;
+      playedThisVisit = true;
+      clearReady();
+
+      if (el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        kickFromStart();
+        return;
+      }
+
+      readyHandler = () => {
+        clearReady();
+        if (!inScene || !playedThisVisit) return;
+        kickFromStart();
+      };
+      el.addEventListener('canplay', readyHandler);
+      el.addEventListener('loadeddata', readyHandler);
+    };
+
     const leave = () => {
+      clearReady();
       playedThisVisit = false;
       el.pause();
     };
@@ -71,6 +117,7 @@ function useRemoteEnterPlay() {
         inScene = false;
         leave();
       }
+      // visible && inScene: stay put — no restart/reset mid-block
     };
 
     const io = new IntersectionObserver(
@@ -82,36 +129,16 @@ function useRemoteEnterPlay() {
       { threshold: [0, 0.2, 0.25, 0.5] },
     );
 
-    io.observe(el);
+    io.observe(target);
     return () => {
       io.disconnect();
+      clearReady();
+      el.removeEventListener('ended', onEnded);
       if (debounce != null) window.clearTimeout(debounce);
     };
   }, []);
 
-  return ref;
-}
-
-function useInViewPlay(active: boolean) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
-          const p = el.play();
-          if (p) p.catch(() => { /* autoplay policy */ });
-        } else {
-          el.pause();
-        }
-      },
-      { threshold: [0, 0.25, 0.5] },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [active]);
-  return ref;
+  return { videoRef, observeRef };
 }
 
 function InternetCycle() {
@@ -172,7 +199,7 @@ function InternetCycle() {
 }
 
 function RemoteBlock() {
-  const videoRef = useRemoteEnterPlay();
+  const { videoRef } = useEnterPlayOnce();
   return (
     <section className={`${styles.block} ${styles.remote}`} data-node-id="132:16570" aria-label="Продвинутый пульт">
       <div className={styles.remoteShell}>
@@ -209,9 +236,16 @@ function RemoteBlock() {
 }
 
 function BracketBlock() {
-  const videoRef = useInViewPlay(true);
+  const { videoRef, observeRef } = useEnterPlayOnce();
   return (
-    <section className={styles.bracket} data-node-id="132:16727" aria-label="Кронштейн и баланс">
+    <section
+      ref={(node) => {
+        observeRef.current = node;
+      }}
+      className={styles.bracket}
+      data-node-id="132:16727"
+      aria-label="Кронштейн и баланс"
+    >
       <div className={styles.bracketLeft}>
         <video
           ref={videoRef}
@@ -219,7 +253,6 @@ function BracketBlock() {
           src={asset('media/continuation/bracket.mp4')}
           muted
           playsInline
-          loop
           preload="auto"
           data-node-id="132:20799"
         />

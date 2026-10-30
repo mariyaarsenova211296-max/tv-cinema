@@ -1,5 +1,5 @@
 {
-  "id": "stv69-alt-fixed-viewport",
+  "id": "stv70-alt-shell-bracket",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
   "figma_continuation": "132:15927",
@@ -7,7 +7,7 @@
   "figma_bracket_video": "132:20799",
   "figma_internet_cycle": ["132:29082", "132:28496", "132:30051", "132:29379"],
   "base": "/tv-cinema/alt/",
-  "viewport": { "width": 1440, "height": 860, "shell": "iframe→inner.html" },
-  "continuation": "STV-69: fixed 1440×860 outer viewport shell for /alt/ only",
-  "note": "STV-69: outer white letterbox shell + same-origin iframe to inner.html. Inner landing/scroll/videos/timings unchanged from STV-68 tip. Scrub main tip stays b12f748."
+  "viewport": { "width": 1440, "height": 860, "shell": "iframe→inner.html", "letterbox": "#000000" },
+  "continuation": "STV-70: black outer shell + bracket enter-once play to file end",
+  "note": "STV-70: outer letterbox #000000 (keep fixed 1440×860, top-flush, H-center). Bracket «Кронштейн» autoplays from start once on enter (iframe 1440×860 root); plays to real end; holds last frame; no loop/scrub/restart while in block. Scrub main tip stays b12f748."
 }
