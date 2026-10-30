@@ -9,6 +9,7 @@
   --cont-ink: #000;
   --cont-ink60: rgba(0, 0, 0, 0.6);
   --cont-ink50: rgba(0, 0, 0, 0.5);
+  --cont-ink80: rgba(0, 0, 0, 0.8);
   --cont-cream: #f9eedf;
   --cont-footer: #f4f7fa;
   --cont-link: #006eff;
@@ -26,14 +27,6 @@
   position: relative;
   width: 100%;
   overflow: clip;
-}
-
-.blockImg {
-  display: block;
-  width: 100%;
-  height: auto;
-  pointer-events: none;
-  user-select: none;
 }
 
 /* —— 1. Advanced remote 132:16570 —— */
@@ -77,21 +70,35 @@
   letter-spacing: -1.38px;
   color: var(--cont-ink);
   text-align: center;
+  z-index: 2;
 }
 
+/* Union plaque geometry: x175 y925 w1026 h332 in 1376×1311 shell */
+.remotePlaque {
+  position: absolute;
+  left: calc(175 / 1376 * 100%);
+  top: calc(925 / 1311 * 100%);
+  width: calc(1026 / 1376 * 100%);
+  height: calc(332 / 1311 * 100%);
+  display: block;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Columns: x355 y973 w667 gap40 */
 .remoteFeatures {
   position: absolute;
   left: calc(355 / 1376 * 100%);
-  bottom: calc(102 / 1311 * 100%);
+  top: calc(973 / 1311 * 100%);
   display: flex;
   gap: 40px;
   width: 667px;
   max-width: calc(100% - 48px);
-  padding: 28px 36px 32px;
   box-sizing: border-box;
-  border-radius: 999px;
-  background: var(--cont-black);
   z-index: 2;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 
 .remoteFeat {
@@ -128,47 +135,70 @@
   white-space: pre-line;
 }
 
-/* —— 2 / 7. Centered copy blocks —— */
+/* —— 2 / 7. Black copy screens 1440×890 —— */
 .copyBlock {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  position: relative;
+  width: 100%;
+  height: calc(890 / 1440 * 100vw);
+  max-height: 890px;
+  min-height: min(890px, calc(890 / 1440 * 100vw));
   background: var(--cont-black);
-  min-height: calc(890 / 1440 * 100vw);
-  max-height: none;
-  height: auto;
-  padding: 120px 24px;
   box-sizing: border-box;
 }
 
 .copyBlockTall {
-  min-height: min(890px, calc(890 / 1440 * 100vw));
+  /* keep aspect locked to Figma 1440×890 */
 }
 
 .copyTitle {
   margin: 0;
-  max-width: 398px;
+  width: 398px;
+  max-width: 90%;
   font-size: 46px;
   font-weight: 600;
   line-height: 0.896;
   letter-spacing: -1.38px;
   color: var(--cont-white);
   white-space: pre-line;
+  text-align: center;
+}
+
+/* title y389 in 1440×890 */
+.copyTitleAbs {
+  position: absolute;
+  left: 50%;
+  top: calc(389 / 890 * 100%);
+  transform: translateX(-50%);
+}
+
+.copyTitleCenter {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 56px);
+  transform: translateX(-50%);
 }
 
 .copyBody {
-  margin: 40px 0 0;
-  max-width: 356px;
+  margin: 0;
+  width: 356px;
+  max-width: 90%;
   font-size: 26px;
   font-weight: 500;
   line-height: 1.3;
   letter-spacing: -0.78px;
   color: var(--cont-muted);
+  text-align: center;
 }
 
-/* —— Visual plate sections (composite + HTML overlay) —— */
+/* desc y552 */
+.copyBodyAbs {
+  position: absolute;
+  left: 50%;
+  top: calc(552 / 890 * 100%);
+  transform: translateX(-50%);
+}
+
+/* —— Visual plate sections —— */
 .plate {
   position: relative;
   width: 100%;
@@ -181,28 +211,17 @@
   height: auto;
 }
 
-.srText {
-  /* Selectable HTML twin over baked composite glyphs */
-  position: absolute;
-  margin: 0;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  white-space: pre-line;
-  z-index: 2;
-}
-
-/* AI scene chips */
+/* AI chips — exactly 3, HTML only over clean scene */
 .aiChips {
   position: absolute;
   left: 50%;
-  bottom: 12%;
+  top: calc(532 / 801 * 100%);
   transform: translateX(-50%);
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   justify-content: center;
+  align-content: center;
   width: min(658px, 90%);
   z-index: 3;
 }
@@ -211,8 +230,8 @@
   margin: 0;
   padding: 18px 24px;
   border-radius: 10000px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
   color: var(--cont-white);
   font-family: var(--cont-font);
   font-size: 18px;
@@ -220,6 +239,10 @@
   line-height: 18px;
   letter-spacing: -0.54px;
   white-space: nowrap;
+}
+
+.aiChipSolid {
+  border-color: #fff;
 }
 
 /* Screen fits overlays */
@@ -266,7 +289,7 @@
   color: var(--cont-ink60);
 }
 
-/* Bracket pair */
+/* Bracket pair — Кронштейн + Выверенный баланс only */
 .bracket {
   display: grid;
   grid-template-columns: 722fr 718fr;
@@ -311,7 +334,6 @@
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.78px;
-  color: var(--cont-ink);
   z-index: 2;
 }
 
@@ -322,7 +344,6 @@
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.54px;
-  color: var(--cont-ink);
   opacity: 0.8;
   z-index: 2;
 }
@@ -331,61 +352,67 @@
   left: calc(120 / 722 * 100%);
   top: calc(110 / 879 * 100%);
   width: 168px;
+  color: var(--cont-ink);
 }
 
 .bracketMountBody {
   left: calc(120 / 722 * 100%);
   top: calc(160 / 879 * 100%);
   width: 180px;
+  color: var(--cont-ink);
 }
 
-.bracketTouchTitle {
-  left: calc(436 / 722 * 100%);
-  top: calc(453 / 879 * 100%);
+/* Right panel copy at x252 y640 / y773.5 within 718 panel */
+.bracketBalanceTitle {
+  left: calc(252 / 718 * 100%);
+  top: calc(640 / 879 * 100%);
   width: 168px;
+  color: var(--cont-white);
 }
 
-.bracketTouchBody {
-  left: calc(436 / 722 * 100%);
-  top: calc(529 / 879 * 100%);
-  width: 198px;
+.bracketBalanceBody {
+  left: calc(252 / 718 * 100%);
+  top: calc(724 / 879 * 100%);
+  width: 247px;
+  color: var(--cont-white);
 }
 
-/* Diagonals / smart home / columns — composite with HTML text patch */
+/* Diagonals — black 26px sizes + 18px title, no white shadow */
+.diagSizes {
+  position: absolute;
+  left: calc(127 / 1440 * 100%);
+  top: calc(197 / 872 * 100%);
+  margin: 0;
+  width: 194px;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.78px;
+  color: var(--cont-ink);
+  z-index: 2;
+}
+
 .diagTitle {
   position: absolute;
   left: calc(127 / 1440 * 100%);
   top: calc(247 / 872 * 100%);
   width: 283px;
   margin: 0;
-  font-size: 26px;
-  font-weight: 500;
-  line-height: 0.9;
-  letter-spacing: -0.78px;
-  color: var(--cont-white);
-  white-space: pre-line;
-  z-index: 2;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
-}
-
-.diagSizes {
-  position: absolute;
-  left: calc(127 / 1440 * 100%);
-  top: calc(197 / 872 * 100%);
-  margin: 0;
   font-size: 18px;
   font-weight: 500;
+  line-height: 1.3;
   letter-spacing: -0.54px;
-  color: var(--cont-white);
+  color: var(--cont-ink80);
+  white-space: pre-line;
   z-index: 2;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
 }
 
+/* Smart home — HTML once; Figma copy at left calc(50%-273.5px) top 207 inside plate */
 .smartTitle {
   position: absolute;
-  left: calc((34 + 308) / 1440 * 100%);
+  left: calc((720 - 273.5) / 1440 * 100%);
   top: calc((45 + 207) / 845 * 100%);
-  width: 143px;
+  width: 209px;
   margin: 0;
   font-size: 26px;
   font-weight: 500;
@@ -398,8 +425,8 @@
 
 .smartBody {
   position: absolute;
-  left: calc((34 + 308) / 1440 * 100%);
-  top: calc((45 + 207 + 76) / 845 * 100%);
+  left: calc((720 - 273.5) / 1440 * 100%);
+  top: calc((45 + 207 + 50) / 845 * 100%);
   width: 209px;
   margin: 0;
   font-size: 18px;
@@ -409,14 +436,14 @@
   color: var(--cont-muted);
   white-space: pre-line;
   z-index: 2;
+  opacity: 0.8;
 }
 
-/* Internet cycle */
+/* Internet cycle — HTML copy over UI states (states have no marketing title) */
 .internet {
   position: relative;
   width: 100%;
   background: var(--cont-black);
-  padding: 0 0;
   min-height: calc(800 / 1440 * 100vw);
 }
 
@@ -481,35 +508,47 @@
   color: var(--cont-muted);
 }
 
-/* Technologies */
+/* Technologies — Figma absolute grid 1440×981 */
 .tech {
   position: relative;
   width: 100%;
-  min-height: 981px;
+  height: calc(981 / 1440 * 100vw);
+  max-height: 981px;
+  min-height: min(981px, calc(981 / 1440 * 100vw));
   background: var(--cont-black);
   color: var(--cont-white);
-  padding: 145px 120px 80px;
   box-sizing: border-box;
 }
 
 .techTitle {
-  margin: 0 0 38px;
-  max-width: 319px;
+  position: absolute;
+  left: calc(120 / 1440 * 100%);
+  top: calc(145 / 981 * 100%);
+  margin: 0;
+  width: 319px;
   font-size: 26px;
   font-weight: 500;
   line-height: 1.13;
   letter-spacing: -0.78px;
 }
 
-.techRow {
+.techDiagRule {
+  position: absolute;
+  left: calc(120 / 1440 * 100%);
+  top: calc(238 / 981 * 100%);
+  width: calc(879 / 1440 * 100%);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.techDiagRow {
+  position: absolute;
+  left: calc(120 / 1440 * 100%);
+  top: calc(246 / 981 * 100%);
+  width: calc(879 / 1440 * 100%);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  width: 100%;
-  max-width: 879px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
-  margin-bottom: 24px;
   font-size: 18px;
   letter-spacing: -0.54px;
   line-height: 1.3;
@@ -517,6 +556,7 @@
 
 .techRowLabel {
   font-weight: 600;
+  color: var(--cont-white);
 }
 
 .techRowValue {
@@ -525,12 +565,15 @@
   text-align: right;
 }
 
-.techSpecs {
+.techSpecWrap {
+  position: absolute;
+  left: calc(120 / 1440 * 100%);
+  top: calc(277 / 981 * 100%);
+  width: calc(1202 / 1440 * 100%);
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 8px;
-  margin-bottom: 48px;
+  gap: 8px 24px;
+  align-items: flex-start;
 }
 
 .techSpecCol {
@@ -552,49 +595,119 @@
   line-height: 1.3;
 }
 
-.techGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
-  padding-top: 24px;
+.techTechValue {
+  width: 242px;
 }
 
+.techGridRule {
+  position: absolute;
+  left: calc(120 / 1440 * 100%);
+  top: calc(401 / 981 * 100%);
+  width: calc(1202 / 1440 * 100%);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Vertical dividers: x421, x722 (bottom band), x1024 (full RGB column) */
+.techVLineMain {
+  position: absolute;
+  left: calc(1024 / 1440 * 100%);
+  top: calc(169 / 981 * 100%);
+  width: 1px;
+  height: calc(564 / 981 * 100%);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.techVLineA {
+  position: absolute;
+  left: calc(421 / 1440 * 100%);
+  top: calc(401 / 981 * 100%);
+  width: 1px;
+  height: calc(332 / 981 * 100%);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.techVLineB {
+  position: absolute;
+  left: calc(722 / 1440 * 100%);
+  top: calc(401 / 981 * 100%);
+  width: 1px;
+  height: calc(332 / 981 * 100%);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.techRgb {
+  position: absolute;
+  left: calc(1048 / 1440 * 100%);
+  top: calc(169 / 981 * 100%);
+  width: 326px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.techCell {
+  position: absolute;
+  top: calc(425 / 981 * 100%);
+  width: calc(280 / 1440 * 100%);
+  min-height: calc(280 / 981 * 100%);
+}
+
+.techCell1 { left: calc(120 / 1440 * 100%); }
+.techCell2 { left: calc(445 / 1440 * 100%); }
+.techCell3 { left: calc(746 / 1440 * 100%); }
+.techCell4 { left: calc(1056 / 1440 * 100%); }
+
 .techCellLabel {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 18px;
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: -0.54px;
   color: var(--cont-muted);
+  white-space: pre-line;
+  opacity: 0.8;
 }
 
 .techCellMeta {
-  margin: 0 0 8px;
+  position: absolute;
+  left: 0;
+  margin: 0;
   font-size: 18px;
   font-weight: 500;
+  line-height: 1.1;
   letter-spacing: -0.54px;
+  color: var(--cont-white);
 }
 
 .techCellValue {
+  position: absolute;
+  left: 0;
   margin: 0;
   font-size: 64px;
   font-weight: 500;
   line-height: 0.93;
   letter-spacing: -3.2px;
   white-space: pre-line;
+  color: var(--cont-white);
 }
 
-.techSide {
-  margin-top: 32px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 24px;
+/* Per-column Figma y positions (relative to cell top 425) */
+.techMetaUhd { top: calc((647 - 425) / 981 * 100%); }
+.techValUhd { top: calc((673 - 425) / 981 * 100%); }
+.techMetaZig { top: calc((587 - 425) / 981 * 100%); }
+.techValZig { top: calc((613 - 425) / 981 * 100%); }
+.techMetaDlg { top: calc((587 - 425) / 981 * 100%); }
+.techValDlg { top: calc((613 - 425) / 981 * 100%); }
+.techMetaMem { top: calc((640 - 425) / 981 * 100%); }
+.techValMem { top: calc((667 - 425) / 981 * 100%); }
+
+.techRgb .techCellValue {
+  position: static;
+  margin-top: 16px;
 }
 
-/* Finale */
+/* Finale — soft top/bottom vignette into black */
 .finale {
   position: relative;
   width: 100%;
@@ -602,13 +715,28 @@
   aspect-ratio: 1440 / 890;
 }
 
-.finaleImg {
+.finaleMedia {
   position: absolute;
   left: calc(39 / 1440 * 100%);
   top: calc(79 / 890 * 100%);
   width: calc(1362 / 1440 * 100%);
   height: calc(760 / 890 * 100%);
+}
+
+.finaleImg {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+}
+
+.finaleVignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 62.612%, #000 104.17%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0) 66.692%, #000 106.27%);
 }
 
 .finaleLeft {
@@ -642,7 +770,7 @@
   z-index: 2;
 }
 
-/* Footer */
+/* Footer 1440×536 */
 .footer {
   width: 100%;
   background: var(--cont-footer);
@@ -651,6 +779,7 @@
   padding: 32px 32px 24px;
   box-sizing: border-box;
   min-height: 536px;
+  height: auto;
 }
 
 .footerGrid {
@@ -663,6 +792,13 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
+}
+
+.footerRight {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  align-items: flex-start;
 }
 
 .footerColTitle {
@@ -700,15 +836,16 @@
   display: block;
   width: 370px;
   max-width: 100%;
-  height: auto;
-  margin-bottom: 48px;
+  height: 48px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .footerMeta {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  margin-bottom: 48px;
+  width: 100%;
 }
 
 .footerMetaValue {
@@ -732,6 +869,7 @@
 .footerSocial {
   display: flex;
   gap: 16px;
+  align-items: flex-start;
 }
 
 .footerSocial a {
@@ -739,12 +877,41 @@
   height: 48px;
   border-radius: 25.6px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.footerSocialVk {
+  background: #629fbd;
+}
+
+.footerSocialOk {
+  background: #feebef;
+}
+
+.footerSocialTg {
+  background: transparent;
+}
+
+.footerSocialVk img {
+  width: 35.2px;
+  height: 35.2px;
+  object-fit: cover;
   display: block;
 }
 
-.footerSocial img {
-  width: 100%;
-  height: 100%;
+.footerSocialOk img {
+  width: 28.8px;
+  height: 28.8px;
+  object-fit: cover;
+  display: block;
+}
+
+.footerSocialTg img {
+  width: 48px;
+  height: 48px;
   object-fit: cover;
   display: block;
 }
@@ -768,20 +935,71 @@
     right: 16px;
     width: auto;
     max-width: none;
+    top: auto;
+    bottom: 24px;
     flex-direction: column;
     gap: 20px;
-    border-radius: 32px;
-    padding: 20px;
   }
   .remoteFeat { width: 100%; }
+  .remotePlaque { display: none; }
+  .copyBlock {
+    height: auto;
+    max-height: none;
+    min-height: 420px;
+    padding: 80px 24px;
+  }
+  .copyTitleAbs,
+  .copyBodyAbs,
+  .copyTitleCenter {
+    position: static;
+    transform: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .copyBodyAbs { margin-top: 40px; }
   .copyTitle { font-size: 32px; }
   .copyBody { font-size: 18px; }
   .bracket { grid-template-columns: 1fr; }
-  .tech { padding: 72px 24px 48px; min-height: 0; }
-  .techGrid { grid-template-columns: 1fr 1fr; }
-  .techCellValue { font-size: 40px; letter-spacing: -1.6px; }
+  .tech {
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    padding: 72px 24px 48px;
+    position: relative;
+  }
+  .techTitle,
+  .techDiagRule,
+  .techDiagRow,
+  .techSpecWrap,
+  .techGridRule,
+  .techVLineMain,
+  .techVLineA,
+  .techVLineB,
+  .techRgb,
+  .techCell {
+    position: static;
+    width: auto;
+    height: auto;
+    left: auto;
+    top: auto;
+  }
+  .techDiagRule,
+  .techGridRule,
+  .techVLineMain,
+  .techVLineA,
+  .techVLineB { display: none; }
+  .techDiagRow {
+    display: flex;
+    margin: 24px 0;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+  }
+  .techSpecWrap { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+  .techRgb { margin-bottom: 32px; }
+  .techCell { margin-bottom: 24px; }
+  .techCellValue { font-size: 40px; letter-spacing: -1.6px; margin-top: 8px; }
   .footerGrid { grid-template-columns: 1fr; }
-  .aiChips { bottom: 6%; }
+  .aiChips { top: auto; bottom: 8%; }
   .aiChip { padding: 12px 16px; font-size: 14px; }
   .screenTitle { font-size: 28px; width: min(220px, 40%); }
 }

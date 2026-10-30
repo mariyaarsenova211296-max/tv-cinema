@@ -27,11 +27,77 @@ const REMOTE_FEATURES = [
   },
 ] as const;
 
+/** Visual chip order matching Figma 132:16709 (wrap: 2 then 1). */
 const AI_CHIPS = [
-  'Ловит на лету',
-  'Подсказывает и угадывает',
-  'Общается как с человеком',
+  { label: 'Подсказывает и угадывает', border: 'soft' as const },
+  { label: 'Ловит на лету', border: 'solid' as const },
+  { label: 'Общается как с человеком', border: 'soft' as const },
 ] as const;
+
+/**
+ * Remote video (132:20755): one play per enter.
+ * outside→enter play from 0 → ended hold last frame while in scene → leave unlocks next enter.
+ * Leave mid-play → stop; next enter restarts. No loop / scrub / localStorage.
+ * Tiny observer flicker ignored via short debounce.
+ */
+function useRemoteEnterPlay() {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    let inScene = false;
+    let playedThisVisit = false;
+    let debounce: number | null = null;
+    const FLICKER_MS = 100;
+
+    const enter = () => {
+      if (playedThisVisit) return;
+      playedThisVisit = true;
+      try {
+        el.pause();
+        el.currentTime = 0;
+      } catch {
+        /* ignore seek race */
+      }
+      const p = el.play();
+      if (p) p.catch(() => { /* autoplay policy */ });
+    };
+
+    const leave = () => {
+      playedThisVisit = false;
+      el.pause();
+    };
+
+    const apply = (visible: boolean) => {
+      if (visible && !inScene) {
+        inScene = true;
+        enter();
+      } else if (!visible && inScene) {
+        inScene = false;
+        leave();
+      }
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting && entry.intersectionRatio >= 0.25;
+        if (debounce != null) window.clearTimeout(debounce);
+        debounce = window.setTimeout(() => apply(visible), FLICKER_MS);
+      },
+      { threshold: [0, 0.2, 0.25, 0.5] },
+    );
+
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      if (debounce != null) window.clearTimeout(debounce);
+    };
+  }, []);
+
+  return ref;
+}
 
 function useInViewPlay(active: boolean) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -113,7 +179,7 @@ function InternetCycle() {
 }
 
 function RemoteBlock() {
-  const videoRef = useInViewPlay(true);
+  const videoRef = useRemoteEnterPlay();
   return (
     <section className={`${styles.block} ${styles.remote}`} data-node-id="132:16570" aria-label="Продвинутый пульт">
       <div className={styles.remoteShell}>
@@ -123,12 +189,19 @@ function RemoteBlock() {
           src={asset('media/continuation/remote.mp4')}
           muted
           playsInline
-          loop
           preload="auto"
           data-node-id="132:20755"
         />
         <h2 className={styles.remoteTitle}>Продвинутый пульт</h2>
-        <div className={styles.remoteFeatures}>
+        <img
+          className={styles.remotePlaque}
+          src={asset('assets/continuation/remote/union.svg')}
+          alt=""
+          width={1026}
+          height={332}
+          data-node-id="132:16575"
+        />
+        <div className={styles.remoteFeatures} data-node-id="132:16579">
           {REMOTE_FEATURES.map(f => (
             <article className={styles.remoteFeat} key={f.title}>
               <img className={styles.remoteFeatIcon} src={f.icon} alt="" width={64} height={64} />
@@ -161,12 +234,8 @@ function BracketBlock() {
         <p className={`${styles.bracketP} ${styles.bracketMountBody}`}>
           Можно закрепить практически вплотную к стене
         </p>
-        <h3 className={`${styles.bracketH} ${styles.bracketTouchTitle}`}>Приятно прикасаться</h3>
-        <p className={`${styles.bracketP} ${styles.bracketTouchBody}`}>
-          Лёгкий металлический корпус и минимум кнопок
-        </p>
       </div>
-      <div className={styles.bracketRight}>
+      <div className={styles.bracketRight} data-node-id="132:16736">
         <img
           className={styles.bracketRightImg}
           src={asset('assets/continuation/bracket/right.png')}
@@ -175,6 +244,80 @@ function BracketBlock() {
           height={879}
           decoding="async"
         />
+        <h3 className={`${styles.bracketH} ${styles.bracketBalanceTitle}`}>Выверенный баланс</h3>
+        <p className={`${styles.bracketP} ${styles.bracketBalanceBody}`}>
+          Благодаря устойчивой мононоге кинотеатр можно установить даже на небольшой тумбе или узкой столешнице
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function TechBlock() {
+  return (
+    <section className={styles.tech} data-node-id="132:17370" aria-label="Технологии">
+      <h2 className={styles.techTitle}>Технологии кинотеатра Сбер 9000</h2>
+
+      <div className={styles.techDiagRule} aria-hidden />
+      <div className={styles.techDiagRow}>
+        <span className={styles.techRowLabel}>Четыре диагонали</span>
+        <span className={styles.techRowValue}>55” 65” 75” 85”</span>
+      </div>
+
+      <div className={styles.techSpecWrap}>
+        <div className={styles.techSpecCol}>
+          <div className={styles.techSpecLine}>
+            <span className={styles.techRowLabel}>Процессор</span>
+            <span className={styles.techRowValue}>мощность 1.9 Гц</span>
+          </div>
+          <div className={styles.techSpecLine}>
+            <span className={styles.techRowLabel}>Bluetooth</span>
+            <span className={styles.techRowValue}>5.1</span>
+          </div>
+        </div>
+        <div className={styles.techSpecCol}>
+          <div className={styles.techSpecLine}>
+            <span className={styles.techRowLabel}>Технологии</span>
+            <span className={`${styles.techRowValue} ${styles.techTechValue}`}>
+              управление голосом
+              <br />
+              no screen режим
+              <br />
+              (работает как умная колонка)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.techGridRule} aria-hidden />
+      <div className={styles.techVLineMain} aria-hidden />
+      <div className={styles.techVLineA} aria-hidden />
+      <div className={styles.techVLineB} aria-hidden />
+
+      <div className={styles.techRgb}>
+        <p className={styles.techCellLabel}>{'Технология экрана,\nкоторой можно гордиться'}</p>
+        <p className={styles.techCellValue}>{'RGB\nminiLED'}</p>
+      </div>
+
+      <div className={`${styles.techCell} ${styles.techCell1}`}>
+        <p className={styles.techCellLabel}>Высокое разрешение</p>
+        <p className={`${styles.techCellMeta} ${styles.techMetaUhd}`}>3840 х 2160</p>
+        <p className={`${styles.techCellValue} ${styles.techValUhd}`}>UHD</p>
+      </div>
+      <div className={`${styles.techCell} ${styles.techCell2}`}>
+        <p className={styles.techCellLabel}>{'Чтобы объединять домашние устройства\nв систему'}</p>
+        <p className={`${styles.techCellMeta} ${styles.techMetaZig}`}>умный дом</p>
+        <p className={`${styles.techCellValue} ${styles.techValZig}`}>Zigbee-хаб</p>
+      </div>
+      <div className={`${styles.techCell} ${styles.techCell3}`}>
+        <p className={styles.techCellLabel}>Прокачанный отклик</p>
+        <p className={`${styles.techCellMeta} ${styles.techMetaDlg}`}>нативно: 144 Гц</p>
+        <p className={`${styles.techCellValue} ${styles.techValDlg}`}>{'DLG:\n288 Гц'}</p>
+      </div>
+      <div className={`${styles.techCell} ${styles.techCell4}`}>
+        <p className={styles.techCellLabel}>Много памяти — много приложений</p>
+        <p className={`${styles.techCellMeta} ${styles.techMetaMem}`}>встроенная память</p>
+        <p className={`${styles.techCellValue} ${styles.techValMem}`}>64 ГБ</p>
       </div>
     </section>
   );
@@ -190,8 +333,10 @@ export function Continuation() {
         data-node-id="132:16706"
         aria-label="Понимает с полуслова"
       >
-        <h2 className={styles.copyTitle}>{'Понимает\nс полуслова.\nНадёжный. Свой'}</h2>
-        <p className={styles.copyBody}>
+        <h2 className={`${styles.copyTitle} ${styles.copyTitleAbs}`}>
+          {'Понимает\nс полуслова.\nНадёжный. Свой'}
+        </h2>
+        <p className={`${styles.copyBody} ${styles.copyBodyAbs}`}>
           ИИ-помощник находит нужный контент, отвечает голосом и управляет умным домом
         </p>
       </section>
@@ -206,8 +351,13 @@ export function Continuation() {
           decoding="async"
         />
         <div className={styles.aiChips}>
-          {AI_CHIPS.map(label => (
-            <p className={styles.aiChip} key={label}>{label}</p>
+          {AI_CHIPS.map(chip => (
+            <p
+              className={`${styles.aiChip}${chip.border === 'solid' ? ` ${styles.aiChipSolid}` : ''}`}
+              key={chip.label}
+            >
+              {chip.label}
+            </p>
           ))}
         </div>
       </section>
@@ -254,7 +404,9 @@ export function Continuation() {
         data-node-id="132:16873"
         aria-label="Больше возможностей"
       >
-        <h2 className={styles.copyTitle}>{'Больше возможностей\nс телевизором Сбер'}</h2>
+        <h2 className={`${styles.copyTitle} ${styles.copyTitleCenter}`}>
+          {'Больше возможностей\nс телевизором Сбер'}
+        </h2>
       </section>
 
       <section className={styles.plate} data-node-id="132:16875" aria-label="Дом, умный дом">
@@ -285,75 +437,20 @@ export function Continuation() {
 
       <InternetCycle />
 
-      <section className={styles.tech} data-node-id="132:17370" aria-label="Технологии">
-        <h2 className={styles.techTitle}>Технологии кинотеатра Сбер 9000</h2>
-        <div className={styles.techRow}>
-          <span className={styles.techRowLabel}>Четыре диагонали</span>
-          <span className={styles.techRowValue}>55” 65” 75” 85”</span>
-        </div>
-        <div className={styles.techSpecs}>
-          <div className={styles.techSpecCol}>
-            <div className={styles.techSpecLine}>
-              <span className={styles.techRowLabel}>Процессор</span>
-              <span className={styles.techRowValue}>мощность 1.9 Гц</span>
-            </div>
-            <div className={styles.techSpecLine}>
-              <span className={styles.techRowLabel}>Bluetooth</span>
-              <span className={styles.techRowValue}>5.1</span>
-            </div>
-          </div>
-          <div className={styles.techSpecCol}>
-            <div className={styles.techSpecLine}>
-              <span className={styles.techRowLabel}>Технологии</span>
-              <span className={styles.techRowValue}>
-                управление голосом
-                <br />
-                no screen режим
-                <br />
-                (работает как умная колонка)
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className={styles.techGrid}>
-          <div>
-            <p className={styles.techCellLabel}>Высокое разрешение</p>
-            <p className={styles.techCellMeta}>3840 х 2160</p>
-            <p className={styles.techCellValue}>UHD</p>
-          </div>
-          <div>
-            <p className={styles.techCellLabel}>Чтобы объединять домашние устройства в систему</p>
-            <p className={styles.techCellMeta}>умный дом</p>
-            <p className={styles.techCellValue}>Zigbee-хаб</p>
-          </div>
-          <div>
-            <p className={styles.techCellLabel}>Прокачанный отклик</p>
-            <p className={styles.techCellMeta}>нативно: 144 Гц</p>
-            <p className={styles.techCellValue}>{'DLG:\n288 Гц'}</p>
-          </div>
-          <div>
-            <p className={styles.techCellLabel}>Много памяти — много приложений</p>
-            <p className={styles.techCellMeta}>встроенная память</p>
-            <p className={styles.techCellValue}>64 ГБ</p>
-          </div>
-        </div>
-        <div className={styles.techSide}>
-          <div>
-            <p className={styles.techCellLabel}>Технология экрана, которой можно гордиться</p>
-            <p className={styles.techCellValue}>{'RGB\nminiLED'}</p>
-          </div>
-        </div>
-      </section>
+      <TechBlock />
 
       <section className={styles.finale} data-node-id="132:17415" aria-label="Финальная композиция">
-        <img
-          className={styles.finaleImg}
-          src={asset('assets/continuation/finale/tv.png')}
-          alt=""
-          width={1362}
-          height={760}
-          decoding="async"
-        />
+        <div className={styles.finaleMedia}>
+          <img
+            className={styles.finaleImg}
+            src={asset('assets/continuation/finale/tv.png')}
+            alt=""
+            width={1362}
+            height={760}
+            decoding="async"
+          />
+          <div className={styles.finaleVignette} aria-hidden />
+        </div>
         <p className={styles.finaleLeft}>Первый кинотеатр</p>
         <p className={styles.finaleRight}>{'с интеллектом\nСбер'}</p>
       </section>
@@ -398,7 +495,7 @@ export function Continuation() {
               </ul>
             </div>
           </div>
-          <div>
+          <div className={styles.footerRight}>
             <img
               className={styles.footerBrand}
               src={asset('assets/continuation/footer/logo.svg')}
@@ -422,14 +519,29 @@ export function Continuation() {
               </div>
             </div>
             <div className={styles.footerSocial}>
-              <a href="#social-vk" aria-label="VK">
-                <img src={asset('assets/continuation/footer/social-1.png')} alt="" width={48} height={48} />
+              <a className={styles.footerSocialVk} href="#social-vk" aria-label="VK">
+                <img
+                  src={asset('assets/continuation/footer/social-1.png')}
+                  alt=""
+                  width={35.2}
+                  height={35.2}
+                />
               </a>
-              <a href="#social-ok" aria-label="OK">
-                <img src={asset('assets/continuation/footer/social-2.png')} alt="" width={48} height={48} />
+              <a className={styles.footerSocialOk} href="#social-ok" aria-label="OK">
+                <img
+                  src={asset('assets/continuation/footer/social-2.png')}
+                  alt=""
+                  width={28.8}
+                  height={28.8}
+                />
               </a>
-              <a href="#social-tg" aria-label="Telegram">
-                <img src={asset('assets/continuation/footer/social-3.png')} alt="" width={48} height={48} />
+              <a className={styles.footerSocialTg} href="#social-tg" aria-label="Telegram">
+                <img
+                  src={asset('assets/continuation/footer/social-3.png')}
+                  alt=""
+                  width={48}
+                  height={48}
+                />
               </a>
             </div>
           </div>
