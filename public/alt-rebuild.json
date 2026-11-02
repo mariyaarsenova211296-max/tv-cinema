@@ -1,5 +1,5 @@
 {
-  "id": "stv70-alt-shell-bracket",
+  "id": "stv71-alt-shell-fit-scale",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
   "figma_continuation": "132:15927",
@@ -7,7 +7,14 @@
   "figma_bracket_video": "132:20799",
   "figma_internet_cycle": ["132:29082", "132:28496", "132:30051", "132:29379"],
   "base": "/tv-cinema/alt/",
-  "viewport": { "width": 1440, "height": 860, "shell": "iframe→inner.html", "letterbox": "#000000" },
-  "continuation": "STV-70: black outer shell + bracket enter-once play to file end",
-  "note": "STV-70: outer letterbox #000000 (keep fixed 1440×860, top-flush, H-center). Bracket «Кронштейн» autoplays from start once on enter (iframe 1440×860 root); plays to real end; holds last frame; no loop/scrub/restart while in block. Scrub main tip stays b12f748."
+  "viewport": {
+    "width": 1440,
+    "height": 860,
+    "shell": "iframe→inner.html",
+    "letterbox": "#000000",
+    "fit": "min(1, vw/1440, vh/860)",
+    "maxScale": 1
+  },
+  "continuation": "STV-71: proportional fit-scale of fixed 1440×860 shell (never >1); black letterbox; top + H-center",
+  "note": "STV-71: outer shell scales whole 1440×860 iframe via transform (origin top left) into CSS-px viewport; render box = 1440*s × 860*s so no outer scroll. Inner landing/scroll/videos unchanged. Scrub main tip stays b12f748."
 }
