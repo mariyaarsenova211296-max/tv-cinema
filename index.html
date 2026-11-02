@@ -4,12 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
-  <meta name="stv-rebuild" content="stv71-alt-shell-fit-scale" />
+  <meta name="stv-rebuild" content="stv72-alt-width-fill-adapt" />
   <title>Sber TV — Кинотеатр с интеллектом</title>
   <link rel="icon" href="data:," />
   <style>
-    /* Outer letterbox — landing lives in a fixed 1440×860 iframe (inner.html),
-       proportionally fit-scaled into the CSS-px viewport (never > 1). */
+    /*
+     * STV-72 outer shell
+     * - Width ≤1440: fill 100% available width (no side bars)
+     * - Width >1440: max 1440, centered, black sides
+     * - Scale is WIDTH-ONLY (never min(w,h) — that caused side bars on short windows)
+     * - Design height stays 860 when 860*scale ≤ vh (black below); otherwise
+     *   iframe height shrinks to vh/scale so inner can adapt layout (no overflow)
+     */
     html, body {
       margin: 0;
       padding: 0;
@@ -35,12 +41,13 @@
       overflow: hidden;
       background: #000;
     }
-    /* Design-sized iframe; visual size comes from transform scale. */
+    /* Design-width iframe; visual size comes from transform scale. */
     #shell-frame iframe {
       position: absolute;
       top: 0;
       left: 0;
       width: 1440px;
+      /* height set by JS (860 or vh/scale when short) */
       height: 860px;
       border: 0;
       background: #000;
@@ -77,14 +84,27 @@
         // CSS-px available area (not screen.* / devicePixelRatio)
         var vw = document.documentElement.clientWidth || window.innerWidth || DESIGN_W;
         var vh = document.documentElement.clientHeight || window.innerHeight || DESIGN_H;
-        var scale = Math.min(1, vw / DESIGN_W, vh / DESIGN_H);
-        var renderW = DESIGN_W * scale;
-        var renderH = DESIGN_H * scale;
 
-        // Wrapper = rendered footprint so outer page never scrolls.
+        // WIDTH-ONLY scale — fills width ≤1440; never shrink for short height
+        // (that would create side black bars). Cap at 1 for wide monitors.
+        var scale = Math.min(1, vw / DESIGN_W);
+        var renderW = DESIGN_W * scale;
+        var idealRenderH = DESIGN_H * scale;
+
+        // If width-fit scene is shorter than the window → black below (don't stretch).
+        // If taller than the window → shrink design height so inner can adapt layout.
+        var designH = DESIGN_H;
+        var renderH = idealRenderH;
+        if (idealRenderH > vh) {
+          designH = vh / scale;
+          renderH = vh;
+        }
+
         frame.style.width = renderW + 'px';
         frame.style.height = renderH + 'px';
-        // Iframe stays 1440×860; scale whole iframe from top-left.
+        iframe.style.width = DESIGN_W + 'px';
+        iframe.style.height = designH + 'px';
+        iframe.setAttribute('height', String(Math.round(designH)));
         iframe.style.transform = 'scale(' + scale + ')';
       }
 

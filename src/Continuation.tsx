@@ -29,7 +29,8 @@ const REMOTE_FEATURES = [
 
 /**
  * Enter-visible play-once (remote 132:20755, bracket 132:20799).
- * Visibility is relative to the iframe’s real 1440×860 viewport (default IO root).
+ * Visibility is relative to the iframe’s design viewport (default IO root;
+ * width 1440, height 860 or shorter when the STV-72 shell adapts).
  * outside→enter: autoplay from 0 once → play at normal speed to real file end →
  * hold last frame while still in block (scroll/observer must not restart) →
  * leave unlocks next enter. No loop / currentTime↔scroll scrub / timer cutoffs /

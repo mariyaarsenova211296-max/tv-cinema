@@ -2,7 +2,7 @@
   color-scheme: dark;
   font-family: "SB Sans Display", "SB Sans Text", "Segoe UI", sans-serif;
   color: #f5f5f5;
-  background: #fff; /* side bars outside #root */
+  background: #000; /* shell letterbox is black; inner fills design column */
   font-synthesis: none;
   --bottom-space: 136px;
   --nav-bg: #f4f7fa;
@@ -13,18 +13,22 @@
   --design-scale: 1;
   /* Horizontal inset so fixed chrome stays inside the 1440 column on wide screens */
   --page-gutter: max(0px, calc((100vw - var(--design-width)) / 2));
+  /* STV-72: vertical budget for short design heights (shell shrinks iframe <860) */
+  --scene-pad-y: clamp(24px, 6.5svh, 96px);
+  --cards-gap: clamp(12px, 5.5svh, 80px);
+  --cards-title-space: clamp(56px, 11svh, 90px);
 }
 
 * { box-sizing: border-box; }
-/* >1440: white pillarbox; composition stays 1440 (no proportional zoom) */
+/* Shell owns >1440 black pillarbox; inner column is always design-width via iframe */
 html {
   scroll-behavior: smooth;
-  background: #fff;
+  background: #000;
 }
 body {
   margin: 0;
   min-width: 320px;
-  background: #fff;
+  background: #000;
   overflow-x: clip;
 }
 #root {
@@ -217,27 +221,33 @@ button, a, input { touch-action: manipulation; }
   transition-delay: 0.22s;
 }
 
-/* Screen 2 — Figma 72:1095 / 72:1863: title 72:1452 centered x=515; cards gap 9, radius 153 */
+/* Screen 2 — Figma 72:1095 / 72:1863: title 72:1452 centered x=515; cards gap 9, radius 153
+ * STV-72: flex-fill remaining viewport after title/gaps/pads so RGB-miniLED /
+ * 144fps cards stay fully visible when the shell shrinks design height <860.
+ * Card media keeps aspect (height 100% of track, width:auto). */
 .cards-section {
   min-height: 100svh;
-  padding: 96px 0 calc(var(--bottom-space) + 48px);
+  height: 100svh;
+  padding: var(--scene-pad-y) 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 80px; /* Figma title y=108 h=82 → cards y=270 */
+  gap: var(--cards-gap); /* Figma 80px at full 860; clamps down when short */
   background: #000;
+  box-sizing: border-box;
 }
 .cards-title {
   margin: 0 auto;
   max-width: 409px;
   text-align: center;
   font-family: "SB Sans Display", sans-serif;
-  font-size: 46px;
+  font-size: clamp(32px, 5.35svh, 46px);
   font-weight: 500;
   letter-spacing: -1.38px; /* -3% of 46 */
   line-height: 0.896;
   white-space: pre-line;
   color: #fff;
+  flex: 0 0 auto;
 }
 .cards-scroller {
   overflow-x: auto;
@@ -247,6 +257,10 @@ button, a, input { touch-action: manipulation; }
   -ms-overflow-style: none;
   padding: 0;
   -webkit-overflow-scrolling: touch;
+  /* Take leftover column height so cards shrink with the viewport */
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 700px;
 }
 .cards-scroller::-webkit-scrollbar {
   display: none !important;
@@ -259,14 +273,15 @@ button, a, input { touch-action: manipulation; }
   align-items: stretch;
   gap: 9px; /* Figma 72:1096 card x deltas */
   width: max-content;
+  height: 100%;
   padding: 0 0 0 10px; /* first card x=10 */
 }
 .card {
   flex: none;
-  height: min(700px, 78svh);
+  height: 100%;
   width: auto;
   overflow: hidden;
-  border-radius: 153px; /* Figma card cornerRadius */
+  border-radius: clamp(96px, 17.8svh, 153px); /* Figma card cornerRadius */
   scroll-snap-align: start;
   background: #0a0d12;
 }
@@ -1045,20 +1060,45 @@ button, a, input { touch-action: manipulation; }
   line-height: 1.1;
 }
 
+/* STV-72: short design height (shell adaptive iframe) — tighten chrome/UTP, keep aspect */
+@media (max-height: 800px) {
+  :root {
+    --bottom-space: 96px;
+    --scene-pad-y: clamp(20px, 5svh, 64px);
+    --cards-gap: clamp(12px, 4svh, 48px);
+    --cards-title-space: clamp(52px, 10svh, 82px);
+  }
+  .site-header { padding: 16px 24px 0; }
+  .feature-block--single { gap: 32px; }
+  .feature-block img { width: 56px; height: 56px; }
+  .feature-block h2 { font-size: 22px; letter-spacing: -0.66px; }
+  .feature-block p { font-size: 16px; letter-spacing: -0.48px; }
+  .comparison-features--single { bottom: calc(var(--bottom-space) + 4px); }
+}
+
+@media (max-height: 700px) {
+  :root {
+    --bottom-space: 72px;
+    --scene-pad-y: clamp(16px, 4svh, 40px);
+    --cards-gap: clamp(10px, 3.2svh, 28px);
+    --cards-title-space: clamp(48px, 9svh, 72px);
+  }
+  .nav-pill { height: 40px; min-height: 40px; font-size: 16px; padding: 8px 14px; }
+  .nav-icon, .brand-link, .brand { width: 40px; height: 40px; }
+  .feature-block--single { gap: 24px; width: min(320px, 90vw); }
+  .feature-block img { width: 48px; height: 48px; }
+  .feature-block h2 { font-size: 20px; letter-spacing: -0.6px; }
+  .feature-block p { font-size: 15px; letter-spacing: -0.45px; max-width: 260px; }
+}
+
 @media (max-width: 900px) {
   .site-header { padding: 16px 16px 0; }
   .nav-group { display: none; }
   .header-right .nav-icon:nth-child(n+2) { display: none; }
-  .cards-section { padding-top: 72px; gap: 32px; }
   .cards-scroller { padding: 0 16px; }
   .cards-title {
     margin: 0 auto; /* keep Figma 72:1452 centered */
-    font-size: 32px;
     letter-spacing: -0.96px;
-  }
-  .card {
-    height: min(560px, 70svh);
-    border-radius: 96px;
   }
   .reveal-section { height: 280px; min-height: 280px; padding: 0 16px; }
   .reveal-title { font-size: 32px; letter-spacing: -0.96px; }

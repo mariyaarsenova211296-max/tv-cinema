@@ -3,8 +3,9 @@ import { useEffect } from 'react';
 const DESIGN_WIDTH = 1440;
 
 /**
- * Lock the composition to the 1440 design width.
- * Wider viewports keep image+text at 1440 and show white side bars (no html zoom).
+ * Lock the composition to the 1440 design width inside the shell iframe.
+ * Outer shell (index.html) width-fills ≤1440 and adapts iframe height when short;
+ * inner layout uses svh clamps — do not whole-scene min(w,h) zoom here.
  */
 export function useDesignScale() {
   useEffect(() => {

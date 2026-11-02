@@ -1,5 +1,5 @@
 {
-  "id": "stv71-alt-shell-fit-scale",
+  "id": "stv72-alt-width-fill-adapt",
   "product": "tv-cinema-v2",
   "figma_file": "emJiewWvxtniMYCtgHFDN7",
   "figma_continuation": "132:15927",
@@ -12,9 +12,10 @@
     "height": 860,
     "shell": "iframe→inner.html",
     "letterbox": "#000000",
-    "fit": "min(1, vw/1440, vh/860)",
-    "maxScale": 1
+    "fit": "width-only min(1, vw/1440); designH adapts when 860*scale > vh",
+    "maxScale": 1,
+    "shortHeight": "inner layout adapts (media/gaps); no whole-scene min(w,h)"
   },
-  "continuation": "STV-71: proportional fit-scale of fixed 1440×860 shell (never >1); black letterbox; top + H-center",
-  "note": "STV-71: outer shell scales whole 1440×860 iframe via transform (origin top left) into CSS-px viewport; render box = 1440*s × 860*s so no outer scroll. Inner landing/scroll/videos unchanged. Scrub main tip stays b12f748."
+  "continuation": "STV-72: width-fill ≤1440 (no side bars); >1440 max 1440 centered black sides; short height adapts inner layout; black below when scene shorter than window",
+  "note": "STV-72 replaces STV-71 min(1,w/1440,h/860) whole-scene fit. Outer shell scales by width only; iframe height shrinks below 860 when needed so inner can tighten vertical layout. Scrub main tip stays b12f748."
 }

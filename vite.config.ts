@@ -13,7 +13,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        // Outer fixed 1440×860 shell (letterbox). Inner landing entry is separate
+        // Outer width-fill shell (STV-72). Inner landing entry is separate
         // so the iframe never recursively embeds itself.
         main: resolve(__dirname, 'index.html'),
         inner: resolve(__dirname, 'inner.html'),
