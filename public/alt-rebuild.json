@@ -1,8 +1,9 @@
 {
-  "id": "stv74-breath-space-scroll",
+  "id": "stv75-continuous-breath-scrub",
   "product": "tv-cinema-v2",
-  "figma_file": "ezskOhJPpgyW6WJaTJB5wh",
-  "figma_layout": "1:2",
+  "figma_overlays": "lvnvZ98EbvfTvGYfHCR0LH",
+  "figma_overlay_frame": "2653:1958",
+  "figma_video_file": "ezskOhJPpgyW6WJaTJB5wh",
   "figma_video": "1:151",
   "figma_video_fill": "1:152",
   "video_hash": "443f466e11a7dc170fc9dd87c6d8dddb57fb9278",
@@ -15,9 +16,13 @@
     "width": 2048,
     "height": 1152,
     "fps": 30,
-    "holds": [6.033, 7.4],
-    "dlg": [10.0, 11.3],
-    "provenance": "MCP export_video from helper timeline on VIDEO fill 1:152 @2048×1152 (same videoHash as Photos asset); faststart remux CRF18"
+    "holds": [],
+    "captions": {
+      "rgbTitle": [4.867, 9.5],
+      "rgbBody": [7.2, 9.5],
+      "dlg": [10.0, 11.3]
+    },
+    "provenance": "Existing STV-74 export of Photos fill 1:152 @2048×1152 (2026-11-17 17.08.53); sole visual layer, no image inserts"
   },
   "toSound": "fade last frame → black → sound-s6-start.jpg (no transition-s5to6)",
   "viewport": {
@@ -27,5 +32,5 @@
     "letterbox": "#000000",
     "fit": "width-only min(1, vw/1440); designH adapts when 860*scale > vh"
   },
-  "note": "STV-74: breath-space from new Figma file ezskOhJPpgyW6WJaTJB5wh. Scrub main tip stays b12f748."
+  "note": "STV-75: continuous start→end scrub; RGB/DLG typography overlays only. Scrub main tip stays b12f748."
 }

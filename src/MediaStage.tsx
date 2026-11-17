@@ -20,7 +20,7 @@ type Props = {
 };
 
 /**
- * STV-74: pure scroll-scrub of breath-space.mp4 across breath* phases.
+ * STV-75: continuous scroll-scrub of breath-space.mp4 (sole visual).
  * toSound fades last frame → black → sound poster (no transition-s5to6 cat).
  * Then sound PLAY · ambience PLAY · rotate SCRUB.
  */

@@ -5,17 +5,14 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { asset } from './base';
 import {
   breathMediaScale,
-  compareLiftPx,
-  compareOverlayOpacity,
-  compareStillOpacity,
+  breathScrubSec,
   config,
-  dlgOpacity,
+  dlgOpacityAt,
   isBreathPhase,
-  macroBodyOpacity,
-  macroStillOpacity,
   phaseOffset,
   resolvePhase,
-  rgbTitleOpacity,
+  rgbBodyOpacityAt,
+  rgbTitleOpacityAt,
   smooth,
   totalDistance,
   clamp,
@@ -49,7 +46,7 @@ const emptyDesign: Design = {
 
 const anchors = [
   { id: 4, phase: 'breathStart' as const },
-  { id: 5, phase: 'breathCompare' as const },
+  { id: 5, phase: 'breathPlanet' as const },
   { id: 6, phase: 'breathDlg' as const },
   { id: '5to6', phase: 'toSound' as const },
   { id: 7, phase: 'finale' as const },
@@ -59,9 +56,7 @@ const anchors = [
 
 const defaultBreathCopy = {
   rgbTitle: 'RGB MINI LED',
-  miniLabel: 'MiniLED',
-  rgbLabel: 'RGB-miniLED',
-  macroBody:
+  rgbBody:
     'Топовая технология экрана. Высокая детализация и насыщенный чёрный цвет без серых пятен',
   dlgTitle: 'DLG 288 Гц',
   dlgBody:
@@ -182,14 +177,18 @@ export default function App() {
       : 1;
   const mediaScale = breathMediaScale(phase, progress);
 
-  const copy = design.breathSpace ?? defaultBreathCopy;
-  const rgbOp = rgbTitleOpacity(phase, progress);
-  const compareOp = compareOverlayOpacity(phase, progress);
-  const compareStillOp = compareStillOpacity(phase, progress);
-  const compareLift = compareLiftPx(phase, progress);
-  const macroOp = macroBodyOpacity(phase, progress);
-  const macroStillOp = macroStillOpacity(phase, progress);
-  const dlgOp = dlgOpacity(phase, progress);
+  const copy = {
+    ...defaultBreathCopy,
+    ...(design.breathSpace ?? {}),
+  };
+  const scrubT = isBreathPhase(phase)
+    ? (breathScrubSec(phase, progress) ?? 0)
+    : phase === 'toSound'
+      ? config.timebase.lastFrameSec
+      : -1;
+  const rgbOp = scrubT >= 0 ? rgbTitleOpacityAt(scrubT) : 0;
+  const rgbBodyOp = scrubT >= 0 ? rgbBodyOpacityAt(scrubT) : 0;
+  const dlgOp = scrubT >= 0 ? dlgOpacityAt(scrubT) : 0;
 
   const finaleOpacity = phase === 'finale'
     ? (progress > 0.88
@@ -228,8 +227,10 @@ export default function App() {
 
   const sceneLabel = (() => {
     if (isBreathPhase(phase)) {
-      if (phase === 'breathCompare') return 5;
-      if (phase === 'breathDlg' || phase === 'breathMacro') return 5;
+      if (phase === 'breathDlg') return 5;
+      if (phase === 'breathPlanet' || phase === 'breathClose' || phase === 'breathToFlight') {
+        return 5;
+      }
       return 4;
     }
     if (phase === 'toSound') return '5→6';
@@ -376,44 +377,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* Breath-space overlays — separate layers over scrubbed video */}
+            {/* STV-75: typography overlays only — video is the sole visual */}
             <div
-              className={`breath-overlays${phase === 'breathCompare' ? ' breath-overlays--compare' : ''}${phase === 'breathMacro' ? ' breath-overlays--macro' : ''}`}
-              style={
-                compareLift > 0.5
-                  ? { transform: `translate3d(0, ${-compareLift}px, 0)` }
-                  : undefined
-              }
-              inert={!(rgbOp > 0.01 || compareOp > 0.01 || macroOp > 0.01 || dlgOp > 0.01) || undefined}
+              className="breath-overlays"
+              data-scrub-t={scrubT >= 0 ? scrubT.toFixed(3) : undefined}
+              inert={!(rgbOp > 0.01 || rgbBodyOp > 0.01 || dlgOp > 0.01) || undefined}
             >
-              {compareStillOp > 0.01 && (
-                <div
-                  className="breath-compare"
-                  style={{ opacity: compareStillOp }}
-                  data-node-id="2653:1821"
-                  aria-hidden="true"
-                >
-                  <div className="breath-compare__half breath-compare__half--mini">
-                    <img src={config.captions.compareMini} alt="" />
-                  </div>
-                  <div className="breath-compare__half breath-compare__half--rgb">
-                    <img src={config.captions.compareRgb} alt="" />
-                  </div>
-                  <div className="breath-compare__divider" data-node-id="2653:1833" />
-                </div>
-              )}
-
-              {macroStillOp > 0.01 && (
-                <div
-                  className="breath-macro-still"
-                  style={{ opacity: macroStillOp }}
-                  data-node-id="2653:1851"
-                  aria-hidden="true"
-                >
-                  <img src={config.captions.macroImage} alt="" />
-                </div>
-              )}
-
               {rgbOp > 0.01 && (
                 <img
                   className="breath-rgb-title"
@@ -424,32 +393,13 @@ export default function App() {
                 />
               )}
 
-              {compareOp > 0.01 && (
-                <>
-                  <p
-                    className="breath-compare-label breath-compare-label--mini"
-                    style={{ opacity: compareOp }}
-                    data-node-id="2653:1838"
-                  >
-                    {design.comparisonLabels?.mini ?? copy.miniLabel}
-                  </p>
-                  <p
-                    className="breath-compare-label breath-compare-label--rgb"
-                    style={{ opacity: compareOp }}
-                    data-node-id="2653:1837"
-                  >
-                    {design.comparisonLabels?.rgb ?? copy.rgbLabel}
-                  </p>
-                </>
-              )}
-
-              {macroOp > 0.01 && (
+              {rgbBodyOp > 0.01 && (
                 <p
-                  className="breath-macro-body"
-                  style={{ opacity: macroOp }}
+                  className="breath-rgb-body"
+                  style={{ opacity: rgbBodyOp }}
                   data-node-id="2653:1855"
                 >
-                  {copy.macroBody}
+                  {copy.rgbBody}
                 </p>
               )}
 
