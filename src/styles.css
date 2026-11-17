@@ -395,8 +395,31 @@ button, a, input { touch-action: manipulation; }
 }
 .media-stage video { opacity: 0; transition: opacity var(--media-crossfade, 180ms) linear; }
 .media-stage video.visible { opacity: 1; }
-/* STV-45: breath hard-cuts — no dual-frame crossfade ghosts between video-2/3. */
-.media-stage--breath video { transition: none; }
+/* STV-74: breath MP4 contain 16:9 on black; hard cuts (no crossfade ghosts). */
+.media-stage--breath {
+  background: #000;
+}
+.media-stage--breath video,
+.media-stage--breath .media-fallback,
+.media-stage--breath .media-still {
+  object-fit: contain;
+  object-position: center center;
+  transition: none;
+}
+.media-to-sound-black,
+.media-to-sound-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.media-to-sound-black { background: #000; }
+.media-to-sound-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+}
 .media-fallback { z-index: -1; pointer-events: none; }
 .media-still { z-index: 5; }
 .media-message {
@@ -667,6 +690,168 @@ button, a, input { touch-action: manipulation; }
   object-position: center center;
   pointer-events: none;
   z-index: 10;
+}
+
+/* STV-74 breath-space overlays (Figma 2653:1958) */
+.breath-overlays {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.breath-compare {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #000;
+}
+.breath-compare__half {
+  overflow: hidden;
+  position: relative;
+}
+.breath-compare__half img {
+  position: absolute;
+  inset: 0;
+  width: 200%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+.breath-compare__half--mini img { left: 0; }
+.breath-compare__half--rgb img { right: 0; left: auto; }
+.breath-compare__divider {
+  position: absolute;
+  left: calc(730 / 1440 * 100%);
+  top: 12%;
+  bottom: 8%;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 0 12px rgba(195, 253, 124, 0.35);
+  transform: translateX(-50%);
+}
+.breath-macro-still {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+.breath-macro-still img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+.breath-rgb-title {
+  position: absolute;
+  left: calc(210 / 1440 * 100%);
+  top: calc(121 / 860 * 100%);
+  width: min(1021px, 71vw);
+  height: auto;
+  z-index: 2;
+  filter: drop-shadow(0 0 24px rgba(195, 253, 124, 0.35));
+}
+.breath-overlays--compare .breath-rgb-title {
+  /* Figma 2653:1839 inside 1388-tall compare frame */
+  top: calc(316 / 1388 * 100%);
+}
+.breath-compare-label {
+  position: absolute;
+  margin: 0;
+  z-index: 3;
+  font-family: "SB Sans Display", "SB Sans Text", sans-serif;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.78px;
+  color: #fff;
+  white-space: nowrap;
+}
+.breath-compare-label--mini {
+  left: calc(114 / 1440 * 100%);
+  bottom: calc(120 / 860 * 100%);
+}
+.breath-compare-label--rgb {
+  right: calc(119 / 1440 * 100%);
+  bottom: calc(118 / 860 * 100%);
+}
+.breath-macro-body {
+  position: absolute;
+  left: calc(697 / 1440 * 100%);
+  top: calc(222 / 860 * 100%);
+  width: min(291px, 28vw);
+  margin: 0;
+  z-index: 3;
+  font-family: "SB Sans Display", "SB Sans Text", sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.54px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: pre-line;
+}
+.breath-dlg {
+  position: absolute;
+  left: calc(784 / 1440 * 100%);
+  top: calc(579 / 860 * 100%);
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  width: min(570px, 48vw);
+  z-index: 3;
+}
+.breath-dlg img {
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+.breath-dlg__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 396px;
+}
+.breath-dlg h2 {
+  margin: 0;
+  font-family: "SB Sans Display", "SB Sans Text", sans-serif;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.78px;
+  color: #fff;
+}
+.breath-dlg p {
+  margin: 0;
+  font-family: "SB Sans Display", "SB Sans Text", sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.54px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: pre-line;
+  max-width: 291px;
+}
+@media (max-height: 780px) {
+  .breath-dlg { top: auto; bottom: calc(var(--bottom-space) + 12px); }
+  .breath-compare-label--mini,
+  .breath-compare-label--rgb { bottom: calc(88 / 860 * 100%); }
+}
+@media (max-width: 900px) {
+  .breath-dlg {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(360px, 92vw);
+  }
+  .breath-macro-body {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(291px, 80vw);
+  }
+  .breath-rgb-title {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90vw, 1021px);
+  }
 }
 
 /* Figma 81:2086 / 81:2100 — single centered UTP 357×132 under TV (RGB then DLG) */

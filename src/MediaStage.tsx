@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
-  approachScrubSec,
+  breathScrubSec,
   config,
   clamp,
-  outroScrubSec,
-  resolveBreathState,
+  isBreathPhase,
   smooth,
   timebase,
+  toSoundLayers,
 } from './config';
-import type { BreathState, Phase } from './config';
+import type { Phase } from './config';
 
 type Props = {
   phase: Phase;
@@ -17,14 +17,12 @@ type Props = {
   active: boolean;
   reduced: boolean;
   breathScale: number;
-  autoplayDone: boolean;
-  onAutoplayDone?: () => void;
 };
 
 /**
- * Single-clip breath (TZ): SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end.
- * Then SCRUB 5→6 transition once (capped at sound handoff) · sound PLAY ·
- * ambience PLAY · rotate SCRUB 0→scrubEndSec (screen 7→8 / Figma 121:4113; STV-64).
+ * STV-74: pure scroll-scrub of breath-space.mp4 across breath* phases.
+ * toSound fades last frame → black → sound poster (no transition-s5to6 cat).
+ * Then sound PLAY · ambience PLAY · rotate SCRUB.
  */
 export function MediaStage({
   phase,
@@ -32,25 +30,18 @@ export function MediaStage({
   active,
   reduced,
   breathScale,
-  autoplayDone,
-  onAutoplayDone,
 }: Props) {
   const breathRef = useRef<HTMLVideoElement | null>(null);
-  const toSoundRef = useRef<HTMLVideoElement | null>(null);
   const soundRef = useRef<HTMLVideoElement | null>(null);
   const ambienceRef = useRef<HTMLVideoElement | null>(null);
   const rotateRef = useRef<HTMLVideoElement | null>(null);
   const playPending = useRef(new Set<string>());
-  const breathPlayArmed = useRef(false);
-  const breathDoneNotified = useRef(false);
   const soundArmed = useRef(false);
   const ambienceArmed = useRef(false);
-  const onDoneRef = useRef(onAutoplayDone);
-  onDoneRef.current = onAutoplayDone;
+  const seekTarget = useRef<number | null>(null);
+  const seeking = useRef(false);
 
   const [breathReady, setBreathReady] = useState(false);
-  const [breathEnded, setBreathEnded] = useState(false);
-  const [breathPlaying, setBreathPlaying] = useState(false);
   const [breathError, setBreathError] = useState(false);
   const [soundEnded, setSoundEnded] = useState(false);
   const [soundReady, setSoundReady] = useState(false);
@@ -60,22 +51,11 @@ export function MediaStage({
   const [ambienceError, setAmbienceError] = useState(false);
   const [, setRotateReady] = useState(false);
   const [rotateError, setRotateError] = useState(false);
-  const [, setToSoundReady] = useState(false);
-  const [toSoundError, setToSoundError] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [manual, setManual] = useState(false);
   const [visible, setVisible] = useState(!document.hidden);
-  const [breathDuration, setBreathDuration] = useState<number>(timebase.breathSec);
 
-  const breathState: BreathState | null = resolveBreathState(
-    phase,
-    autoplayDone || breathEnded,
-  );
-  const inApproach = breathState === 'SCROLL_APPROACH';
-  const inAutoplay = breathState === 'AUTO_PLAY';
-  const inHold = breathState === 'HOLD_RIDER';
-  const inOutro = breathState === 'SCROLL_OUTRO';
-  const inBreathFlow = breathState !== null;
+  const inBreath = isBreathPhase(phase);
   const inToSound = phase === 'toSound';
   const inAmbience = phase === 'ambience';
   const scrubbingRotate = phase === 'rotate';
@@ -85,15 +65,14 @@ export function MediaStage({
   const ambiencePlayingPhase = inAmbience && progress >= config.ambience.blackEnd;
   const holdSoundStill = ambienceBlack;
   const inFinale = phase === 'finale';
-  const toSoundRatio = inToSound ? smooth(progress) : 0;
 
-  const approachSec = inApproach ? approachScrubSec(progress) : timebase.approachEndSec;
-  const outroSec = inOutro
-    ? outroScrubSec(
-        (phase === 'comparison' || phase === 'utpDlg') ? 1 : progress,
-        breathDuration,
-      )
-    : timebase.holdSec;
+  const scrubSec = inBreath
+    ? (breathScrubSec(phase, progress) ?? 0)
+    : inToSound
+      ? timebase.lastFrameSec
+      : null;
+
+  const fade = inToSound ? toSoundLayers(progress) : null;
 
   const soundFade =
     inFinale
@@ -110,9 +89,6 @@ export function MediaStage({
 
   const rotateRatio = scrubbingRotate ? smooth(progress) : holdingRotateEnd ? 1 : 0;
 
-  const playingBreath = Boolean(
-    inAutoplay && breathPlaying && !breathEnded && (!reduced || manual),
-  );
   const playingSound = Boolean(
     active && visible && inFinale && !soundEnded && (!reduced || manual),
   );
@@ -125,34 +101,51 @@ export function MediaStage({
       && (!reduced || manual),
   );
 
+  function applySeek(el: HTMLVideoElement, sec: number) {
+    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
+    const last = Math.min(
+      timebase.lastFrameSec,
+      Math.max(0, el.duration - 1 / timebase.fps),
+    );
+    const target = clamp(sec, 0, last);
+    if (!el.paused) el.pause();
+    if (Math.abs(el.currentTime - target) <= config.playback.seekTolerance) {
+      seeking.current = false;
+      seekTarget.current = null;
+      return;
+    }
+    if (seeking.current) {
+      seekTarget.current = target;
+      return;
+    }
+    seeking.current = true;
+    seekTarget.current = target;
+    el.currentTime = target;
+  }
+
+  function onBreathSeeked() {
+    setBreathReady(true);
+    const el = breathRef.current;
+    const pending = seekTarget.current;
+    seeking.current = false;
+    if (!el || pending == null) return;
+    if (Math.abs(el.currentTime - pending) > config.playback.seekTolerance) {
+      seeking.current = true;
+      el.currentTime = pending;
+      return;
+    }
+    seekTarget.current = null;
+  }
+
   function seekPaused(el: HTMLVideoElement, sec: number) {
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
     const last = Math.max(0, el.duration - 1 / 24);
     const target = clamp(sec, 0, last);
     if (!el.paused) el.pause();
-    // Skip while a seek is in flight or we're already on-target — prevents
-    // seek thrashing that freezes sticky stages mid-scroll.
     if (el.seeking || Math.abs(el.currentTime - target) <= config.playback.seekTolerance) {
       return;
     }
     el.currentTime = target;
-  }
-
-  function notifyBreathDone() {
-    if (breathDoneNotified.current) return;
-    breathDoneNotified.current = true;
-    setBreathEnded(true);
-    setBreathPlaying(false);
-    onDoneRef.current?.();
-  }
-
-  function parkHold(el: HTMLVideoElement) {
-    seekPaused(el, Math.min(timebase.holdSec, Math.max(0, el.duration - 1 / 24)));
-  }
-
-  function noteDuration(seconds: number) {
-    if (!Number.isFinite(seconds) || seconds <= 0) return;
-    setBreathDuration(prev => (Math.abs(prev - seconds) > 0.001 ? seconds : prev));
   }
 
   useEffect(() => {
@@ -169,37 +162,34 @@ export function MediaStage({
     }
   }, [inAmbience, ambienceEnded]);
 
-  const wasAutoplay = useRef(false);
+  // Breath scroll-scrub (queued seek)
   useEffect(() => {
-    if (inAutoplay && !wasAutoplay.current) {
-      breathPlayArmed.current = false;
-      breathDoneNotified.current = false;
-      setBreathEnded(false);
-      setBreathPlaying(false);
-      setManual(false);
+    if (inRotateScene || inFinale || inAmbience) {
+      breathRef.current?.pause();
+      return;
     }
-    wasAutoplay.current = inAutoplay;
-  }, [inAutoplay]);
+    if (!inBreath && !inToSound) return;
 
-  // Screen 5→6 transition SCRUB — once, capped at sound handoff (STV-61).
-  useEffect(() => {
-    const el = toSoundRef.current;
-    if (!el || !inToSound) return;
+    const el = breathRef.current;
+    if (!el || breathError) return;
     if (el.preload !== 'auto') el.preload = 'auto';
-    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    const handoff = Math.min(
-      config.toSoundMedia.scrubEndSec,
-      Math.max(0, el.duration - 1 / 24),
-    );
-    const target = reduced || toSoundRatio >= 0.999
-      ? handoff
-      : clamp(toSoundRatio * handoff, 0, handoff);
-    seekPaused(el, target);
-    if (el.readyState >= 2) setToSoundReady(true);
+
+    // Warm while approaching sticky stage
+    if (!active && !breathReady) {
+      if (el.readyState < 2) el.load();
+    }
+
+    if (scrubSec == null) return;
+    if (reduced) {
+      applySeek(el, scrubSec);
+      if (el.readyState >= 2) setBreathReady(true);
+      return;
+    }
+    applySeek(el, scrubSec);
+    if (el.readyState >= 2) setBreathReady(true);
   });
 
-  // Rotate scrub — STV-64: cap at scrubEndSec so the baked ~4.05s loop restart
-  // (t≈4.05 ≡ t=0) is never scrubbed; obsolete holds that handoff end frame.
+  // Rotate scrub
   useEffect(() => {
     const el = rotateRef.current;
     if (!el || !inRotateScene) return;
@@ -259,7 +249,7 @@ export function MediaStage({
       .finally(() => playPending.current.delete('ambience'));
   });
 
-  // Sound PLAY (v4)
+  // Sound PLAY
   useEffect(() => {
     if (!inFinale && !holdSoundStill) return;
     const el = soundRef.current;
@@ -303,108 +293,6 @@ export function MediaStage({
       .finally(() => playPending.current.delete('sound'));
   });
 
-  // Single continuous breath-s3to5 controller (one timeline, no double-bind):
-  // SCRUB 0→1 · PLAY 1→7 · HOLD @7 · SCRUB 7→end (UTPs hold end frame).
-  useEffect(() => {
-    if (inRotateScene || inFinale || inAmbience || inToSound || !inBreathFlow) {
-      breathRef.current?.pause();
-      return;
-    }
-
-    const el = breathRef.current;
-    if (!el || breathError) return;
-    if (el.preload !== 'auto') el.preload = 'auto';
-    el.playbackRate = config.playback.breathRate;
-
-    if (Number.isFinite(el.duration) && el.duration > 0) {
-      noteDuration(el.duration);
-    }
-
-    if (inApproach) {
-      const sec = reduced ? timebase.approachEndSec : approachSec;
-      seekPaused(el, sec);
-      if (el.readyState >= 2) setBreathReady(true);
-      return;
-    }
-
-    if (inHold) {
-      parkHold(el);
-      if (el.readyState >= 2) setBreathReady(true);
-      return;
-    }
-
-    if (inOutro) {
-      // One outro scrub across retreat; RGB/DLG hold the end frame (no re-scrub).
-      const sec = (phase === 'comparison' || phase === 'utpDlg')
-        ? outroScrubSec(1, breathDuration)
-        : outroSec;
-      seekPaused(el, sec);
-      if (el.readyState >= 2) setBreathReady(true);
-      return;
-    }
-
-    // AUTO_PLAY 1 → 7 — time-driven only; never seek while playing.
-    if (reduced) {
-      parkHold(el);
-      notifyBreathDone();
-      return;
-    }
-
-    if (!active && !breathPlayArmed.current) {
-      seekPaused(el, timebase.approachEndSec);
-      return;
-    }
-
-    if (document.hidden && breathPlayArmed.current && !breathEnded) {
-      el.pause();
-      return;
-    }
-
-    if (!breathPlayArmed.current) {
-      if (!active) return;
-      seekPaused(el, timebase.approachEndSec);
-      breathPlayArmed.current = true;
-    }
-
-    if (document.hidden || !breathPlayArmed.current || breathEnded) return;
-    if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-
-    if (el.currentTime + 0.04 >= timebase.holdSec) {
-      parkHold(el);
-      notifyBreathDone();
-      return;
-    }
-
-    if (!el.paused || playPending.current.has('breath')) return;
-
-    playPending.current.add('breath');
-    el.play()
-      .then(() => {
-        setAutoplayBlocked(false);
-        setBreathPlaying(true);
-        setBreathReady(true);
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setAutoplayBlocked(true);
-      })
-      .finally(() => playPending.current.delete('breath'));
-  });
-
-  useEffect(() => {
-    if (!inAutoplay || breathEnded || reduced) return;
-    const el = breathRef.current;
-    if (!el) return;
-    const onTime = () => {
-      if (breathDoneNotified.current) return;
-      if (el.currentTime + 0.04 >= timebase.holdSec) {
-        parkHold(el);
-        notifyBreathDone();
-      }
-    };
-    el.addEventListener('timeupdate', onTime);
-    return () => el.removeEventListener('timeupdate', onTime);
-  }, [inAutoplay, breathEnded, reduced]);
-
   useEffect(() => {
     const visibility = () => {
       if (document.hidden) {
@@ -430,42 +318,56 @@ export function MediaStage({
   }, [phase, active]);
 
   const still = reduced && !manual;
-  const showBreath = inBreathFlow && !inAmbience && !inRotateScene && !inFinale && !inToSound;
-  const showToSound = inToSound && !toSoundError && !(reduced && still);
-  const showSound = (inFinale || holdSoundStill) && soundFade > 0.01 && !inBreathFlow && !inRotateScene && !inToSound;
-  const showAmbience = ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
+  const showBreath =
+    (inBreath || inToSound)
+    && !inAmbience
+    && !inRotateScene
+    && !inFinale;
+  const breathOpacity = inToSound && fade
+    ? fade.breath
+    : showBreath
+      ? 1
+      : 0;
+  const showSound =
+    (inFinale || holdSoundStill)
+    && soundFade > 0.01
+    && !inBreath
+    && !inRotateScene
+    && !inToSound;
+  const showAmbience =
+    ambiencePlayingPhase && ambienceFade > 0.01 && !ambienceError && !(reduced && still);
   const showRotate = inRotateScene && !rotateError && !(reduced && still);
+  const showPoster = inToSound && fade ? fade.poster > 0.01 : false;
+  const showBlack = inToSound && fade ? fade.black > 0.01 : false;
 
-  const fallback = inApproach
-    ? (approachSec / timebase.approachEndSec < 0.85
+  const fallback = inBreath
+    ? (scrubSec != null && scrubSec < 1
       ? config.breathMedia.poster
       : config.breathMedia.end)
-    : inAutoplay || inHold || inOutro
-      ? config.breathMedia.end
-      : inToSound
-        ? (toSoundRatio > 0.95 ? config.toSoundMedia.end : config.toSoundMedia.poster)
-        : inRotateScene
-          ? (reduced || rotateRatio > 0.95 || holdingRotateEnd
-            ? config.rotateMedia.end
-            : config.rotateMedia.poster)
-          : inAmbience
-            ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
-            : (soundEnded || holdSoundStill ? config.soundMedia.end : config.soundMedia.poster);
+    : inToSound
+      ? config.toSoundMedia.poster
+      : inRotateScene
+        ? (reduced || rotateRatio > 0.95 || holdingRotateEnd
+          ? config.rotateMedia.end
+          : config.rotateMedia.poster)
+        : inAmbience
+          ? (ambienceEnded || reduced ? config.ambienceMedia.end : config.ambienceMedia.poster)
+          : (soundEnded || holdSoundStill ? config.soundMedia.end : config.soundMedia.poster);
 
-  const showVideoPlane = !still && showBreath && breathReady && !breathError;
+  const showVideoPlane =
+    !still && showBreath && breathReady && !breathError && breathOpacity > 0.01;
 
   const needsManual =
     active
     && (
-      (inAutoplay && !breathEnded && !playingBreath)
-      || (inFinale && !playingSound)
+      (inFinale && !playingSound)
       || (ambiencePlayingPhase && !playingAmbience)
     )
     && (reduced || autoplayBlocked);
 
   return (
     <div
-      className={`media-stage${inRotateScene ? ' media-stage--rotate' : ''}${inBreathFlow ? ' media-stage--breath' : ''}`}
+      className={`media-stage${inRotateScene ? ' media-stage--rotate' : ''}${inBreath || inToSound ? ' media-stage--breath' : ''}`}
       style={{
         '--media-crossfade': `${config.playback.breathCrossfadeMs}ms`,
         '--breath-scale': String(breathScale),
@@ -482,43 +384,36 @@ export function MediaStage({
                 ? 'to-sound'
                 : 'breath'
       }
-      data-breath-state={inBreathFlow ? breathState : undefined}
       data-mode={
-        inApproach
-          ? 'scroll-approach'
-          : inAutoplay && !breathEnded
-            ? (playingBreath ? 'play-breath' : 'still-breath')
-            : inHold
-              ? 'hold-rider'
-              : inOutro
-                ? 'scroll-outro'
-                : inToSound
-                  ? 'scroll-to-sound'
-                  : inRotateScene
-                    ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
-                    : ambiencePlayingPhase
-                      ? (playingAmbience ? 'play-ambience' : 'still-ambience')
-                      : inFinale
-                        ? (playingSound ? 'play' : 'still')
-                        : 'still'
+        inBreath
+          ? 'scroll-scrub'
+          : inToSound
+            ? 'fade-to-sound'
+            : inRotateScene
+              ? (scrubbingRotate ? 'scroll-rotate' : 'still-rotate')
+              : ambiencePlayingPhase
+                ? (playingAmbience ? 'play-ambience' : 'still-ambience')
+                : inFinale
+                  ? (playingSound ? 'play' : 'still')
+                  : 'still'
       }
       data-testid="tv-drive"
-      data-breath-ended={inHold || inOutro ? '1' : '0'}
-      data-breath-scale={breathScale.toFixed(3)}
-      data-approach-sec={inApproach ? approachSec.toFixed(3) : undefined}
-      data-hold-sec={inHold ? timebase.holdSec.toFixed(3) : undefined}
-      data-outro-sec={inOutro ? outroSec.toFixed(3) : undefined}
       data-breath-t={
         showBreath && breathRef.current
           ? breathRef.current.currentTime.toFixed(3)
           : undefined
       }
+      data-scrub-sec={scrubSec != null ? scrubSec.toFixed(3) : undefined}
     >
       <img
         className="media-fallback"
         src={fallback}
         alt="Телевизор Sber TV"
-        style={{ opacity: showVideoPlane || showRotate || showAmbience || showSound || showToSound ? 0 : 1 }}
+        style={{
+          opacity: showVideoPlane || showRotate || showAmbience || showSound || showPoster
+            ? 0
+            : 1,
+        }}
         aria-hidden="true"
       />
 
@@ -532,38 +427,30 @@ export function MediaStage({
         preload="auto"
         aria-hidden="true"
         className={showVideoPlane ? 'visible' : ''}
+        style={{ opacity: showVideoPlane ? breathOpacity : 0 }}
         onLoadedData={() => setBreathReady(true)}
         onCanPlay={() => setBreathReady(true)}
-        onLoadedMetadata={() => {
-          const el = breathRef.current;
-          if (el && Number.isFinite(el.duration)) setBreathDuration(el.duration);
-        }}
-        onSeeked={() => setBreathReady(true)}
-        onEnded={() => {
-          if (breathPlayArmed.current && !breathDoneNotified.current) {
-            const el = breathRef.current;
-            if (el) parkHold(el);
-            notifyBreathDone();
-          }
-        }}
+        onSeeked={onBreathSeeked}
         onError={() => setBreathError(true)}
       />
 
-      <video
-        ref={toSoundRef}
-        data-testid="video-to-sound"
-        src={config.toSoundMedia.src}
-        poster={config.toSoundMedia.poster}
-        muted
-        playsInline
-        preload={inToSound ? 'auto' : 'metadata'}
-        aria-hidden="true"
-        className={showToSound && !still ? 'visible' : ''}
-        onLoadedData={() => setToSoundReady(true)}
-        onCanPlay={() => setToSoundReady(true)}
-        onSeeked={() => setToSoundReady(true)}
-        onError={() => setToSoundError(true)}
-      />
+      {showBlack && fade && (
+        <div
+          className="media-to-sound-black"
+          style={{ opacity: fade.black }}
+          aria-hidden="true"
+        />
+      )}
+
+      {showPoster && fade && (
+        <img
+          className="media-to-sound-poster"
+          src={config.toSoundMedia.poster}
+          alt=""
+          style={{ opacity: fade.poster }}
+          aria-hidden="true"
+        />
+      )}
 
       <video
         ref={soundRef}
@@ -635,22 +522,6 @@ export function MediaStage({
           className="manual-play"
           aria-pressed={manual}
           onClick={() => {
-            if (inAutoplay && !breathEnded) {
-              const el = breathRef.current;
-              setManual(true);
-              breathPlayArmed.current = true;
-              if (el) {
-                el.playbackRate = config.playback.breathRate;
-                el.currentTime = timebase.approachEndSec;
-                el.play()
-                  .then(() => {
-                    setAutoplayBlocked(false);
-                    setBreathPlaying(true);
-                  })
-                  .catch(() => setAutoplayBlocked(true));
-              }
-              return;
-            }
             if (inFinale) {
               const el = soundRef.current;
               setManual(true);

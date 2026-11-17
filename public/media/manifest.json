@@ -12,17 +12,26 @@
     "copy_at_sec": 3
   },
   {
-    "role": "breath-s3to5",
-    "figma_frame": "112:2884",
-    "figma_video_fill": "72:1038",
-    "video_hash": "82106e6e62aace9ab4a65f3bf5c6c3ed8f7d1ba1",
-    "path": "media/breath-s3to5.mp4",
-    "mode": "SCRUB 0→1 / PLAY 1→7 (scroll-clamped) / SCRUB 7→end",
-    "duration": 10.033333,
-    "note": "Screens 3→4, 4, 4→5, and 5 — same continuous clip. STV-59 clamps scroll during PLAY."
+    "role": "breath-space",
+    "figma_frame": "2654:1959",
+    "figma_video_fill": "2654:1960",
+    "video_hash": "443f466e11a7dc170fc9dd87c6d8dddb57fb9278",
+    "path": "media/breath-space.mp4",
+    "mode": "SCRUB (pure scroll)",
+    "duration": 20.066667,
+    "last_frame_sec": 20.0,
+    "holds_sec": [
+      6.033,
+      7.4
+    ],
+    "dlg_sec": [
+      10.0,
+      11.3
+    ],
+    "note": "STV-74: Figma VIDEO export via helper timeline 20.033s; scroll-scrub only; no AUTO_PLAY."
   },
   {
-    "role": "transition-s5to6",
+    "role": "transition-s5to6-unused",
     "figma_frame": "112:2885",
     "figma_video_fill": "72:1039",
     "video_hash": "ca8c72128be1edee4046a2319bed1b9c71828191",
@@ -30,7 +39,8 @@
     "mode": "SCRUB 0→4.0s (sound handoff)",
     "duration": 6.033333,
     "scrub_end_sec": 4.0,
-    "note": "STV-61: scrub only to violin handoff (~4.0s). Past that the export re-enters horse frames and duplicated the cat→sound transition."
+    "note": "STV-74: unused on /alt/. toSound is fade breath-end → black → sound-s6-start.jpg (avoids cat flash).",
+    "kept_in_repo": true
   },
   {
     "role": "sound-s6",

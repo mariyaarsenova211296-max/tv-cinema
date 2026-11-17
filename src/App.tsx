@@ -4,12 +4,18 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { asset } from './base';
 import {
-  autoplayLockStart,
   breathMediaScale,
+  compareLiftPx,
+  compareOverlayOpacity,
+  compareStillOpacity,
   config,
+  dlgOpacity,
+  isBreathPhase,
+  macroBodyOpacity,
+  macroStillOpacity,
   phaseOffset,
-  resolveBreathState,
-  resolveBreathStory,
+  resolvePhase,
+  rgbTitleOpacity,
   smooth,
   totalDistance,
   clamp,
@@ -38,17 +44,29 @@ const emptyDesign: Design = {
   neverObsolete: null,
   remote: null,
   comparison: null,
+  breathSpace: null,
 };
 
 const anchors = [
-  { id: 4, phase: 'approach' as const },
-  { id: 5, phase: 'comparison' as const },
-  { id: 6, phase: 'utpDlg' as const },
+  { id: 4, phase: 'breathStart' as const },
+  { id: 5, phase: 'breathCompare' as const },
+  { id: 6, phase: 'breathDlg' as const },
   { id: '5to6', phase: 'toSound' as const },
   { id: 7, phase: 'finale' as const },
   { id: 8, phase: 'ambience' as const },
   { id: 9, phase: 'rotate' as const },
 ];
+
+const defaultBreathCopy = {
+  rgbTitle: 'RGB MINI LED',
+  miniLabel: 'MiniLED',
+  rgbLabel: 'RGB-miniLED',
+  macroBody:
+    'Топовая технология экрана. Высокая детализация и насыщенный чёрный цвет без серых пятен',
+  dlgTitle: 'DLG 288 Гц',
+  dlgBody:
+    'Картинка адаптируется под динамичный контент. Увеличенная скорость обновления экрана',
+};
 
 function resolveDesign(raw: Design): Design {
   return {
@@ -74,22 +92,11 @@ export default function App() {
   const [design, setDesign] = useState<Design>(emptyDesign);
   const [distance, setDistance] = useState(-1);
   const [inView, setInView] = useState(false);
-  const [autoplayDone, setAutoplayDone] = useState(false);
-  const [unlockDistance, setUnlockDistance] = useState(0);
   const stage = useRef<HTMLElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const cardsTrack = useRef<HTMLDivElement>(null);
-  const distanceRef = useRef(distance);
-  distanceRef.current = distance;
-  const autoplayDoneRef = useRef(autoplayDone);
-  autoplayDoneRef.current = autoplayDone;
   const reduced = useMotionPreference();
-  const { phase, progress } = resolveBreathStory(
-    Math.max(0, distance),
-    autoplayDone,
-    unlockDistance,
-  );
-  const breathState = resolveBreathState(phase, autoplayDone);
+  const { phase, progress } = resolvePhase(Math.max(0, distance));
   useDesignScale();
 
   useEffect(() => {
@@ -112,24 +119,7 @@ export default function App() {
       const rect = stage.current.getBoundingClientRect();
       const viewport =
         stage.current.querySelector('.stage-sticky')?.clientHeight || innerHeight;
-      let next = -rect.top / viewport;
-      // STV-59: once approach completes, pin scroll at the autoplay gate while
-      // PLAY 1→7 runs. Pinning exactly at autoplayLockStart (not "just below")
-      // is required so resolveBreathStory enters AUTO_PLAY — a sub-pixel land
-      // under the gate left phase stuck on approach@1 and the playhead never
-      // armed. Without the upper clamp, scrolling during PLAY consumes the
-      // sticky runway and post-breath phases become unreachable (HOLD jam +
-      // scroll-back repeats the same clip).
-      if (!autoplayDoneRef.current && next >= autoplayLockStart - 0.002) {
-        if (next > autoplayLockStart) {
-          const stageTop = window.scrollY + rect.top;
-          const targetY = stageTop + autoplayLockStart * viewport;
-          if (Math.abs(window.scrollY - targetY) > 1) {
-            window.scrollTo(0, targetY);
-          }
-        }
-        next = autoplayLockStart;
-      }
+      const next = -rect.top / viewport;
       setDistance(next);
       setInView(rect.top <= 1 && rect.bottom >= viewport - 1);
     };
@@ -182,24 +172,9 @@ export default function App() {
     return () => ctx.revert();
   }, [design.cards, design.cta, reduced]);
 
-  useEffect(() => {
-    if (!autoplayDone) return;
-    if (distance < 0 || distance < autoplayLockStart) {
-      setAutoplayDone(false);
-      setUnlockDistance(0);
-    }
-  }, [distance, autoplayDone]);
-
-  const handleAutoplayDone = () => {
-    // Always unlock from the gate — scroll is clamped during PLAY, so using
-    // the live distance would only matter if the clamp failed.
-    setUnlockDistance(autoplayLockStart);
-    setAutoplayDone(true);
-  };
-
   const mediaOpacity = reduced
     ? 1
-    : phase === 'approach'
+    : phase === 'breathStart'
       ? smooth(
           (progress - config.reveal.from)
             / Math.max(0.001, config.reveal.to - config.reveal.from),
@@ -207,22 +182,14 @@ export default function App() {
       : 1;
   const mediaScale = breathMediaScale(phase, progress);
 
-  const utpPhases = phase === 'comparison' || phase === 'utpDlg';
-  const activeUtpIndex = phase === 'comparison' ? 0 : phase === 'utpDlg' ? 1 : -1;
-  const utpOpacity = (() => {
-    if (!utpPhases) return 0;
-    if (progress < config.text.enterEnd) return smooth(progress / config.text.enterEnd);
-    if (progress > 1 - config.text.leaveEnd) {
-      return 1 - smooth((progress - (1 - config.text.leaveEnd)) / config.text.leaveEnd);
-    }
-    return 1;
-  })();
-  const utpActive = utpPhases && utpOpacity > 0.5 && inView;
-  const activeUtp =
-    activeUtpIndex >= 0 && utpOpacity > 0.01
-      ? design.comparisonFeatures[activeUtpIndex]
-      : null;
-  const utpIn = utpOpacity > 0.08;
+  const copy = design.breathSpace ?? defaultBreathCopy;
+  const rgbOp = rgbTitleOpacity(phase, progress);
+  const compareOp = compareOverlayOpacity(phase, progress);
+  const compareStillOp = compareStillOpacity(phase, progress);
+  const compareLift = compareLiftPx(phase, progress);
+  const macroOp = macroBodyOpacity(phase, progress);
+  const macroStillOp = macroStillOpacity(phase, progress);
+  const dlgOp = dlgOpacity(phase, progress);
 
   const finaleOpacity = phase === 'finale'
     ? (progress > 0.88
@@ -258,6 +225,19 @@ export default function App() {
   const layerTransform = obsoleteLift > 0.5
     ? `translate3d(0, ${-obsoleteLift}px, 0)`
     : undefined;
+
+  const sceneLabel = (() => {
+    if (isBreathPhase(phase)) {
+      if (phase === 'breathCompare') return 5;
+      if (phase === 'breathDlg' || phase === 'breathMacro') return 5;
+      return 4;
+    }
+    if (phase === 'toSound') return '5→6';
+    if (phase === 'finale') return 6;
+    if (phase === 'ambience') return 7;
+    if (phase === 'rotate' || phase === 'obsolete') return 8;
+    return 9;
+  })();
 
   return (
     <>
@@ -373,11 +353,7 @@ export default function App() {
           <div
             className="stage-sticky"
             data-phase={phase}
-            data-breath-state={breathState ?? undefined}
             data-progress={progress.toFixed(3)}
-            data-autoplay={
-              autoplayDone ? 'done' : phase === 'autoplay' ? 'play' : 'pending'
-            }
           >
             <div className="visual-position">
               <div className="visual-frame" ref={frame}>
@@ -395,30 +371,108 @@ export default function App() {
                     active={inView}
                     reduced={reduced}
                     breathScale={mediaScale}
-                    autoplayDone={autoplayDone}
-                    onAutoplayDone={handleAutoplayDone}
                   />
                 </div>
               </div>
             </div>
 
-            {activeUtp && (
-              <div
-                className={`comparison-features comparison-features--single${utpIn ? ' is-in' : ''}`}
-                data-testid="comparison-features"
-                data-node-id={activeUtpIndex === 0 ? '102:14787' : '102:14768'}
-                style={{ opacity: utpOpacity }}
-                inert={!utpActive || undefined}
-              >
-                <article className="feature-block feature-block--single" key={activeUtp.title}>
-                  <img src={activeUtp.icon} alt="" width={64} height={64} />
-                  <div className="feature-block__copy">
-                    <h2>{activeUtp.title}</h2>
-                    <p>{activeUtp.body}</p>
+            {/* Breath-space overlays — separate layers over scrubbed video */}
+            <div
+              className={`breath-overlays${phase === 'breathCompare' ? ' breath-overlays--compare' : ''}${phase === 'breathMacro' ? ' breath-overlays--macro' : ''}`}
+              style={
+                compareLift > 0.5
+                  ? { transform: `translate3d(0, ${-compareLift}px, 0)` }
+                  : undefined
+              }
+              inert={!(rgbOp > 0.01 || compareOp > 0.01 || macroOp > 0.01 || dlgOp > 0.01) || undefined}
+            >
+              {compareStillOp > 0.01 && (
+                <div
+                  className="breath-compare"
+                  style={{ opacity: compareStillOp }}
+                  data-node-id="2653:1821"
+                  aria-hidden="true"
+                >
+                  <div className="breath-compare__half breath-compare__half--mini">
+                    <img src={config.captions.compareMini} alt="" />
                   </div>
-                </article>
-              </div>
-            )}
+                  <div className="breath-compare__half breath-compare__half--rgb">
+                    <img src={config.captions.compareRgb} alt="" />
+                  </div>
+                  <div className="breath-compare__divider" data-node-id="2653:1833" />
+                </div>
+              )}
+
+              {macroStillOp > 0.01 && (
+                <div
+                  className="breath-macro-still"
+                  style={{ opacity: macroStillOp }}
+                  data-node-id="2653:1851"
+                  aria-hidden="true"
+                >
+                  <img src={config.captions.macroImage} alt="" />
+                </div>
+              )}
+
+              {rgbOp > 0.01 && (
+                <img
+                  className="breath-rgb-title"
+                  src={config.captions.rgbTitle}
+                  alt={copy.rgbTitle}
+                  style={{ opacity: rgbOp }}
+                  data-node-id="2653:1839"
+                />
+              )}
+
+              {compareOp > 0.01 && (
+                <>
+                  <p
+                    className="breath-compare-label breath-compare-label--mini"
+                    style={{ opacity: compareOp }}
+                    data-node-id="2653:1838"
+                  >
+                    {design.comparisonLabels?.mini ?? copy.miniLabel}
+                  </p>
+                  <p
+                    className="breath-compare-label breath-compare-label--rgb"
+                    style={{ opacity: compareOp }}
+                    data-node-id="2653:1837"
+                  >
+                    {design.comparisonLabels?.rgb ?? copy.rgbLabel}
+                  </p>
+                </>
+              )}
+
+              {macroOp > 0.01 && (
+                <p
+                  className="breath-macro-body"
+                  style={{ opacity: macroOp }}
+                  data-node-id="2653:1855"
+                >
+                  {copy.macroBody}
+                </p>
+              )}
+
+              {dlgOp > 0.01 && (
+                <div
+                  className="breath-dlg"
+                  style={{ opacity: dlgOp }}
+                  data-node-id="2653:1945"
+                >
+                  <img
+                    src={config.captions.dlgIcon}
+                    alt=""
+                    width={56}
+                    height={56}
+                    data-node-id="2653:1947"
+                  />
+                  <div className="breath-dlg__copy">
+                    <h2 data-node-id="2653:1954">{copy.dlgTitle}</h2>
+                    <p data-node-id="2653:1955">{copy.dlgBody}</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {design.finale && (
               <div
@@ -484,7 +538,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* STV-66: Figma continuation AFTER obsolete / outside .experience sticky scroll */}
         <Continuation />
       </main>
 
@@ -501,31 +554,14 @@ export default function App() {
       )}
 
       <span className="sr-only" aria-live="polite">
-        {inView
-          && `Сцена ${
-            phase === 'approach'
-              || phase === 'autoplay'
-              || phase === 'waitClose'
-              || phase === 'retreat'
-              ? 4
-              : phase === 'comparison' || phase === 'utpDlg'
-                ? 5
-                : phase === 'toSound'
-                  ? '5→6'
-                  : phase === 'finale'
-                    ? 6
-                    : phase === 'ambience'
-                      ? 7
-                      : phase === 'rotate' || phase === 'obsolete'
-                        ? 8
-                        : 9
-          }`}
+        {inView && `Сцена ${sceneLabel}`}
       </span>
       <div
         className="timeline-status"
         hidden
         data-distance={clamp(distance, -1, totalDistance)}
-        data-autoplay={autoplayDone ? '1' : '0'}
+        data-phase={phase}
+        data-progress={progress.toFixed(3)}
       />
     </>
   );
