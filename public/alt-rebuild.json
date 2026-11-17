@@ -1,18 +1,23 @@
 {
   "id": "stv74-breath-space-scroll",
   "product": "tv-cinema-v2",
-  "figma_file": "lvnvZ98EbvfTvGYfHCR0LH",
-  "figma_layout": "2653:1958",
-  "figma_video": "2654:1959",
+  "figma_file": "ezskOhJPpgyW6WJaTJB5wh",
+  "figma_layout": "1:2",
+  "figma_video": "1:151",
+  "figma_video_fill": "1:152",
   "video_hash": "443f466e11a7dc170fc9dd87c6d8dddb57fb9278",
   "base": "/tv-cinema/alt/",
   "breath": {
     "src": "media/breath-space.mp4",
     "mode": "SCRUB",
-    "durationSec": 20.033,
+    "durationSec": 20.066667,
     "lastFrameSec": 20.0,
+    "width": 2048,
+    "height": 1152,
+    "fps": 30,
     "holds": [6.033, 7.4],
-    "dlg": [10.0, 11.3]
+    "dlg": [10.0, 11.3],
+    "provenance": "MCP export_video from helper timeline on VIDEO fill 1:152 @2048×1152 (same videoHash as Photos asset); faststart remux CRF18"
   },
   "toSound": "fade last frame → black → sound-s6-start.jpg (no transition-s5to6)",
   "viewport": {
@@ -22,5 +27,5 @@
     "letterbox": "#000000",
     "fit": "width-only min(1, vw/1440); designH adapts when 860*scale > vh"
   },
-  "note": "STV-74: replace breath-s3to5 AUTO_PLAY with pure scroll-scrub of breath-space.mp4 per TZ. Scrub main tip stays b12f748."
+  "note": "STV-74: breath-space from new Figma file ezskOhJPpgyW6WJaTJB5wh. Scrub main tip stays b12f748."
 }

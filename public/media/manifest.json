@@ -13,8 +13,8 @@
   },
   {
     "role": "breath-space",
-    "figma_frame": "2654:1959",
-    "figma_video_fill": "2654:1960",
+    "figma_frame": "1:151",
+    "figma_video_fill": "1:152",
     "video_hash": "443f466e11a7dc170fc9dd87c6d8dddb57fb9278",
     "path": "media/breath-space.mp4",
     "mode": "SCRUB (pure scroll)",
@@ -28,7 +28,10 @@
       10.0,
       11.3
     ],
-    "note": "STV-74: Figma VIDEO export via helper timeline 20.033s; scroll-scrub only; no AUTO_PLAY."
+    "note": "STV-74: MCP export_video @2048×1152 from new Figma file; same videoHash as Photos fill. Timeline kept from TZ.",
+    "figma_file": "ezskOhJPpgyW6WJaTJB5wh",
+    "width": 2048,
+    "height": 1152
   },
   {
     "role": "transition-s5to6-unused",

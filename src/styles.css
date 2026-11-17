@@ -710,17 +710,18 @@ button, a, input { touch-action: manipulation; }
 .breath-compare__half {
   overflow: hidden;
   position: relative;
+  background: #000;
 }
 .breath-compare__half img {
   position: absolute;
   inset: 0;
-  width: 200%;
+  width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center center;
 }
-.breath-compare__half--mini img { left: 0; }
-.breath-compare__half--rgb img { right: 0; left: auto; }
+.breath-compare__half--mini img { object-position: center right; }
+.breath-compare__half--rgb img { object-position: center left; }
 .breath-compare__divider {
   position: absolute;
   left: calc(730 / 1440 * 100%);
