@@ -1,5 +1,5 @@
 {
-  "id": "stv75-continuous-breath-scrub",
+  "id": "stv77-breath-scrub-smooth",
   "product": "tv-cinema-v2",
   "figma_overlays": "lvnvZ98EbvfTvGYfHCR0LH",
   "figma_overlay_frame": "2653:1958",
@@ -16,13 +16,21 @@
     "width": 2048,
     "height": 1152,
     "fps": 30,
+    "keyint": 8,
     "holds": [],
+    "scrollH": 9.5,
+    "scrub": {
+      "followHz": 14,
+      "settleSec": 0.0167,
+      "idleMs": 90,
+      "map": "linear-per-segment"
+    },
     "captions": {
       "rgbTitle": [4.867, 9.5],
       "rgbBody": [7.2, 9.5],
       "dlg": [10.0, 11.3]
     },
-    "provenance": "Existing STV-74 export of Photos fill 1:152 @2048×1152 (2026-11-17 17.08.53); sole visual layer, no image inserts"
+    "provenance": "Same visual clip as STV-74/75 (Photos fill 1:152); remuxed keyint=8 / no B-frames / faststart for smoother seeks"
   },
   "toSound": "fade last frame → black → sound-s6-start.jpg (no transition-s5to6)",
   "viewport": {
@@ -32,5 +40,5 @@
     "letterbox": "#000000",
     "fit": "width-only min(1, vw/1440); designH adapts when 860*scale > vh"
   },
-  "note": "STV-75: continuous start→end scrub; RGB/DLG typography overlays only. Scrub main tip stays b12f748."
+  "note": "STV-77: smoother continuous scrub (longer H, RAF lerp, denser keyframes). Main tip stays b12f748."
 }

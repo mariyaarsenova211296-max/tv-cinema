@@ -1,7 +1,7 @@
 import { asset } from './base';
 
 /**
- * STV-75 · continuous breath-space scroll-scrub.
+ * STV-77 · smoother continuous breath-space scroll-scrub.
  * Sole visual = breath-space.mp4. No image inserts / hold pauses.
  * Captions fade by video time (bidirectional). toSound → sound poster → finale.
  */
@@ -19,29 +19,29 @@ export const timebase = {
 
 /**
  * Continuous scrub segments — no hold inserts.
- * Distances keep TZ pacing minus compare/macro hold scroll.
+ * STV-77: ~1.7× scroll height vs STV-75 so the same 20s maps to more wheel travel.
  */
 export const breathSegments = [
-  { phase: 'breathStart', distance: 1.5, t0: 0, t1: 4.867 },
-  { phase: 'breathPlanet', distance: 0.65, t0: 4.867, t1: 6.033 },
-  { phase: 'breathClose', distance: 0.6, t0: 6.033, t1: 7.4 },
-  { phase: 'breathToFlight', distance: 0.7, t0: 7.4, t1: 10.0 },
-  { phase: 'breathDlg', distance: 1.0, t0: 10.0, t1: 11.3 },
-  { phase: 'breathTurn', distance: 0.85, t0: 11.3, t1: 14.733 },
-  { phase: 'breathEnd', distance: 0.25, t0: 14.733, t1: 20.0 },
+  { phase: 'breathStart', distance: 2.5, t0: 0, t1: 4.867 },
+  { phase: 'breathPlanet', distance: 1.1, t0: 4.867, t1: 6.033 },
+  { phase: 'breathClose', distance: 1.0, t0: 6.033, t1: 7.4 },
+  { phase: 'breathToFlight', distance: 1.2, t0: 7.4, t1: 10.0 },
+  { phase: 'breathDlg', distance: 1.7, t0: 10.0, t1: 11.3 },
+  { phase: 'breathTurn', distance: 1.5, t0: 11.3, t1: 14.733 },
+  { phase: 'breathEnd', distance: 0.5, t0: 14.733, t1: 20.0 },
 ] as const;
 
 export type BreathPhase = (typeof breathSegments)[number]['phase'];
 
 export const config = {
   distances: {
-    breathStart: 1.5,
-    breathPlanet: 0.65,
-    breathClose: 0.6,
-    breathToFlight: 0.7,
-    breathDlg: 1.0,
-    breathTurn: 0.85,
-    breathEnd: 0.25,
+    breathStart: 2.5,
+    breathPlanet: 1.1,
+    breathClose: 1.0,
+    breathToFlight: 1.2,
+    breathDlg: 1.7,
+    breathTurn: 1.5,
+    breathEnd: 0.5,
     toSound: 0.4,
     finale: 3.5,
     ambience: 4.5,
@@ -76,8 +76,18 @@ export const config = {
   playback: {
     crossfadeMs: 280,
     breathCrossfadeMs: 0,
-    seekTolerance: 0.04,
+    /** Settle threshold once lerp is close to scroll target (seconds). */
+    seekTolerance: 0.02,
     breathRate: 1,
+    /**
+     * STV-77 scrub follow: exponential lerp of displayed time → scroll target.
+     * Higher Hz = snappier; ~14 keeps bidirectional scrub fluid without snap.
+     */
+    scrubFollowHz: 14,
+    /** Snap + hold when |display−target| below this (seconds). */
+    scrubSettleSec: 1 / 60,
+    /** After scroll target stops changing for this long, force settle (ms). */
+    scrubIdleMs: 90,
   },
   heroMedia: {
     src: asset('media/hero-s3.mp4'),
@@ -172,12 +182,16 @@ export function isBreathPhase(phase: Phase): phase is BreathPhase {
   return breathSegments.some(s => s.phase === phase);
 }
 
-/** Map phase + progress → breath-space.mp4 currentTime (seconds). */
+/**
+ * Map phase + progress → breath-space.mp4 currentTime (seconds).
+ * Linear within each segment so segment boundaries don't zero-out velocity
+ * (smoothstep per segment felt sticky / snappy across handoffs).
+ */
 export function breathScrubSec(phase: Phase, progress: number): number | null {
   const seg = breathSegments.find(s => s.phase === phase);
   if (!seg) return null;
   if (seg.t0 === seg.t1) return seg.t0;
-  return seg.t0 + (seg.t1 - seg.t0) * smooth(progress);
+  return seg.t0 + (seg.t1 - seg.t0) * clamp(progress);
 }
 
 /** Opacity from video-time window [in, inEnd] → hold → [out, outEnd]. */

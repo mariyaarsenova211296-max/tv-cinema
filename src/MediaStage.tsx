@@ -20,9 +20,10 @@ type Props = {
 };
 
 /**
- * STV-75: continuous scroll-scrub of breath-space.mp4 (sole visual).
+ * STV-77: continuous scroll-scrub of breath-space.mp4 (sole visual).
+ * Scroll sets a target time; RAF lerps displayed currentTime toward it
+ * (bidirectional; settles/holds when scroll stops). Denser keyframes help seeks.
  * toSound fades last frame → black → sound poster (no transition-s5to6 cat).
- * Then sound PLAY · ambience PLAY · rotate SCRUB.
  */
 export function MediaStage({
   phase,
@@ -38,8 +39,17 @@ export function MediaStage({
   const playPending = useRef(new Set<string>());
   const soundArmed = useRef(false);
   const ambienceArmed = useRef(false);
+  /** Pending hard-seek destination while a seek is in flight. */
   const seekTarget = useRef<number | null>(null);
   const seeking = useRef(false);
+  /** Scroll-driven scrub goal (seconds). */
+  const scrubGoal = useRef(0);
+  /** Lerped display time driven by RAF. */
+  const scrubDisplay = useRef(0);
+  const scrubGoalAt = useRef(0);
+  const scrubRaf = useRef(0);
+  const scrubLastTs = useRef(0);
+  const scrubActive = useRef(false);
 
   const [breathReady, setBreathReady] = useState(false);
   const [breathError, setBreathError] = useState(false);
@@ -101,13 +111,18 @@ export function MediaStage({
       && (!reduced || manual),
   );
 
+  function breathLastSec(el: HTMLVideoElement): number {
+    return Math.min(
+      timebase.lastFrameSec,
+      Math.max(0, (Number.isFinite(el.duration) && el.duration > 0
+        ? el.duration
+        : timebase.breathSec) - 1 / timebase.fps),
+    );
+  }
+
   function applySeek(el: HTMLVideoElement, sec: number) {
     if (!Number.isFinite(el.duration) || el.duration <= 0) return;
-    const last = Math.min(
-      timebase.lastFrameSec,
-      Math.max(0, el.duration - 1 / timebase.fps),
-    );
-    const target = clamp(sec, 0, last);
+    const target = clamp(sec, 0, breathLastSec(el));
     if (!el.paused) el.pause();
     if (Math.abs(el.currentTime - target) <= config.playback.seekTolerance) {
       seeking.current = false;
@@ -162,32 +177,88 @@ export function MediaStage({
     }
   }, [inAmbience, ambienceEnded]);
 
-  // Breath scroll-scrub (queued seek)
+  // Publish scroll → scrub goal (React render path; seek happens on RAF).
   useEffect(() => {
     if (inRotateScene || inFinale || inAmbience) {
       breathRef.current?.pause();
+      scrubActive.current = false;
       return;
     }
-    if (!inBreath && !inToSound) return;
+    if (!inBreath && !inToSound) {
+      scrubActive.current = false;
+      return;
+    }
 
     const el = breathRef.current;
     if (!el || breathError) return;
     if (el.preload !== 'auto') el.preload = 'auto';
-
-    // Warm while approaching sticky stage
-    if (!active && !breathReady) {
-      if (el.readyState < 2) el.load();
-    }
+    if (!active && !breathReady && el.readyState < 2) el.load();
 
     if (scrubSec == null) return;
+    const wasActive = scrubActive.current;
+    scrubGoal.current = scrubSec;
+    scrubGoalAt.current = performance.now();
+    scrubActive.current = true;
+    // Cold-enter: don't ease from a stale time across section transitions.
+    if (!wasActive || Math.abs(scrubDisplay.current - scrubSec) > 1.5) {
+      scrubDisplay.current = scrubSec;
+    }
+
     if (reduced) {
+      scrubDisplay.current = scrubSec;
       applySeek(el, scrubSec);
       if (el.readyState >= 2) setBreathReady(true);
-      return;
     }
-    applySeek(el, scrubSec);
-    if (el.readyState >= 2) setBreathReady(true);
   });
+
+  // STV-77: RAF lerp displayed time toward scroll goal; settle/hold when idle.
+  useEffect(() => {
+    if (reduced) return;
+
+    const tick = (ts: number) => {
+      scrubRaf.current = requestAnimationFrame(tick);
+      if (!scrubActive.current) {
+        scrubLastTs.current = ts;
+        return;
+      }
+      const el = breathRef.current;
+      if (!el || breathError) {
+        scrubLastTs.current = ts;
+        return;
+      }
+
+      const last = breathLastSec(el);
+      const goal = clamp(scrubGoal.current, 0, last);
+      const prev = scrubLastTs.current || ts;
+      const dt = Math.min(0.05, Math.max(0, (ts - prev) / 1000));
+      scrubLastTs.current = ts;
+
+      const idleMs = performance.now() - scrubGoalAt.current;
+      const settle = config.playback.scrubSettleSec;
+      let display = scrubDisplay.current;
+
+      if (
+        Math.abs(goal - display) <= settle
+        || idleMs >= config.playback.scrubIdleMs
+      ) {
+        display = goal;
+      } else {
+        const alpha = 1 - Math.exp(-config.playback.scrubFollowHz * dt);
+        display += (goal - display) * alpha;
+        if (Math.abs(goal - display) <= settle) display = goal;
+      }
+
+      scrubDisplay.current = clamp(display, 0, last);
+      applySeek(el, scrubDisplay.current);
+    };
+
+    scrubRaf.current = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(scrubRaf.current);
+      scrubRaf.current = 0;
+      scrubLastTs.current = 0;
+    };
+  }, [reduced, breathError]);
 
   // Rotate scrub
   useEffect(() => {
