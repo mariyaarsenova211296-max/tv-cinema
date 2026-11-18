@@ -22,13 +22,14 @@
     "last_frame_sec": 20.0,
     "holds_sec": [],
     "keyint": 8,
-    "scroll_h": 9.5,
+    "scroll_h": 13.5,
+    "late_from_sec": 11.0,
     "captions_sec": {
       "rgbTitle": [4.867, 9.5],
       "rgbBody": [7.2, 9.5],
       "dlg": [10.0, 11.3]
     },
-    "note": "STV-77: smoother scrub — longer H, RAF lerp, remux keyint=8/no-B/faststart. Same visual content.",
+    "note": "STV-78: post-11s turn/end H stretched (2.8+3.2); late followHz 9. Pre-11s H unchanged from STV-77.",
     "figma_file": "ezskOhJPpgyW6WJaTJB5wh",
     "figma_overlays": "lvnvZ98EbvfTvGYfHCR0LH#2653:1958",
     "width": 2048,

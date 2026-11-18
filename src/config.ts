@@ -1,9 +1,8 @@
 import { asset } from './base';
 
 /**
- * STV-77 · smoother continuous breath-space scroll-scrub.
- * Sole visual = breath-space.mp4. No image inserts / hold pauses.
- * Captions fade by video time (bidirectional). toSound → sound poster → finale.
+ * STV-78 · smoother scrub from ~11s → end (turn / end / toSound).
+ * Earlier RGB/DLG segments keep STV-77 distances & caption times.
  */
 export const timebase = {
   fps: 30,
@@ -15,11 +14,14 @@ export const timebase = {
   rgbOutSec: 9.5,
   dlgStartSec: 10.0,
   dlgEndSec: 11.3,
+  /** STV-78: gentler follow + stretched H from this video second onward. */
+  lateScrubSec: 11.0,
 } as const;
 
 /**
  * Continuous scrub segments — no hold inserts.
- * STV-77: ~1.7× scroll height vs STV-75 so the same 20s maps to more wheel travel.
+ * STV-78: lengthen breathTurn / breathEnd so ≥11s maps to far more scroll.
+ * Pre-11s distances unchanged from STV-77.
  */
 export const breathSegments = [
   { phase: 'breathStart', distance: 2.5, t0: 0, t1: 4.867 },
@@ -27,8 +29,8 @@ export const breathSegments = [
   { phase: 'breathClose', distance: 1.0, t0: 6.033, t1: 7.4 },
   { phase: 'breathToFlight', distance: 1.2, t0: 7.4, t1: 10.0 },
   { phase: 'breathDlg', distance: 1.7, t0: 10.0, t1: 11.3 },
-  { phase: 'breathTurn', distance: 1.5, t0: 11.3, t1: 14.733 },
-  { phase: 'breathEnd', distance: 0.5, t0: 14.733, t1: 20.0 },
+  { phase: 'breathTurn', distance: 2.8, t0: 11.3, t1: 14.733 },
+  { phase: 'breathEnd', distance: 3.2, t0: 14.733, t1: 20.0 },
 ] as const;
 
 export type BreathPhase = (typeof breathSegments)[number]['phase'];
@@ -40,9 +42,9 @@ export const config = {
     breathClose: 1.0,
     breathToFlight: 1.2,
     breathDlg: 1.7,
-    breathTurn: 1.5,
-    breathEnd: 0.5,
-    toSound: 0.4,
+    breathTurn: 2.8,
+    breathEnd: 3.2,
+    toSound: 0.55,
     finale: 3.5,
     ambience: 4.5,
     rotate: 3.2,
@@ -80,10 +82,11 @@ export const config = {
     seekTolerance: 0.02,
     breathRate: 1,
     /**
-     * STV-77 scrub follow: exponential lerp of displayed time → scroll target.
-     * Higher Hz = snappier; ~14 keeps bidirectional scrub fluid without snap.
+     * Scrub follow: exponential lerp of displayed time → scroll target.
+     * Higher Hz = snappier. Late zone (≥ lateScrubSec) uses a gentler rate.
      */
     scrubFollowHz: 14,
+    scrubFollowHzLate: 9,
     /** Snap + hold when |display−target| below this (seconds). */
     scrubSettleSec: 1 / 60,
     /** After scroll target stops changing for this long, force settle (ms). */

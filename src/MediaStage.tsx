@@ -20,10 +20,10 @@ type Props = {
 };
 
 /**
- * STV-77: continuous scroll-scrub of breath-space.mp4 (sole visual).
+ * STV-78: continuous scroll-scrub of breath-space.mp4 (sole visual).
  * Scroll sets a target time; RAF lerps displayed currentTime toward it
- * (bidirectional; settles/holds when scroll stops). Denser keyframes help seeks.
- * toSound fades last frame → black → sound poster (no transition-s5to6 cat).
+ * (bidirectional; settles/holds when scroll stops). From ≥11s uses gentler
+ * follow Hz; turn/end segments have more scroll H. toSound fades → sound poster.
  */
 export function MediaStage({
   phase,
@@ -243,7 +243,11 @@ export function MediaStage({
       ) {
         display = goal;
       } else {
-        const alpha = 1 - Math.exp(-config.playback.scrubFollowHz * dt);
+        const late = Math.max(goal, display) >= timebase.lateScrubSec;
+        const followHz = late
+          ? config.playback.scrubFollowHzLate
+          : config.playback.scrubFollowHz;
+        const alpha = 1 - Math.exp(-followHz * dt);
         display += (goal - display) * alpha;
         if (Math.abs(goal - display) <= settle) display = goal;
       }
